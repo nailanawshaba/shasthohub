@@ -43,8 +43,10 @@ type SKB struct {
 }
 
 type SKBPriv struct {
-	Data       []byte `codec:"data"`
-	Encryption int    `codec:"encryption"`
+	Data                 []byte `codec:"data"`
+	Encryption           int    `codec:"encryption"`
+	PassphraseGeneration int    `codec:"passphrase_generation"`
+	RefreshGeneration    int    `codec:"refresh_generation"`
 }
 
 func (key *PGPKeyBundle) ToSKB(gc *GlobalContext, tsec *triplesec.Cipher) (ret *SKB, err error) {
