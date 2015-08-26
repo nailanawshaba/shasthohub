@@ -19,6 +19,10 @@ var con net.Conn
 //    -- configure the global context with more care
 //    -- test it ... just a bit...
 //
+// Some more references here on how to compile to an .so:
+//
+//   https://blog.filippo.io/building-python-modules-with-go-1-5/
+//
 
 type dummyCmd struct{}
 
