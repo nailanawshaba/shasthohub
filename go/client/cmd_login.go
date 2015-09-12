@@ -8,6 +8,7 @@ import (
 	"github.com/keybase/client/go/libkb"
 	keybase1 "github.com/keybase/client/protocol/go"
 	"github.com/maxtaco/go-framed-msgpack-rpc/rpc2"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 type CmdLogin struct {
@@ -95,4 +96,17 @@ func (v *CmdLogin) GetUsage() libkb.Usage {
 		KbKeyring: true,
 		API:       true,
 	}
+}
+
+func RegisterCmdLogin(app *kingpin.Application) {
+	c := app.Command("login", "Establish a session with the keybase server.")
+	cmd := &CmdLogin{}
+	c.Arg("username", "Username to login with.").StringVar(&cmd.Username)
+	c.Action(func(*kingpin.ParseContext) error {
+		err := InitClient(cmd)
+		if err != nil {
+			return err
+		}
+		return cmd.Run()
+	})
 }

@@ -249,13 +249,17 @@ func (u Usage) UseKeyring() bool {
 }
 
 func (g *GlobalContext) ConfigureAll(line CommandLine, cmd Command) error {
-	var err error
 
 	g.SetCommandLine(line)
 
-	g.ConfigureLogging()
-
 	usage := cmd.GetUsage()
+
+	return g.ConfigureForUsage(usage)
+}
+
+func (g *GlobalContext) ConfigureForUsage(usage Usage) error {
+	var err error
+	g.ConfigureLogging()
 
 	if usage.Config {
 		if err = g.ConfigureConfig(); err != nil {

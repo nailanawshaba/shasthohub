@@ -11,6 +11,7 @@ import (
 	"github.com/keybase/client/go/libkb"
 	keybase1 "github.com/keybase/client/protocol/go"
 	"github.com/maxtaco/go-framed-msgpack-rpc/rpc2"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 // CmdListTrackers is the 'list-trackers' command.  It displays
@@ -235,4 +236,22 @@ func (c *CmdListTrackers) GetUsage() libkb.Usage {
 		Config: true,
 		API:    true,
 	}
+}
+
+func RegisterCmdListTrackers(app *kingpin.Application) {
+	c := app.Command("list", "List trackers.")
+
+	cmd := &CmdListTrackers{}
+	trackersCmd := c.Command("trackers", "List trackers.")
+	trackersCmd.Flag("verbose", "Verbose.").Short('v').BoolVar(&cmd.verbose)
+	trackersCmd.Flag("json", "Output JSON.").Short('j').BoolVar(&cmd.json)
+	trackersCmd.Flag("headers", "Show headers.").Short('H').BoolVar(&cmd.headers)
+	trackersCmd.Arg("user", "Username.").StringVar(&cmd.username)
+	trackersCmd.Action(func(*kingpin.ParseContext) error {
+		err := InitClient(cmd)
+		if err != nil {
+			return err
+		}
+		return cmd.Run()
+	})
 }

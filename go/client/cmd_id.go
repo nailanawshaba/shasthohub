@@ -9,6 +9,7 @@ import (
 	"github.com/keybase/client/go/libkb"
 	keybase1 "github.com/keybase/client/protocol/go"
 	"github.com/maxtaco/go-framed-msgpack-rpc/rpc2"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 type CmdID struct {
@@ -84,4 +85,19 @@ func (v *CmdID) GetUsage() libkb.Usage {
 		KbKeyring: true,
 		API:       true,
 	}
+}
+
+func RegisterCmdID(app *kingpin.Application) {
+	c := app.Command("id", "Identify a user and check their proofs.")
+
+	cmd := &CmdID{}
+	c.Flag("track-statement", "Output a tracking statement.").Short('t').BoolVar(&cmd.trackStatement)
+	c.Arg("user", "User to identify.").StringVar(&cmd.user)
+	c.Action(func(*kingpin.ParseContext) error {
+		err := InitClient(cmd)
+		if err != nil {
+			return err
+		}
+		return cmd.Run()
+	})
 }
