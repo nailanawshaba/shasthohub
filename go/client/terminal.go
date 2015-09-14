@@ -104,8 +104,9 @@ func (t Terminal) GetSecret(arg *keybase1.SecretEntryArg) (res *keybase1.SecretE
 		// TODO: Default to 'No' and dismiss the question for
 		// about a day if 'No' is selected.
 		res.StoreSecret, err = t.PromptYesNo(libkb.GetTerminalPrompt(), PromptDefaultYes)
-		if err != nil {
-			return
+		if err == minterm.ErrPromptInterrupted {
+			res = &keybase1.SecretEntryRes{Canceled: true}
+			err = nil
 		}
 	}
 
