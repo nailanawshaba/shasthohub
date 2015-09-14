@@ -16,11 +16,13 @@ import (
 
 // MinTerm is a minimal terminal interface.
 type MinTerm struct {
-	tty    *os.File
-	in     *os.File
-	out    *os.File
-	width  int
-	height int
+	tty       *os.File
+	in        *os.File
+	out       *os.File
+	scanner   *bufio.Scanner
+	termState *terminal.State
+	width     int
+	height    int
 }
 
 var ErrPromptInterrupted = errors.New("prompt interrupted")
@@ -45,6 +47,10 @@ func (m *MinTerm) open() error {
 	m.out = m.tty
 	m.in = m.tty
 	fd := int(m.tty.Fd())
+	m.termState, err = terminal.MakeRaw(fd)
+	if err != nil {
+		return err
+	}
 	w, h, err := terminal.GetSize(fd)
 	if err != nil {
 		return err
@@ -55,13 +61,18 @@ func (m *MinTerm) open() error {
 
 // Shutdown closes the terminal.
 func (m *MinTerm) Shutdown() error {
+	var err error
 	if m.tty == nil {
 		return nil
 	}
 	// this can hang waiting for newline, so do it in a goroutine.
 	// application shutting down, so will get closed by os anyway...
-	go m.tty.Close()
-	return nil
+	if m.termState != nil {
+		err = terminal.Restore(int(m.tty.Fd()), m.termState)
+		m.tty.Close()
+	}
+
+	return err
 }
 
 // Size returns the width and height of the terminal.
@@ -75,12 +86,41 @@ func (m *MinTerm) Write(s string) error {
 	return err
 }
 
+func (m *MinTerm) readLine() (string, error) {
+	var n int
+	var err error
+	var buf []byte
+	for {
+		tmp := make([]byte, 1)
+		n, err = m.in.Read(tmp)
+		fmt.Printf("read -> %v %v %v\n", n, err, tmp)
+		if n == 0 || err != nil {
+			break
+		}
+		if tmp[0] == '\n' {
+			break
+		}
+		if tmp[0] == 3 {
+			err = ErrPromptInterrupted
+			break
+		}
+		if tmp[0] == 4 {
+			break
+		}
+		buf = append(buf, tmp[0])
+	}
+	fmt.Printf("Breaking....\n")
+	return string(buf), err
+
+}
+
 // Prompt gets a line of input from the terminal.  It displays the text in
 // the prompt parameter first.
 func (m *MinTerm) Prompt(prompt string) (string, error) {
 	m.Write(prompt)
-	r := bufio.NewReader(m.in)
-	p, err := r.ReadString('\n')
+	fmt.Printf("starting read...\n")
+	p, err := m.readLine()
+	fmt.Printf("stopping read... %s %v\n", p, err)
 	if err != nil {
 		return "", err
 	}

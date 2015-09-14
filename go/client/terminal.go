@@ -32,7 +32,11 @@ func (t Terminal) Write(s string) error {
 }
 
 func (t Terminal) Prompt(s string) (string, error) {
-	return t.engine.Prompt(s)
+	res, err := t.engine.Prompt(s)
+	if err == minterm.ErrPromptInterrupted {
+		err = InputCanceledError{}
+	}
+	return res, err
 }
 
 func (t Terminal) PromptYesNo(p string, def PromptDefault) (ret bool, err error) {
@@ -104,7 +108,6 @@ func (t Terminal) GetSecret(arg *keybase1.SecretEntryArg) (res *keybase1.SecretE
 		// TODO: Default to 'No' and dismiss the question for
 		// about a day if 'No' is selected.
 		res.StoreSecret, err = t.PromptYesNo(libkb.GetTerminalPrompt(), PromptDefaultYes)
-		fmt.Printf("back from prompt yes/no...%v\n", err)
 		if err != nil {
 			return
 		}

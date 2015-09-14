@@ -175,11 +175,14 @@ func (s *SKB) VerboseDescription() (ret string, err error) {
 
 func (s *SKB) HumanDescription(owner *User) (string, error) {
 	key, err := s.GetPubKey()
+	fmt.Printf("Bar A %d\n", s.Type)
 	if err != nil {
+		fmt.Printf("Bar B\n")
 		return "", err
 	}
 
 	if IsPGPAlgo(s.Type) {
+		fmt.Printf("Bar C\n")
 		return s.pgpHumanDescription(key)
 	}
 	return s.devHumandDescription(owner, key)
@@ -679,6 +682,7 @@ func (s *SKB) UnlockNoPrompt(lctx LoginContext, secretStore SecretStore, lksPrel
 func (s *SKB) unlockPrompt(lctx LoginContext, reason, which string, secretStore SecretStore, ui SecretUI, me *User) (GenericKey, error) {
 	desc, err := s.HumanDescription(me)
 	if err != nil {
+		fmt.Printf("shiiitt!!!\n")
 		return nil, err
 	}
 
@@ -707,15 +711,21 @@ func (s *SKB) PromptAndUnlock(lctx LoginContext, reason, which string, secretSto
 		s.G().Log.Debug("- PromptAndUnlock -> %s", ErrToOk(err))
 	}()
 
+	fmt.Printf("fooo 1\n")
+
 	// First try to unlock without prompting the user.
 	ret, err = s.UnlockNoPrompt(lctx, secretStore, lksPreload)
 	if err == nil {
+		fmt.Printf("fooo 2\n")
 		return
 	}
+	fmt.Printf("fooo 3\n")
 	if err != errUnlockNotPossible {
+		fmt.Printf("fooo 4\n")
 		return
 	}
 
+	fmt.Printf("fooo 5\n")
 	// Prompt necessary:
 	ret, err = s.unlockPrompt(lctx, reason, which, secretStore, ui, me)
 	return
