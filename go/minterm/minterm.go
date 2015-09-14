@@ -4,7 +4,6 @@
 package minterm
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"os"
@@ -79,16 +78,14 @@ func (m *MinTerm) Write(s string) error {
 // the prompt parameter first.
 func (m *MinTerm) Prompt(prompt string) (string, error) {
 	m.Write(prompt)
-	r := bufio.NewReader(m.in)
-	p, err := r.ReadString('\n')
+	b, err := gopass.GetPrompt()
+	if err == gopass.ErrInterrupted {
+		err = ErrPromptInterrupted
+	}
 	if err != nil {
 		return "", err
 	}
-	// strip off the trailing newline
-	if len(p) > 0 {
-		p = p[:len(p)-1]
-	}
-	return p, nil
+	return string(b), nil
 }
 
 // PromptPassword gets a line of input from the terminal, but
