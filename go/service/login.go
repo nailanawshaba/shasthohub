@@ -13,7 +13,7 @@ type LoginHandler struct {
 	locksmithUI libkb.LocksmithUI
 }
 
-func NewLoginHandler(xp *rpc2.Transport) *LoginHandler {
+func NewLoginHandler(xp rpc2.Transporter) *LoginHandler {
 	return &LoginHandler{CancelHandler: NewCancelHandler(xp)}
 }
 
