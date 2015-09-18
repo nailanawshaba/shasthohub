@@ -134,7 +134,7 @@ func (ps *ParsedSig) Verify(k PGPKeyBundle) (err error) {
 		return
 	}
 
-	if ps.MD.Signature == nil {
+	if ps.MD.Signature == nil && ps.MD.SignatureV3 == nil {
 		err = fmt.Errorf("No available signature after checking signature")
 		return
 	}
