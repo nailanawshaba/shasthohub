@@ -10,16 +10,20 @@ import (
 // UserHandler is the RPC handler for the user interface.
 type UserHandler struct {
 	*BaseHandler
+	libkb.Contextified
 }
 
 // NewUserHandler creates a UserHandler for the xp transport.
-func NewUserHandler(xp rpc.Transporter) *UserHandler {
-	return &UserHandler{BaseHandler: NewBaseHandler(xp)}
+func NewUserHandler(xp rpc.Transporter, g *libkb.GlobalContext) *UserHandler {
+	return &UserHandler{
+		BaseHandler:  NewBaseHandler(xp),
+		Contextified: libkb.NewContextified(g),
+	}
 }
 
 // ListTrackers gets the list of trackers for a user by uid.
 func (h *UserHandler) ListTrackers(arg keybase1.ListTrackersArg) ([]keybase1.Tracker, error) {
-	eng := engine.NewListTrackers(arg.Uid, G)
+	eng := engine.NewListTrackers(arg.Uid, h.G())
 	return h.listTrackers(arg.SessionID, eng)
 }
 
@@ -48,7 +52,7 @@ func (h *UserHandler) listTrackers(sessionID int, eng *engine.ListTrackersEngine
 
 func (h *UserHandler) LoadUncheckedUserSummaries(arg keybase1.LoadUncheckedUserSummariesArg) ([]keybase1.UserSummary, error) {
 	ctx := &engine.Context{}
-	eng := engine.NewUserSummary(arg.Uids, G)
+	eng := engine.NewUserSummary(arg.Uids, h.G())
 	if err := engine.RunEngine(eng, ctx); err != nil {
 		return nil, err
 	}
@@ -61,7 +65,7 @@ func (h *UserHandler) ListTracking(arg keybase1.ListTrackingArg) (res []keybase1
 		Filter: arg.Filter,
 		// Verbose has no effect on this call. At the engine level, it only
 		// affects JSON output.
-	}, G)
+	}, h.G())
 	err = engine.RunEngine(eng, &engine.Context{})
 	res = eng.TableResult()
 	return
@@ -72,14 +76,14 @@ func (h *UserHandler) ListTrackingJSON(arg keybase1.ListTrackingJSONArg) (res st
 		JSON:    true,
 		Filter:  arg.Filter,
 		Verbose: arg.Verbose,
-	}, G)
+	}, h.G())
 	err = engine.RunEngine(eng, &engine.Context{})
 	res = eng.JSONResult()
 	return
 }
 
 func (h *UserHandler) LoadUser(arg keybase1.LoadUserArg) (user keybase1.User, err error) {
-	u, err := libkb.LoadUser(libkb.LoadUserArg{UID: arg.Uid, Contextified: libkb.NewContextified(G)})
+	u, err := libkb.LoadUser(libkb.LoadUserArg{UID: arg.Uid, Contextified: libkb.NewContextified(h.G())})
 	if err != nil {
 		return
 	}
@@ -89,13 +93,13 @@ func (h *UserHandler) LoadUser(arg keybase1.LoadUserArg) (user keybase1.User, er
 }
 
 func (h *UserHandler) LoadUserPlusKeys(arg keybase1.LoadUserPlusKeysArg) (keybase1.UserPlusKeys, error) {
-	return libkb.LoadUserPlusKeys(G, arg.Uid, arg.CacheOK)
+	return libkb.LoadUserPlusKeys(h.G(), arg.Uid, arg.CacheOK)
 }
 
 func (h *UserHandler) Search(arg keybase1.SearchArg) (results []keybase1.SearchResult, err error) {
 	eng := engine.NewSearchEngine(engine.SearchEngineArgs{
 		Query: arg.Query,
-	}, G)
+	}, h.G())
 	ctx := &engine.Context{LogUI: h.getLogUI(arg.SessionID)}
 	err = engine.RunEngine(eng, ctx)
 	if err == nil {
@@ -105,7 +109,7 @@ func (h *UserHandler) Search(arg keybase1.SearchArg) (results []keybase1.SearchR
 }
 
 func (h *UserHandler) LoadPublicKeys(arg keybase1.LoadPublicKeysArg) (keys []keybase1.PublicKey, err error) {
-	u, err := libkb.LoadUser(libkb.LoadUserArg{UID: arg.Uid, Contextified: libkb.NewContextified(G)})
+	u, err := libkb.LoadUser(libkb.LoadUserArg{UID: arg.Uid, Contextified: libkb.NewContextified(h.G())})
 	if err != nil {
 		return
 	}

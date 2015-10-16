@@ -2,16 +2,21 @@ package service
 
 import (
 	"github.com/keybase/client/go/engine"
+	"github.com/keybase/client/go/libkb"
 	keybase1 "github.com/keybase/client/go/protocol"
 	rpc "github.com/keybase/go-framed-msgpack-rpc"
 )
 
 type BTCHandler struct {
 	*BaseHandler
+	libkb.Contextified
 }
 
-func NewBTCHandler(xp rpc.Transporter) *BTCHandler {
-	return &BTCHandler{BaseHandler: NewBaseHandler(xp)}
+func NewBTCHandler(xp rpc.Transporter, g *libkb.GlobalContext) *BTCHandler {
+	return &BTCHandler{
+		BaseHandler:  NewBaseHandler(xp),
+		Contextified: libkb.NewContextified(g),
+	}
 }
 
 // BTC creates a BTCEngine and runs it.
@@ -20,6 +25,6 @@ func (h *BTCHandler) RegisterBTC(arg keybase1.RegisterBTCArg) error {
 		LogUI:    h.getLogUI(arg.SessionID),
 		SecretUI: h.getSecretUI(arg.SessionID),
 	}
-	eng := engine.NewBTCEngine(arg.Address, arg.Force, G)
+	eng := engine.NewBTCEngine(arg.Address, arg.Force, h.G())
 	return engine.RunEngine(eng, &ctx)
 }

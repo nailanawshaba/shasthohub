@@ -144,9 +144,13 @@ func (s *LoginState) LoginWithKey(lctx LoginContext, user *User, key GenericKey,
 }
 
 func (s *LoginState) Logout() error {
-	return s.loginHandle(func(a LoginContext) error {
+	err := s.loginHandle(func(a LoginContext) error {
 		return s.logout(a)
 	}, nil, "logout")
+	if err == nil {
+		s.G().NotifyRouter.HandleLogout()
+	}
+	return err
 }
 
 // ExternalFunc is for having the LoginState handler call a

@@ -8,25 +8,29 @@ import (
 )
 
 type LoginHandler struct {
+	libkb.Contextified
 	*CancelHandler
 	identifyUI  libkb.IdentifyUI
 	locksmithUI libkb.LocksmithUI
 }
 
-func NewLoginHandler(xp rpc.Transporter) *LoginHandler {
-	return &LoginHandler{CancelHandler: NewCancelHandler(xp)}
+func NewLoginHandler(xp rpc.Transporter, g *libkb.GlobalContext) *LoginHandler {
+	return &LoginHandler{
+		CancelHandler: NewCancelHandler(xp),
+		Contextified:  libkb.NewContextified(g),
+	}
 }
 
 func (h *LoginHandler) GetConfiguredAccounts(sessionID int) ([]keybase1.ConfiguredAccount, error) {
-	return libkb.GetConfiguredAccounts(G)
+	return libkb.GetConfiguredAccounts(h.G())
 }
 
 func (h *LoginHandler) Logout(sessionID int) error {
-	return G.Logout()
+	return h.G().Logout()
 }
 
 func (h *LoginHandler) Reset(sessionID int) error {
-	eng := engine.NewResetEngine(G)
+	eng := engine.NewResetEngine(h.G())
 	ctx := engine.Context{}
 	return engine.RunEngine(eng, &ctx)
 }
@@ -39,7 +43,7 @@ func (h *LoginHandler) LoginWithPrompt(arg keybase1.LoginWithPromptArg) error {
 		LoginUI:     h.getLoginUI(arg.SessionID),
 		GPGUI:       h.getGPGUI(arg.SessionID),
 	}
-	eng := engine.NewLoginWithPromptEngine(arg.Username, G)
+	eng := engine.NewLoginWithPromptEngine(arg.Username, h.G())
 
 	return h.loginWithEngine(eng, ctx, arg.SessionID)
 }
@@ -52,7 +56,7 @@ func (h *LoginHandler) LoginWithStoredSecret(arg keybase1.LoginWithStoredSecretA
 		LoginUI:     h.getLoginUI(arg.SessionID),
 		GPGUI:       h.getGPGUI(arg.SessionID),
 	}
-	loginEngine := engine.NewLoginWithStoredSecretEngine(arg.Username, G)
+	loginEngine := engine.NewLoginWithStoredSecretEngine(arg.Username, h.G())
 	return h.loginWithEngine(loginEngine, ctx, arg.SessionID)
 }
 
@@ -65,7 +69,7 @@ func (h *LoginHandler) LoginWithPassphrase(arg keybase1.LoginWithPassphraseArg) 
 		GPGUI:       h.getGPGUI(arg.SessionID),
 	}
 
-	loginEngine := engine.NewLoginWithPassphraseEngine(arg.Username, arg.Passphrase, arg.StoreSecret, G)
+	loginEngine := engine.NewLoginWithPassphraseEngine(arg.Username, arg.Passphrase, arg.StoreSecret, h.G())
 	return h.loginWithEngine(loginEngine, ctx, arg.SessionID)
 }
 
@@ -79,8 +83,8 @@ func (h *LoginHandler) loginWithEngine(eng *engine.LoginEngine, ctx *engine.Cont
 	err := engine.RunEngine(eng, ctx)
 	if err != nil {
 		if _, ok := err.(libkb.CanceledError); ok {
-			G.Log.Debug("logging out due to login cancel")
-			G.Logout()
+			h.G().Log.Debug("logging out due to login cancel")
+			h.G().Logout()
 		}
 	}
 	return err
@@ -89,7 +93,7 @@ func (h *LoginHandler) loginWithEngine(eng *engine.LoginEngine, ctx *engine.Cont
 func (h *LoginHandler) CancelLogin(sessionID int) error {
 	c := h.canceler(sessionID)
 	if c == nil {
-		G.Log.Debug("CancelLogin called and there's no login engine for sessionID %d", sessionID)
+		h.G().Log.Debug("CancelLogin called and there's no login engine for sessionID %d", sessionID)
 		return libkb.LoginSessionNotFound{SessionID: sessionID}
 	}
 	return c.Cancel()
@@ -101,7 +105,7 @@ func (h *LoginHandler) PaperKey(sessionID int) error {
 		LoginUI:  h.getLoginUI(sessionID),
 		SecretUI: h.getSecretUI(sessionID),
 	}
-	eng := engine.NewPaperKey(G)
+	eng := engine.NewPaperKey(h.G())
 	return engine.RunEngine(eng, ctx)
 }
 
@@ -110,7 +114,7 @@ func (h *LoginHandler) Unlock(sessionID int) error {
 		LogUI:    h.getLogUI(sessionID),
 		SecretUI: h.getSecretUI(sessionID),
 	}
-	eng := engine.NewUnlock(G)
+	eng := engine.NewUnlock(h.G())
 	return engine.RunEngine(eng, ctx)
 }
 

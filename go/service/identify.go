@@ -9,6 +9,7 @@ import (
 )
 
 type RemoteBaseIdentifyUI struct {
+	libkb.Contextified
 	sessionID  int
 	uicli      keybase1.IdentifyUiClient
 	logUI      libkb.LogUI
@@ -22,10 +23,14 @@ type RemoteSelfIdentifyUI struct {
 
 type IdentifyHandler struct {
 	*BaseHandler
+	libkb.Contextified
 }
 
-func NewIdentifyHandler(xp rpc.Transporter) *IdentifyHandler {
-	return &IdentifyHandler{BaseHandler: NewBaseHandler(xp)}
+func NewIdentifyHandler(xp rpc.Transporter, g *libkb.GlobalContext) *IdentifyHandler {
+	return &IdentifyHandler{
+		BaseHandler:  NewBaseHandler(xp),
+		Contextified: libkb.NewContextified(g),
+	}
 }
 
 func (h *IdentifyHandler) Identify(arg keybase1.IdentifyArg) (keybase1.IdentifyRes, error) {
@@ -53,9 +58,9 @@ func (h *IdentifyHandler) identify(sessionID int, iarg engine.IDEngineArg, doInt
 	}
 	ctx := engine.Context{
 		LogUI:      logui,
-		IdentifyUI: h.NewRemoteIdentifyUI(sessionID),
+		IdentifyUI: h.NewRemoteIdentifyUI(sessionID, h.G()),
 	}
-	eng := engine.NewIDEngine(&iarg, G)
+	eng := engine.NewIDEngine(&iarg, h.G())
 	err = engine.RunEngine(eng, &ctx)
 	res = eng.Result()
 	return
@@ -81,7 +86,7 @@ func (u *RemoteBaseIdentifyUI) FinishSocialProofCheck(p keybase1.RemoteProof, lc
 
 func (u *RemoteBaseIdentifyUI) Confirm(io *keybase1.IdentifyOutcome) (confirmed bool, err error) {
 	if u.skipPrompt {
-		G.Log.Debug("skipping Confirm for %q", io.Username)
+		u.G().Log.Debug("skipping Confirm for %q", io.Username)
 		return true, nil
 	}
 	return u.uicli.Confirm(keybase1.ConfirmArg{SessionID: u.sessionID, Outcome: *io})
