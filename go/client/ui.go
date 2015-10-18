@@ -895,7 +895,7 @@ func (ui *UI) PromptSelection(prompt string, low, hi int) (ret int, err error) {
 			Hint: fmt.Sprintf("%d-%d", low, hi),
 		},
 	}
-	err = NewPrompter([]*Field{field}).Run()
+	err = NewTerminalPrompter([]*Field{field}).Run()
 	if p := field.Value; p == nil {
 		err = ErrInputCanceled
 	} else {
@@ -919,7 +919,7 @@ func (ui *UI) PromptSelectionOrCancel(prompt string, low, hi int) (ret int, err 
 			Hint: fmt.Sprintf("%d-%d, or q to cancel", low, hi),
 		},
 	}
-	err = NewPrompter([]*Field{field}).Run()
+	err = NewTerminalPrompter([]*Field{field}).Run()
 	if p := field.Value; p == nil || *p == "q" {
 		err = ErrInputCanceled
 	} else {

@@ -6,8 +6,9 @@ import (
 	"testing"
 )
 
+type testLoginUI struct{}
+
 func TestSignup(t *testing.T) {
-	t.Skip()
 
 	tc := setupTest(t, "signup")
 
@@ -21,7 +22,7 @@ func TestSignup(t *testing.T) {
 	}()
 
 	tc2 := cloneContext(tc)
-	stopper := client.NewCmdCtlStopRunner(tc2.G)
+	signup := client.NewCmdSignupRunner(g)
 
 	<-startCh
 	if err := stopper.Run(); err != nil {

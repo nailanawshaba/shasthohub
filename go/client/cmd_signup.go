@@ -48,26 +48,31 @@ func (pf PromptFields) ToList() []*Field {
 type CmdSignup struct {
 	libkb.Contextified
 	fields   *PromptFields
-	prompter *Prompter
+	prompter Prompter
 
-	scli              keybase1.SignupClient
-	ccli              keybase1.ConfigClient
-	code              string
-	requestedInvite   bool
-	fullname          string
-	notes             string
-	passphrase        string
-	storeSecret       bool
-	defaultEmail      string
-	defaultUsername   string
-	defaultPassphrase string
-	defaultDevice     string
-	doPrompt          bool
+	scli                keybase1.SignupClient
+	ccli                keybase1.ConfigClient
+	code                string
+	requestedInvite     bool
+	fullname            string
+	notes               string
+	passphrase          string
+	storeSecret         bool
+	defaultEmail        string
+	defaultUsername     string
+	defaultPassphrase   string
+	defaultDevice       string
+	doPrompt            bool
+	makeNewPrompterFunc func([]*Field) Prompter
 }
 
 func NewCmdSignupRunner(g *libkb.GlobalContext) *CmdSignup {
 	return &CmdSignup{
 		Contextified: libkb.NewContextified(g),
+		doPrompt:     true,
+		makeNewPrompterFunc: func(f []*Field) Prompter {
+			return NewTerminalPrompter(f)
+		},
 	}
 }
 
@@ -99,7 +104,7 @@ func (s *CmdSignup) ParseArgv(ctx *cli.Context) error {
 		}
 
 		s.passphrase = s.defaultPassphrase
-		s.prompter = NewPrompter(s.fields.ToList())
+		s.prompter = NewTerminalPrompter(s.fields.ToList())
 		s.doPrompt = false
 	} else {
 		s.doPrompt = true
@@ -130,7 +135,6 @@ Enjoy!
 }
 
 func (s *CmdSignup) Run() (err error) {
-	s.G().Log.Debug("| Client mode")
 
 	if err = s.initClient(); err != nil {
 		return err
@@ -270,7 +274,7 @@ func (s *CmdSignup) requestInvitePromptForData() error {
 	}
 
 	fields := []*Field{fullname, notes}
-	prompter := NewPrompter(fields)
+	prompter := NewTerminalPrompter(fields)
 	if err := prompter.Run(); err != nil {
 		return err
 	}
@@ -344,7 +348,7 @@ func (s *CmdSignup) MakePrompter() {
 		deviceName:      deviceName,
 	}
 
-	s.prompter = NewPrompter(s.fields.ToList())
+	s.prompter = s.makeNewPrompterFunc(s.fields.ToList())
 }
 
 func (s *CmdSignup) GetUsage() libkb.Usage {
@@ -354,6 +358,10 @@ func (s *CmdSignup) GetUsage() libkb.Usage {
 		KbKeyring:  true,
 		API:        true,
 	}
+}
+
+func (s *CmdSignup) SetMakeNewPrompterFunc(f func([]*Field) Prompter) {
+	s.makeNewPrompterFunc = f
 }
 
 func (s *CmdSignup) initClient() error {

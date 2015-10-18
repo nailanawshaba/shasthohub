@@ -25,20 +25,26 @@ func (f Field) GetValue() string {
 	return *f.Value
 }
 
-type Prompter struct {
+type Prompter interface {
+	Run() error
+}
+
+type TerminalPrompter struct {
 	Fields []*Field
 }
 
-func NewPrompter(f []*Field) *Prompter {
-	return &Prompter{f}
+var _ Prompter = (*TerminalPrompter)(nil)
+
+func NewTerminalPrompter(f []*Field) Prompter {
+	return &TerminalPrompter{f}
 }
 
-func (p *Prompter) Run() error {
+func (p *TerminalPrompter) Run() error {
 	for _, f := range p.Fields {
 		if f.Disabled {
 			continue
 		}
-		if err := p.ReadField(f); err != nil {
+		if err := p.readField(f); err != nil {
 			return err
 		}
 	}
@@ -51,7 +57,7 @@ func (f *Field) Clear() string {
 	return old
 }
 
-func (p *Prompter) ReadField(f *Field) (err error) {
+func (p *TerminalPrompter) readField(f *Field) (err error) {
 
 	done := false
 	first := true
