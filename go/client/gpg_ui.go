@@ -5,6 +5,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/keybase/client/go/libkb"
 	"github.com/keybase/client/go/protocol"
 	rpc "github.com/keybase/go-framed-msgpack-rpc"
 )
@@ -60,12 +61,12 @@ func (g GPGUI) WantToAddGPGKey(dummy int) (bool, error) {
 	if g.noPrompt {
 		return false, nil
 	}
-	return g.parent.PromptYesNo("Would you like to add one of your PGP keys to Keybase?", PromptDefaultYes)
+	return g.parent.PromptYesNo("Would you like to add one of your PGP keys to Keybase?", libkb.PromptDefaultYes)
 }
 
 func (g GPGUI) ConfirmDuplicateKeyChosen(dummy int) (bool, error) {
 	if g.noPrompt {
 		return false, nil
 	}
-	return g.parent.PromptYesNo("You've already selected this public key for use on Keybase. Would you like to update it on Keybase?", PromptDefaultYes)
+	return g.parent.PromptYesNo("You've already selected this public key for use on Keybase. Would you like to update it on Keybase?", libkb.PromptDefaultYes)
 }

@@ -17,6 +17,9 @@ type UI struct {
 	SecretEntry *SecretEntry
 }
 
+// The UI class also fulfills the TerminalUI interface from libkb
+var _ libkb.TerminalUI = (*UI)(nil)
+
 type BaseIdentifyUI struct {
 	parent *UI
 }
@@ -97,29 +100,29 @@ func (ui IdentifyTrackUI) Confirm(o *keybase1.IdentifyOutcome) (confirmed bool, 
 
 	ui.ReportRevoked(o.Revoked)
 
-	promptDefault := PromptDefaultYes
+	promptDefault := libkb.PromptDefaultYes
 	trackChanged := true
 	switch o.TrackStatus {
 	case keybase1.TrackStatus_UPDATE_BROKEN:
 		prompt = "Your tracking statement of " + username + " is broken; fix it?"
-		promptDefault = PromptDefaultNo
+		promptDefault = libkb.PromptDefaultNo
 	case keybase1.TrackStatus_UPDATE_NEW_PROOFS:
 		prompt = "Your tracking statement of " + username +
 			" is still valid; update it to reflect new proofs?"
-		promptDefault = PromptDefaultYes
+		promptDefault = libkb.PromptDefaultYes
 	case keybase1.TrackStatus_UPDATE_OK:
 		G.Log.Info("Your tracking statement is up-to-date")
 		trackChanged = false
 	case keybase1.TrackStatus_NEW_ZERO_PROOFS:
 		prompt = "We found an account for " + username +
 			", but they haven't proven their identity. Still track them?"
-		promptDefault = PromptDefaultNo
+		promptDefault = libkb.PromptDefaultNo
 	case keybase1.TrackStatus_NEW_FAIL_PROOFS:
 		prompt = "Some proofs failed; still track " + username + "?"
-		promptDefault = PromptDefaultNo
+		promptDefault = libkb.PromptDefaultNo
 	default:
 		prompt = "Is this the " + ColorString("bold", username) + " you wanted?"
-		promptDefault = PromptDefaultYes
+		promptDefault = libkb.PromptDefaultYes
 	}
 
 	// Tracking statement exists and is unchanged, nothing to do
@@ -417,7 +420,7 @@ func (p ProveUI) PromptOverwrite(arg keybase1.PromptOverwriteArg) (bool, error) 
 	default:
 		prompt = "Overwrite " + arg.Account + "?"
 	}
-	return p.parent.PromptYesNo(prompt, PromptDefaultNo)
+	return p.parent.PromptYesNo(prompt, libkb.PromptDefaultNo)
 }
 
 func (p ProveUI) PromptUsername(arg keybase1.PromptUsernameArg) (string, error) {
@@ -439,7 +442,7 @@ func (p ProveUI) OutputPrechecks(arg keybase1.OutputPrechecksArg) error {
 
 func (p ProveUI) PreProofWarning(arg keybase1.PreProofWarningArg) (bool, error) {
 	p.render(arg.Text)
-	return p.parent.PromptYesNo("Proceed?", PromptDefaultNo)
+	return p.parent.PromptYesNo("Proceed?", libkb.PromptDefaultNo)
 }
 
 func (p ProveUI) OutputInstructions(arg keybase1.OutputInstructionsArg) (err error) {
@@ -458,7 +461,7 @@ func (p ProveUI) OkToCheck(arg keybase1.OkToCheckArg) (bool, error) {
 		agn = "again "
 	}
 	prompt := "Check " + arg.Name + " " + agn + "now?"
-	return p.parent.PromptYesNo(prompt, PromptDefaultYes)
+	return p.parent.PromptYesNo(prompt, libkb.PromptDefaultYes)
 }
 
 func (p ProveUI) DisplayRecheckWarning(arg keybase1.DisplayRecheckWarningArg) error {
@@ -600,7 +603,7 @@ func (l LoginUI) PromptRevokePaperKeys(arg keybase1.PromptRevokePaperKeysArg) (b
 		prompt = fmt.Sprintf("Also revoke existing %q ?", arg.Device.Name)
 	}
 
-	return l.parent.PromptYesNo(prompt, PromptDefaultNo)
+	return l.parent.PromptYesNo(prompt, libkb.PromptDefaultNo)
 }
 
 func (l LoginUI) DisplayPaperKeyPhrase(arg keybase1.DisplayPaperKeyPhraseArg) error {
@@ -631,26 +634,26 @@ func (l LoginUI) DisplayPrimaryPaperKey(arg keybase1.DisplayPrimaryPaperKeyArg) 
 	l.parent.Printf("\t%s\n\n", arg.Phrase)
 	l.parent.Printf("Write it down....now!\n\n")
 
-	confirmed, err := l.parent.PromptYesNo("Have you written down the above paper key?", PromptDefaultNo)
+	confirmed, err := l.parent.PromptYesNo("Have you written down the above paper key?", libkb.PromptDefaultNo)
 	if err != nil {
 		return err
 	}
 	for !confirmed {
 		l.parent.Printf("\nPlease write down your paper key\n\n")
 		l.parent.Printf("\t%s\n\n", arg.Phrase)
-		confirmed, err = l.parent.PromptYesNo("Now have you written it down?", PromptDefaultNo)
+		confirmed, err = l.parent.PromptYesNo("Now have you written it down?", libkb.PromptDefaultNo)
 		if err != nil {
 			return err
 		}
 	}
 
-	confirmed, err = l.parent.PromptYesNo("Excellent!  Is it in your wallet?", PromptDefaultNo)
+	confirmed, err = l.parent.PromptYesNo("Excellent!  Is it in your wallet?", libkb.PromptDefaultNo)
 	if err != nil {
 		return err
 	}
 	for !confirmed {
 		l.parent.Printf("\nPlease put it in your wallet.\n\n")
-		confirmed, err = l.parent.PromptYesNo("Now is it in your wallet?", PromptDefaultNo)
+		confirmed, err = l.parent.PromptYesNo("Now is it in your wallet?", libkb.PromptDefaultNo)
 		if err != nil {
 			return err
 		}
@@ -871,15 +874,10 @@ func sentencePunctuate(s string) string {
 	return strings.ToUpper(s[0:1]) + s[1:] + "."
 }
 
-type PromptDefault int
+// GetTerminalUI returns the main client UI, which happens to be a terminal UI
+func (ui *UI) GetTerminalUI() libkb.TerminalUI { return ui }
 
-const (
-	PromptDefaultNo PromptDefault = iota
-	PromptDefaultYes
-	PromptDefaultNeither
-)
-
-func (ui *UI) PromptYesNo(p string, def PromptDefault) (ret bool, err error) {
+func (ui *UI) PromptYesNo(p string, def libkb.PromptDefault) (ret bool, err error) {
 	return ui.Terminal.PromptYesNo(p, def)
 }
 

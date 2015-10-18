@@ -283,12 +283,26 @@ type DoctorUI interface {
 	DisplayResult(msg string) error
 }
 
+type PromptDefault int
+
+const (
+	PromptDefaultNo PromptDefault = iota
+	PromptDefaultYes
+	PromptDefaultNeither
+)
+
+type TerminalUI interface {
+	Output(string) error
+	PromptYesNo(string, PromptDefault) (bool, error)
+}
+
 type UI interface {
 	GetDoctorUI() DoctorUI
 	GetIdentifyUI() IdentifyUI
 	GetIdentifyTrackUI(strict bool) IdentifyUI
 	GetLoginUI() LoginUI
 	GetSecretUI() SecretUI
+	GetTerminalUI() TerminalUI
 	GetProveUI() ProveUI
 	GetLogUI() LogUI
 	GetGPGUI() GPGUI

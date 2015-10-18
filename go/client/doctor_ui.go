@@ -100,7 +100,7 @@ func (d DoctorUI) DisplayStatus(status keybase1.DoctorStatus) (bool, error) {
 		d.parent.Output(signout + "\n")
 	}
 
-	return d.parent.PromptYesNo("Proceed?", PromptDefaultYes)
+	return d.parent.PromptYesNo("Proceed?", libkb.PromptDefaultYes)
 }
 
 func (d DoctorUI) DisplayResult(msg string) error {
