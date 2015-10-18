@@ -22,7 +22,10 @@ func TestSignup(t *testing.T) {
 	}()
 
 	tc2 := cloneContext(tc)
-	signup := client.NewCmdSignupRunner(g)
+	client.NewCmdSignupRunner(tc2.G) // stuff to come
+
+	tc3 := cloneContext(tc)
+	stopper := client.NewCmdCtlStopRunner(tc3.G)
 
 	<-startCh
 	if err := stopper.Run(); err != nil {
