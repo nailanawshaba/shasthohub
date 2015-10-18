@@ -2,10 +2,8 @@ package libkb
 
 import (
 	"fmt"
-	"net"
-	"runtime"
-
 	rpc "github.com/keybase/go-framed-msgpack-rpc"
+	"net"
 )
 
 type SocketInfo interface {
@@ -43,28 +41,12 @@ func BindToSocket(info SocketInfo) (ret net.Listener, err error) {
 	}
 	l, a := info.ToStringPair()
 	G.Log.Info("Binding to %s:%s", l, a)
-	return net.Listen(l, a)
+	ret, err = net.Listen(l, a)
+	return ret, err
 }
 
 func DialSocket(info SocketInfo) (ret net.Conn, err error) {
 	return net.Dial(info.ToStringPair())
-}
-
-func ConfigureSocketInfo() (ret SocketInfo, err error) {
-	port := G.Env.GetDaemonPort()
-	if runtime.GOOS == "windows" && port == 0 {
-		port = DaemonPort
-	}
-	if port != 0 {
-		ret = SocketInfoTCP{port}
-	} else {
-		var s string
-		s, err = G.Env.GetSocketFile()
-		if err == nil {
-			ret = SocketInfoUnix{s}
-		}
-	}
-	return
 }
 
 type SocketWrapper struct {

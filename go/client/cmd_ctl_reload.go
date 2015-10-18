@@ -6,26 +6,28 @@ import (
 	"github.com/keybase/client/go/libkb"
 )
 
-func NewCmdCtlReload(cl *libcmdline.CommandLine) cli.Command {
+func NewCmdCtlReload(cl *libcmdline.CommandLine, g *libkb.GlobalContext) cli.Command {
 	return cli.Command{
 		Name:  "reload",
 		Usage: "Reload config file",
 		Action: func(c *cli.Context) {
-			cl.ChooseCommand(&CmdCtlReload{}, "reload", c)
+			cl.ChooseCommand(&CmdCtlReload{libkb.NewContextified(g)}, "reload", c)
 			cl.SetForkCmd(libcmdline.NoFork)
 			cl.SetNoStandalone()
 		},
 	}
 }
 
-type CmdCtlReload struct{}
+type CmdCtlReload struct {
+	libkb.Contextified
+}
 
 func (s *CmdCtlReload) ParseArgv(ctx *cli.Context) error {
 	return nil
 }
 
 func (s *CmdCtlReload) Run() (err error) {
-	cli, err := GetCtlClient()
+	cli, err := GetCtlClient(s.G())
 	if err != nil {
 		return err
 	}

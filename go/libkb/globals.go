@@ -291,7 +291,7 @@ func (g *GlobalContext) ConfigureUsage(usage Usage) error {
 			return err
 		}
 	}
-	if usage.Socket || !G.Env.GetStandalone() {
+	if usage.Socket || !g.Env.GetStandalone() {
 		if err = g.ConfigureSocketInfo(); err != nil {
 			return err
 		}
@@ -350,7 +350,7 @@ func (g *GlobalContext) GetMyUID() keybase1.UID {
 }
 
 func (g *GlobalContext) ConfigureSocketInfo() (err error) {
-	g.SocketInfo, err = ConfigureSocketInfo()
+	g.SocketInfo, err = g.Env.getSocketInfo()
 	return err
 }
 

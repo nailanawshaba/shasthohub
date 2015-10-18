@@ -79,7 +79,7 @@ type TestContext struct {
 
 func (tc *TestContext) Cleanup() {
 	if len(tc.Tp.Home) > 0 {
-		G.Log.Debug("cleaning up %s", tc.Tp.Home)
+		tc.G.Log.Debug("cleaning up %s", tc.Tp.Home)
 		tc.G.Shutdown()
 		os.RemoveAll(tc.Tp.Home)
 		tc.ClearAllStoredSecrets()
@@ -169,16 +169,19 @@ func (tc TestContext) ClearAllStoredSecrets() error {
 
 var setupTestMu sync.Mutex
 
-func setupTestContext(tb testing.TB, nm string) (tc TestContext, err error) {
+func setupTestContext(tb testing.TB, nm string, tcPrev *TestContext) (tc TestContext, err error) {
 	setupTestMu.Lock()
 	defer setupTestMu.Unlock()
 
 	g := NewGlobalContext()
 	g.Log = logger.NewTestLogger(tb)
 	g.Init()
+	g.Log.Debug("SetupTest %s", nm)
 
 	// Set up our testing parameters.  We might add others later on
-	if tc.Tp.Home, err = ioutil.TempDir(os.TempDir(), nm); err != nil {
+	if tcPrev != nil {
+		tc.Tp = tcPrev.Tp
+	} else if tc.Tp.Home, err = ioutil.TempDir(os.TempDir(), nm); err != nil {
 		return
 	}
 
@@ -188,6 +191,7 @@ func setupTestContext(tb testing.TB, nm string) (tc TestContext, err error) {
 
 	tc.Tp.Debug = false
 	tc.Tp.Devel = true
+
 	g.Env.Test = tc.Tp
 
 	g.ConfigureLogging()
@@ -228,14 +232,26 @@ func setupTestContext(tb testing.TB, nm string) (tc TestContext, err error) {
 }
 
 func SetupTest(tb testing.TB, nm string) (tc TestContext) {
-	G.Log.Debug("SetupTest %s", nm)
 	var err error
-	tc, err = setupTestContext(tb, nm)
+	tc, err = setupTestContext(tb, nm, nil)
 	if err != nil {
 		tb.Fatal(err)
 	}
-
 	return tc
+}
+
+func (tc *TestContext) SetSocketFile(s string) {
+	tc.Tp.SocketFile = s
+	tc.G.Env.Test.SocketFile = s
+}
+
+func (tc TestContext) Clone() (ret TestContext) {
+	var err error
+	ret, err = setupTestContext(tc.T, "", &tc)
+	if err != nil {
+		tc.T.Fatal(err)
+	}
+	return ret
 }
 
 type nullui struct {
