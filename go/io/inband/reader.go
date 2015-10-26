@@ -36,8 +36,8 @@ func NewReader(stopSeq []byte, r io.Reader) (io.Reader, error) {
 func computePrefix(pattern []byte) ([]int, error) {
 	// sanity check
 	lenp := len(pattern)
-	if len_p < 2 {
-		if len_p == 0 {
+	if lenp < 2 {
+		if lenp == 0 {
 			return nil, errors.New("'pattern' must contain at least one character")
 		}
 		return []int{-1}, nil
