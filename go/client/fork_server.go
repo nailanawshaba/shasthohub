@@ -7,7 +7,6 @@ import (
 
 	"github.com/keybase/cli"
 	"github.com/keybase/client/go/libkb"
-	"github.com/keybase/client/go/service"
 )
 
 // GetExtraFlags gets the extra fork-related flags for this platform
@@ -22,38 +21,6 @@ func GetExtraFlags() []cli.Flag {
 			Usage: "Enable auto-fork of background service.",
 		},
 	}
-}
-
-// ForkServer forks a new background Keybase service, and waits until it's
-// pingable. It will only do something useful on Unixes; it won't work on
-// Windows (probably?). Returns an error if anything bad happens; otherwise,
-// assume that the server was successfully started up.
-func ForkServer(cl libkb.CommandLine, g *libkb.GlobalContext) error {
-	srv := service.NewService(true /* isDaemon */, g)
-
-	// If we try to get an exclusive lock and succeed, it means we
-	// need to relaunch the daemon since it's dead
-	g.Log.Debug("Getting flock")
-	err := srv.GetExclusiveLockWithoutAutoUnlock()
-	if err == nil {
-		g.Log.Debug("Flocked! Server must have died")
-		srv.ReleaseLock()
-		err = spawnServer(cl)
-		if err != nil {
-			g.Log.Errorf("Error in spawning server process: %s", err)
-			return err
-		}
-		err = pingLoop()
-		if err != nil {
-			g.Log.Errorf("Ping failure after server fork: %s", err)
-			return err
-		}
-	} else {
-		g.Log.Debug("The server is still up")
-		err = nil
-	}
-
-	return err
 }
 
 func pingLoop() error {

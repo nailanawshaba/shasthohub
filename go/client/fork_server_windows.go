@@ -4,63 +4,61 @@ package client
 
 import (
 	"fmt"
-	"os"
-	"syscall"
+	"time"
 
 	"github.com/keybase/client/go/libkb"
+	"golang.org/x/sys/windows/svc"
+	"golang.org/x/sys/windows/svc/mgr"
 )
 
-func spawnServer(cl libkb.CommandLine) (err error) {
+// On Windows, we rely on a previously installed service
+func ForkServer(cl libkb.CommandLine, g *libkb.GlobalContext) error {
+	return nil
+}
 
-	var files []uintptr
-	var cmd string
-	var args []string
-	var devnull, log *os.File
-	var pid int
-
-	defer func() {
-		if err != nil {
-			if devnull != nil {
-				devnull.Close()
-			}
-			if log != nil {
-				log.Close()
-			}
-		}
-	}()
-
-	if devnull, err = os.OpenFile("nul", os.O_RDONLY, 0); err != nil {
-		return
-	}
-	files = append(files, devnull.Fd())
-
-	if G.Env.GetSplitLogOutput() {
-		files = append(files, uintptr(1), uintptr(2))
-	} else {
-		if _, log, err = libkb.OpenLogFile(); err != nil {
-			return
-		}
-		files = append(files, log.Fd(), log.Fd())
-	}
-
-	// On 'nix this would include Setsid: true, which means
-	// the new process inherits the session/terminal from the parent.
-	// This is default on windows and need not be specified.
-	attr := syscall.ProcAttr{
-		Env:   os.Environ(),
-		Files: files,
-	}
-
-	cmd, args, err = makeServerCommandLine(cl)
+func startService() error {
+	m, err := mgr.Connect()
 	if err != nil {
 		return err
 	}
-
-	pid, _, err = syscall.StartProcess(cmd, args, &attr)
+	defer m.Disconnect()
+	s, err := m.OpenService("keybase")
 	if err != nil {
-		err = fmt.Errorf("Error in StartProcess: %s", err)
-	} else {
-		G.Log.Info("Starting background server with pid=%d", pid)
+		return fmt.Errorf("could not access service: %v", err)
 	}
-	return err
+	defer s.Close()
+	err = s.Start("is", "manual-started")
+	if err != nil {
+		return fmt.Errorf("could not start service: %v", err)
+	}
+	return nil
+}
+
+func controlService(c svc.Cmd, to svc.State) error {
+	m, err := mgr.Connect()
+	if err != nil {
+		return err
+	}
+	defer m.Disconnect()
+	s, err := m.OpenService("keybase")
+	if err != nil {
+		return fmt.Errorf("could not access service: %v", err)
+	}
+	defer s.Close()
+	status, err := s.Control(c)
+	if err != nil {
+		return fmt.Errorf("could not send control=%d: %v", c, err)
+	}
+	timeout := time.Now().Add(10 * time.Second)
+	for status.State != to {
+		if timeout.Before(time.Now()) {
+			return fmt.Errorf("timeout waiting for service to go to state=%d", to)
+		}
+		time.Sleep(300 * time.Millisecond)
+		status, err = s.Query()
+		if err != nil {
+			return fmt.Errorf("could not retrieve service status: %v", err)
+		}
+	}
+	return nil
 }

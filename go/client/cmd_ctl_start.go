@@ -26,10 +26,6 @@ func (s *CmdCtlStart) ParseArgv(ctx *cli.Context) error {
 	return nil
 }
 
-func (s *CmdCtlStart) Run() (err error) {
-	return nil
-}
-
 func (s *CmdCtlStart) GetUsage() libkb.Usage {
 	return libkb.Usage{}
 }

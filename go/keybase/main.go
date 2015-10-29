@@ -77,8 +77,8 @@ func mainInner(g *libkb.GlobalContext) error {
 
 	warnNonProd(g.Log, g.Env)
 
-	if cl.IsService() {
-		return cmd.Run()
+	if err, isService := service.CheckRunAsService(cl, cmd); isService {
+		return err
 	}
 
 	// Start the server on the other end, possibly.
@@ -111,9 +111,12 @@ func mainInner(g *libkb.GlobalContext) error {
 		if g.Env.GetLocalRPCDebug() != "" {
 			g.Log.Info("Disabling log forwarding due to RPC debugging.")
 		} else {
-			err = registerGlobalLogUI(g)
-			if err != nil {
-				return err
+			// Might be a windows service debug command
+			if cl.IsNoStandalone() {
+				err = registerGlobalLogUI(g)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}

@@ -4,7 +4,6 @@ import (
 	"github.com/keybase/cli"
 	"github.com/keybase/client/go/libcmdline"
 	"github.com/keybase/client/go/libkb"
-	"golang.org/x/net/context"
 )
 
 func NewCmdCtlStop(cl *libcmdline.CommandLine, g *libkb.GlobalContext) cli.Command {
@@ -29,14 +28,6 @@ func NewCmdCtlStopRunner(g *libkb.GlobalContext) *CmdCtlStop {
 
 func (s *CmdCtlStop) ParseArgv(ctx *cli.Context) error {
 	return nil
-}
-
-func (s *CmdCtlStop) Run() (err error) {
-	cli, err := GetCtlClient(s.G())
-	if err != nil {
-		return err
-	}
-	return cli.Stop(context.TODO(), 0)
 }
 
 func (s *CmdCtlStop) GetUsage() libkb.Usage {
