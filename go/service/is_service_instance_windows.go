@@ -26,7 +26,7 @@ func IsServiceInstance() bool {
 func CheckRunAsService(cl *libcmdline.CommandLine, cmd libkb.Command) (error, bool) {
 	isIntSess, _ := svc.IsAnInteractiveSession()
 
-	if !isIntSess {
+	if !isIntSess || cl.IsService() {
 		RunWinService(false)
 		return nil, true
 	}
@@ -94,7 +94,7 @@ func RunWinService(isDebug bool) {
 	if isDebug {
 		run = debug.Run
 	}
-	err = run("keybase", &winservice{})
+	err = run(libkb.GetServiceName(), &winservice{})
 	if err != nil {
 		//		elog.Error(1, fmt.Sprintf("keyhbase service failed: %v", err))
 		return

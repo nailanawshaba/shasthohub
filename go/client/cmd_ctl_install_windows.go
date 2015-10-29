@@ -15,7 +15,6 @@ func NewCmdCtlInstall(cl *libcmdline.CommandLine, g *libkb.GlobalContext) cli.Co
 		Action: func(c *cli.Context) {
 			cl.ChooseCommand(&CmdCtlInstall{libkb.NewContextified(g)}, "install", c)
 			cl.SetForkCmd(libcmdline.NoFork)
-			cl.SetNoStandalone()
 		},
 	}
 }
@@ -29,7 +28,7 @@ func (s *CmdCtlInstall) ParseArgv(ctx *cli.Context) error {
 }
 
 func (s *CmdCtlInstall) Run() (err error) {
-	return installService("keybase background service")
+	return installService()
 }
 
 func (s *CmdCtlInstall) GetUsage() libkb.Usage {

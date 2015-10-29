@@ -4,9 +4,7 @@
 package libkb
 
 import (
-	"errors"
 	"net"
-	"os/user"
 
 	"github.com/natefinch/npipe"
 )
@@ -22,17 +20,10 @@ type SocketNamedPipe struct {
 // If the service ever runs under a different account than
 // current user, this will have to be revisited.
 func NewSocket(g *GlobalContext) (ret Socket, err error) {
-	currentUser, err := user.Current()
-	if err != nil {
-		return
-	}
-	if len(currentUser.Username) == 0 {
-		err = errors.New("Empty username, can't make pipe")
-		return
-	}
+
 	return SocketNamedPipe{
 		Contextified: NewContextified(g),
-		pipename:     `\\.\pipe\kbservice\` + currentUser.Username,
+		pipename:     `\\.\pipe\` + GetServiceName(),
 	}, nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 )
@@ -71,4 +72,13 @@ func AppDataDir() (string, error) {
 	}
 
 	return folder, nil
+}
+
+func GetServiceName() string {
+	prog := os.Args[0]
+	p, _ := filepath.Abs(prog)
+	p, _ = filepath.Split(p)
+	name := p[len(filepath.VolumeName(p)):]
+	name = strings.Replace(name, "\\", "_", -1)
+	return "keybase_" + name
 }

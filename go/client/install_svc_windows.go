@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/keybase/client/go/libkb"
 	"golang.org/x/sys/windows/svc/eventlog"
 	"golang.org/x/sys/windows/svc/mgr"
 )
@@ -42,8 +43,9 @@ func exePath() (string, error) {
 	return "", err
 }
 
-func installService(desc string) error {
-	name := "keybase"
+func installService() error {
+	desc := "keybase background service"
+	name := libkb.GetServiceName()
 	exepath, err := exePath()
 	if err != nil {
 		return err
@@ -58,7 +60,11 @@ func installService(desc string) error {
 		s.Close()
 		return fmt.Errorf("service %s already exists", name)
 	}
-	s, err = m.CreateService(name, exepath, mgr.Config{DisplayName: desc}, "service")
+	cfg := mgr.Config{
+		DisplayName: desc,
+		StartType:   mgr.StartAutomatic}
+	fmt.Printf("servicename: %s\n", name)
+	s, err = m.CreateService(name, exepath, cfg, "service")
 	if err != nil {
 		return err
 	}
@@ -72,12 +78,13 @@ func installService(desc string) error {
 }
 
 func removeService() error {
+	name := libkb.GetServiceName()
 	m, err := mgr.Connect()
 	if err != nil {
 		return err
 	}
 	defer m.Disconnect()
-	s, err := m.OpenService("keybase")
+	s, err := m.OpenService(name)
 	if err != nil {
 		return errors.New("service keybase is not installed")
 	}
@@ -86,7 +93,7 @@ func removeService() error {
 	if err != nil {
 		return err
 	}
-	err = eventlog.Remove("keybase")
+	err = eventlog.Remove(name)
 	if err != nil {
 		return fmt.Errorf("RemoveEventLogSource() failed: %s", err)
 	}

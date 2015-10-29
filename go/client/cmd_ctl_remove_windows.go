@@ -15,7 +15,6 @@ func NewCmdCtlRemove(cl *libcmdline.CommandLine, g *libkb.GlobalContext) cli.Com
 		Action: func(c *cli.Context) {
 			cl.ChooseCommand(&CmdCtlRemove{libkb.NewContextified(g)}, "remove", c)
 			cl.SetForkCmd(libcmdline.NoFork)
-			cl.SetNoStandalone()
 		},
 	}
 }
