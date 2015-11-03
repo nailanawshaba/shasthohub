@@ -57,7 +57,7 @@ func (a *Account) LoggedInProvisionedLoad() (bool, error) {
 	return a.LocalSession().loadAndCheckProvisioned()
 }
 
-func (a *Account) LoadLoginSession(emailOrUsername string) error {
+func (a *Account) LoadLoginSession(emailOrUsername EmailOrUsername) error {
 	if a.LoginSession().ExistsFor(emailOrUsername) {
 		return nil
 	}
@@ -70,7 +70,7 @@ func (a *Account) LoadLoginSession(emailOrUsername string) error {
 	return nil
 }
 
-func (a *Account) CreateLoginSessionWithSalt(emailOrUsername string, salt []byte) error {
+func (a *Account) CreateLoginSessionWithSalt(emailOrUsername EmailOrUsername, salt []byte) error {
 	if a.loginSessionExists() {
 		return fmt.Errorf("CreateLoginSessionWithSalt called, but Account already has LoginSession")
 	}

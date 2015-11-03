@@ -170,6 +170,18 @@ func (fu *FakeUser) Login(g *libkb.GlobalContext) error {
 	return fu.LoginWithSecretUI(s, g)
 }
 
+func (fu *FakeUser) LoginViaEmail(g *libkb.GlobalContext) error {
+	ctx := &Context{
+		ProvisionUI: newTestProvisionUI(),
+		LogUI:       g.UI.GetLogUI(),
+		GPGUI:       &gpgtestui{},
+		SecretUI:    fu.NewSecretUI(),
+		LoginUI:     &libkb.TestLoginUI{Username: fu.Email},
+	}
+	li := NewLogin(g, libkb.DeviceTypeDesktop, fu.Email)
+	return RunEngine(li, ctx)
+}
+
 func (fu *FakeUser) LoginOrBust(tc libkb.TestContext) {
 	if err := fu.Login(tc.G); err != nil {
 		tc.T.Fatal(err)

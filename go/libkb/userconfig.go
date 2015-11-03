@@ -5,6 +5,7 @@ package libkb
 
 import (
 	"encoding/hex"
+	"errors"
 	"strings"
 
 	keybase1 "github.com/keybase/client/go/protocol"
@@ -33,6 +34,42 @@ func (n NormalizedUsername) String() string { return string(n) }
 
 // IsNil returns true if the username is the empty string
 func (n NormalizedUsername) IsNil() bool { return len(string(n)) == 0 }
+
+//==================================================================
+
+// EmailOrUsername is either a username or an email address.
+type EmailOrUsername string
+
+/*
+func NewEmailOrUsername(s string) (EmailOrUsername, error) {
+	if !CheckEmailOrUsername.F(s) {
+		return "", InvalidArgumentError{}
+	}
+	return EmailOrUsername(s), nil
+}
+*/
+func NewEmailOrUsername(s string) EmailOrUsername {
+	return EmailOrUsername(s)
+}
+
+func (u EmailOrUsername) IsUsername() bool {
+	return CheckUsername.F(string(u))
+}
+
+func (u EmailOrUsername) IsEmail() bool {
+	return CheckEmail.F(string(u))
+}
+
+func (u EmailOrUsername) NormalizedUsername() (NormalizedUsername, error) {
+	if !u.IsUsername() {
+		return "", errors.New("not a username")
+	}
+	return NewNormalizedUsername(string(u)), nil
+}
+
+func (u EmailOrUsername) String() string {
+	return string(u)
+}
 
 //==================================================================
 

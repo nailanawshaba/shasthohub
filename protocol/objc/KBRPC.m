@@ -1692,7 +1692,7 @@
 }
 
 - (void)getKeybasePassphrase:(KBRGetKeybasePassphraseRequestParams *)params completion:(void (^)(NSError *error, NSString *str))completion {
-  NSDictionary *rparams = @{@"username": KBRValue(params.username), @"retry": KBRValue(params.retry)};
+  NSDictionary *rparams = @{@"emailOrUsername": KBRValue(params.emailOrUsername), @"retry": KBRValue(params.retry)};
   [self.client sendRequestWithMethod:@"keybase.1.secretUi.getKeybasePassphrase" params:rparams sessionId:self.sessionId completion:^(NSError *error, id retval) {
     if (error) {
       completion(error, nil);
@@ -1703,8 +1703,8 @@
   }];
 }
 
-- (void)getKeybasePassphraseWithUsername:(NSString *)username retry:(NSString *)retry completion:(void (^)(NSError *error, NSString *str))completion {
-  NSDictionary *rparams = @{@"username": KBRValue(username), @"retry": KBRValue(retry)};
+- (void)getKeybasePassphraseWithEmailOrUsername:(NSString *)emailOrUsername retry:(NSString *)retry completion:(void (^)(NSError *error, NSString *str))completion {
+  NSDictionary *rparams = @{@"emailOrUsername": KBRValue(emailOrUsername), @"retry": KBRValue(retry)};
   [self.client sendRequestWithMethod:@"keybase.1.secretUi.getKeybasePassphrase" params:rparams sessionId:self.sessionId completion:^(NSError *error, id retval) {
     if (error) {
       completion(error, nil);
@@ -4089,7 +4089,7 @@
 - (instancetype)initWithParams:(NSArray *)params {
   if ((self = [super initWithParams:params])) {
     self.sessionID = [params[0][@"sessionID"] integerValue];
-    self.username = params[0][@"username"];
+    self.emailOrUsername = params[0][@"emailOrUsername"];
     self.retry = params[0][@"retry"];
   }
   return self;

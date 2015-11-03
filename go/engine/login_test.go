@@ -40,8 +40,21 @@ func TestLoginAndSwitch(t *testing.T) {
 	Logout(tc)
 	t.Logf("second logging back in")
 	u2.LoginOrBust(tc)
+}
 
-	return
+// Login via email address
+func TestLoginEmail(t *testing.T) {
+	tc := SetupEngineTest(t, "login")
+	defer tc.Cleanup()
+
+	u1 := CreateAndSignupFakeUser(tc, "first")
+	Logout(tc)
+
+	fmt.Printf("signed up\n")
+	if err := u1.LoginViaEmail(tc.G); err != nil {
+		t.Fatal(err)
+	}
+
 }
 
 func TestLoginFakeUserNoKeys(t *testing.T) {

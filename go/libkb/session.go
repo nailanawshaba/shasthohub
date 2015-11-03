@@ -28,6 +28,7 @@ type Session struct {
 	valid    bool
 	uid      keybase1.UID
 	username *NormalizedUsername
+	email    string
 	mtime    time.Time
 	checked  bool
 }
@@ -74,6 +75,10 @@ func (s *Session) GetUsername() *NormalizedUsername {
 	return s.username
 }
 
+func (s *Session) GetEmail() string {
+	return s.email
+}
+
 func (s *Session) GetUID() keybase1.UID {
 	return s.uid
 }
@@ -94,10 +99,15 @@ func (s *Session) SetUsername(username NormalizedUsername) {
 	s.username = &username
 }
 
-func (s *Session) SetLoggedIn(sessionID, csrfToken string, username NormalizedUsername, uid keybase1.UID, deviceID keybase1.DeviceID) error {
+func (s *Session) SetEmail(email string) {
+	s.email = email
+}
+
+func (s *Session) SetLoggedIn(sessionID, csrfToken string, username NormalizedUsername, email string, uid keybase1.UID, deviceID keybase1.DeviceID) error {
 	s.valid = true
 	s.uid = uid
 	s.username = &username
+	s.email = email
 	s.token = sessionID
 	if s.file == nil {
 		G.Log.Warning("s.file == nil")

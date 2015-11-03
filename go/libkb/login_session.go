@@ -14,8 +14,8 @@ var ErrLoginSessionNotLoaded = errors.New("LoginSession not loaded")
 var ErrLoginSessionCleared = errors.New("LoginSession already cleared")
 
 type LoginSession struct {
-	sessionFor      string // set by constructor
-	salt            []byte // retrieved from server, or set by WithSalt constructor
+	sessionFor      EmailOrUsername // set by constructor
+	salt            []byte          // retrieved from server, or set by WithSalt constructor
 	loginSessionB64 string
 	loginSession    []byte // decoded from above parameter
 	loaded          bool   // load state
@@ -23,7 +23,7 @@ type LoginSession struct {
 	Contextified
 }
 
-func NewLoginSession(emailOrUsername string, g *GlobalContext) *LoginSession {
+func NewLoginSession(emailOrUsername EmailOrUsername, g *GlobalContext) *LoginSession {
 	return &LoginSession{
 		sessionFor:   emailOrUsername,
 		Contextified: NewContextified(g),
@@ -31,7 +31,7 @@ func NewLoginSession(emailOrUsername string, g *GlobalContext) *LoginSession {
 }
 
 // Upon signup, a login session is created with a generated salt.
-func NewLoginSessionWithSalt(emailOrUsername string, salt []byte, g *GlobalContext) *LoginSession {
+func NewLoginSessionWithSalt(emailOrUsername EmailOrUsername, salt []byte, g *GlobalContext) *LoginSession {
 	ls := NewLoginSession(emailOrUsername, g)
 	ls.salt = salt
 	ls.loaded = true
@@ -65,7 +65,7 @@ func (s *LoginSession) SessionEncoded() (string, error) {
 	return s.loginSessionB64, nil
 }
 
-func (s *LoginSession) ExistsFor(emailOrUsername string) bool {
+func (s *LoginSession) ExistsFor(emailOrUsername EmailOrUsername) bool {
 	if s == nil {
 		return false
 	}
@@ -126,7 +126,7 @@ func (s *LoginSession) Load() error {
 		Endpoint:    "getsalt",
 		NeedSession: false,
 		Args: HTTPArgs{
-			"email_or_username": S{Val: s.sessionFor},
+			"email_or_username": S{Val: s.sessionFor.String()},
 		},
 	})
 	if err != nil {

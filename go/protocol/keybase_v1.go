@@ -1,6 +1,3 @@
-// Copyright 2015 Keybase, Inc. All rights reserved. Use of
-// this source code is governed by the included BSD license.
-
 package keybase1
 
 import (
@@ -3812,9 +3809,9 @@ type GetNewPassphraseArg struct {
 }
 
 type GetKeybasePassphraseArg struct {
-	SessionID int    `codec:"sessionID" json:"sessionID"`
-	Username  string `codec:"username" json:"username"`
-	Retry     string `codec:"retry" json:"retry"`
+	SessionID       int    `codec:"sessionID" json:"sessionID"`
+	EmailOrUsername string `codec:"emailOrUsername" json:"emailOrUsername"`
+	Retry           string `codec:"retry" json:"retry"`
 }
 
 type GetPaperKeyPassphraseArg struct {

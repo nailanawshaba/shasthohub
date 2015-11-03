@@ -564,13 +564,13 @@ func (e *Env) GetProofCacheShortDur() time.Duration {
 	)
 }
 
-func (e *Env) GetEmailOrUsername() string {
+func (e *Env) GetEmailOrUsername() EmailOrUsername {
 	un := e.GetUsername().String()
 	if len(un) > 0 {
-		return un
+		return NewEmailOrUsername(un)
 	}
 	em := e.GetEmail()
-	return em
+	return NewEmailOrUsername(em)
 }
 
 func (e *Env) GetRunMode() RunMode {
