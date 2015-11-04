@@ -91,22 +91,34 @@ func (enc *Encoding) Encode(dst, src []byte) {
 // bounds checks are performed.  In particular, the dst buffer will
 // be zero-padded from right to left in all remaining bytes.
 func (enc *Encoding) encodeBlock(dst, src []byte) {
-	num := new(big.Int).SetBytes(src)
 	rem := new(big.Int)
 	quo := new(big.Int)
 
-	p := enc.EncodedLen(len(src)) - 1
+	// How many encoded characters we need to emit
+	encodedLen := enc.EncodedLen(len(src))
 
-	for num.Sign() != 0 {
-		num, rem = quo.QuoRem(num, enc.baseBig, rem)
-		dst[p] = enc.encode[rem.Uint64()]
-		p--
+	// We only need to start emiting blocks from outputStart on up
+	outputStart := enc.outBlockLen - encodedLen
+
+	// Shift the input data all the way over to the upper bits
+	// if the block is incomplete.  This way we can use our encoder
+	// for standard base64 encoding.
+	if len(src) < enc.inBlockLen {
+		tmp := make([]byte, enc.inBlockLen)
+		copy(tmp, src)
+		src = tmp
 	}
 
-	// Pad the remainder of the buffer with 0s
-	for p >= 0 {
-		dst[p] = enc.encode[0]
-		p--
+	// Use big-endian encoding to encode the padded source buffer
+	num := new(big.Int).SetBytes(src)
+
+	// Now fill in the output block from right to left. Only
+	// start to the left of our outputStart as computed above.
+	for i := 0; i < enc.outBlockLen; i++ {
+		num, rem = quo.QuoRem(num, enc.baseBig, rem)
+		if i >= outputStart {
+			dst[enc.outBlockLen-1-i] = enc.encode[rem.Uint64()]
+		}
 	}
 }
 
@@ -178,8 +190,14 @@ func (enc *Encoding) decodeBlock(dst []byte, src []byte, baseOffset int, strict 
 		return 0, 0, ErrInvalidEncodingLength
 	}
 
+	// For short blocks, shift over
+	for i := numGoodChars; i < enc.outBlockLen; i++ {
+		res.Mul(res, enc.baseBig)
+	}
+
 	raw := res.Bytes()
 	paddedLen := enc.DecodedLen(numGoodChars)
+
 	p := 0
 	if len(raw) < paddedLen {
 		p = paddedLen - len(raw)
