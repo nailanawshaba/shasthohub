@@ -5,7 +5,6 @@
 package openpgp
 
 import (
-	"crypto/rsa"
 	"fmt"
 	"io"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/keybase/go-crypto/openpgp/armor"
 	"github.com/keybase/go-crypto/openpgp/errors"
 	"github.com/keybase/go-crypto/openpgp/packet"
+	"github.com/keybase/go-crypto/rsa"
 )
 
 // PublicKeyType is the armor type for a PGP public key.
