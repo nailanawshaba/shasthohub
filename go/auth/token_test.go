@@ -36,8 +36,8 @@ func TestTokenVerifyToken(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = VerifyToken("nope", server, challenge, testMaxTokenExpireIn)
-	if err == nil {
-		t.Fatal(fmt.Errorf("expected verification failure"))
+	if _, ok := err.(TokenVerificationError); !ok  {
+		t.Fatalf("Expected TokenVerificationError, got: %T", err)
 	}
 	token, err = VerifyToken(sig, server, challenge, testMaxTokenExpireIn)
 	if err != nil {

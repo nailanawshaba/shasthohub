@@ -99,10 +99,10 @@ func VerifyToken(signature, server, challenge string, maxExpireIn int) (*Token, 
 	var t *Token
 	key, token, _, err := libkb.NaclVerifyAndExtract(signature)
 	if err != nil {
-		return nil, err
+		return nil, TokenVerificationError{err: err}
 	}
 	if t, err = parseToken(token); err != nil {
-		return nil, err
+		return nil, TokenParseError{err: err}
 	}
 	if key.GetKID() != t.KID() {
 		return nil, InvalidTokenKeyError{

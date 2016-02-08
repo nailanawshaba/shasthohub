@@ -115,3 +115,54 @@ func (e InvalidTokenChallengeError) Error() string {
 	return fmt.Sprintf("Invalid challenge in token, expected: %s, received: %s",
 		e.expected, e.received)
 }
+
+// TokenVerificationError is returned when there is a problem verifying and extracting
+// the token siganture.
+type TokenVerificationError struct {
+	err error
+}
+
+func (e TokenVerificationError) Error() string {
+	return e.err.Error()
+}
+
+// TokenParseError is returned when there is a problem parsing the token.
+type TokenParseError struct {
+	err error
+}
+
+func (e TokenParseError) Error() string {
+	return e.err.Error()
+}
+
+// ShouldRetryError returns true if the given error should be retried.
+func ShouldRetryError(e error) bool {
+	// return false on known hard errors
+	switch e.(type) {
+	case BadUsernameError:
+		return false
+	case BadKeyError:
+		return false
+	case KeysNotEqualError:
+		return false
+	case InvalidTokenTypeError:
+		return false
+	case MaxTokenExpiresError:
+		return false
+	case TokenExpiredError:
+		return false
+	case InvalidTokenKeyError:
+		return false
+	case InvalidTokenServerError:
+		return false
+	case InvalidTokenChallengeError:
+		return false
+	case TokenVerificationError:
+		return false
+	case TokenParseError:
+		return false
+	default:
+	}
+	// assume anything we don't recognize is retryable.
+	return true
+}
