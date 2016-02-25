@@ -216,6 +216,10 @@
       "type" : "UserVersionVector"
     } ]
   }, {
+    "type" : "enum",
+    "name" : "MerkleTreeID",
+    "symbols" : [ "MASTER_0", "KBFS_PUBLIC_1", "KBFS_PRIVATE_2" ]
+  }, {
     "type" : "record",
     "name" : "GPGKey",
     "fields" : [ {

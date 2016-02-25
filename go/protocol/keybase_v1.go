@@ -1541,6 +1541,14 @@ func (c FavoriteClient) FavoriteList(ctx context.Context, sessionID int) (res []
 	return
 }
 
+type MerkleTreeID int
+
+const (
+	MerkleTreeID_MASTER       MerkleTreeID = 0
+	MerkleTreeID_KBFS_PUBLIC  MerkleTreeID = 1
+	MerkleTreeID_KBFS_PRIVATE MerkleTreeID = 2
+)
+
 type GPGKey struct {
 	Algorithm  string        `codec:"algorithm" json:"algorithm"`
 	KeyID      string        `codec:"keyID" json:"keyID"`
@@ -3200,14 +3208,6 @@ func (c LoginUiClient) DisplayPrimaryPaperKey(ctx context.Context, __arg Display
 	return
 }
 
-type MerkleTreeID int
-
-const (
-	MerkleTreeID_MASTER       MerkleTreeID = 0
-	MerkleTreeID_KBFS_PUBLIC  MerkleTreeID = 1
-	MerkleTreeID_KBFS_PRIVATE MerkleTreeID = 2
-)
-
 type KeyHalf struct {
 	User      UID    `codec:"user" json:"user"`
 	DeviceKID KID    `codec:"deviceKID" json:"deviceKID"`
@@ -4825,6 +4825,14 @@ const (
 	ProvisionMethod_GPG_SIGN   ProvisionMethod = 4
 )
 
+type GPGMethod int
+
+const (
+	GPGMethod_GPG_NONE   GPGMethod = 0
+	GPGMethod_GPG_IMPORT GPGMethod = 1
+	GPGMethod_GPG_SIGN   GPGMethod = 2
+)
+
 type DeviceType int
 
 const (
@@ -4847,6 +4855,11 @@ type SecretResponse struct {
 type ChooseProvisioningMethodArg struct {
 	SessionID int  `codec:"sessionID" json:"sessionID"`
 	GpgOption bool `codec:"gpgOption" json:"gpgOption"`
+}
+
+type ChooseGPGMethodArg struct {
+	SessionID int      `codec:"sessionID" json:"sessionID"`
+	Keys      []GPGKey `codec:"keys" json:"keys"`
 }
 
 type ChooseDeviceTypeArg struct {
@@ -4885,6 +4898,7 @@ type ProvisionerSuccessArg struct {
 
 type ProvisionUiInterface interface {
 	ChooseProvisioningMethod(context.Context, ChooseProvisioningMethodArg) (ProvisionMethod, error)
+	ChooseGPGMethod(context.Context, ChooseGPGMethodArg) (GPGMethod, error)
 	ChooseDeviceType(context.Context, ChooseDeviceTypeArg) (DeviceType, error)
 	DisplayAndPromptSecret(context.Context, DisplayAndPromptSecretArg) (SecretResponse, error)
 	DisplaySecretExchanged(context.Context, int) error
@@ -4909,6 +4923,22 @@ func ProvisionUiProtocol(i ProvisionUiInterface) rpc.Protocol {
 						return
 					}
 					ret, err = i.ChooseProvisioningMethod(ctx, (*typedArgs)[0])
+					return
+				},
+				MethodType: rpc.MethodCall,
+			},
+			"chooseGPGMethod": {
+				MakeArg: func() interface{} {
+					ret := make([]ChooseGPGMethodArg, 1)
+					return &ret
+				},
+				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
+					typedArgs, ok := args.(*[]ChooseGPGMethodArg)
+					if !ok {
+						err = rpc.NewTypeError((*[]ChooseGPGMethodArg)(nil), args)
+						return
+					}
+					ret, err = i.ChooseGPGMethod(ctx, (*typedArgs)[0])
 					return
 				},
 				MethodType: rpc.MethodCall,
@@ -5019,6 +5049,11 @@ type ProvisionUiClient struct {
 
 func (c ProvisionUiClient) ChooseProvisioningMethod(ctx context.Context, __arg ChooseProvisioningMethodArg) (res ProvisionMethod, err error) {
 	err = c.Cli.Call(ctx, "keybase.1.provisionUi.chooseProvisioningMethod", []interface{}{__arg}, &res)
+	return
+}
+
+func (c ProvisionUiClient) ChooseGPGMethod(ctx context.Context, __arg ChooseGPGMethodArg) (res GPGMethod, err error) {
+	err = c.Cli.Call(ctx, "keybase.1.provisionUi.chooseGPGMethod", []interface{}{__arg}, &res)
 	return
 }
 

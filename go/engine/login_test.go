@@ -500,7 +500,7 @@ func TestProvisionPaper(t *testing.T) {
 
 // Provision device using a private GPG key (not synced to keybase
 // server), import private key to lksec.
-func TestProvisionGPGImport(t *testing.T) {
+func TestProvisionGPGImportOK(t *testing.T) {
 	tc := SetupEngineTest(t, "login")
 	defer tc.Cleanup()
 
@@ -991,6 +991,7 @@ func TestProvisionPassphraseNoKeysMultipleAccounts(t *testing.T) {
 type testProvisionUI struct {
 	secretCh               chan kex2.Secret
 	method                 keybase1.ProvisionMethod
+	gpgMethod              keybase1.GPGMethod
 	verbose                bool
 	calledChooseDeviceType int
 }
@@ -1000,6 +1001,7 @@ func newTestProvisionUI() *testProvisionUI {
 	if len(os.Getenv("KB_TEST_VERBOSE")) > 0 {
 		ui.verbose = true
 	}
+	ui.gpgMethod = keybase1.GPGMethod_GPG_IMPORT
 	return ui
 }
 
@@ -1024,12 +1026,14 @@ func newTestProvisionUIPaper() *testProvisionUI {
 func newTestProvisionUIGPGImport() *testProvisionUI {
 	ui := newTestProvisionUI()
 	ui.method = keybase1.ProvisionMethod_GPG_IMPORT
+	ui.gpgMethod = keybase1.GPGMethod_GPG_IMPORT
 	return ui
 }
 
 func newTestProvisionUIGPGSign() *testProvisionUI {
 	ui := newTestProvisionUI()
 	ui.method = keybase1.ProvisionMethod_GPG_SIGN
+	ui.gpgMethod = keybase1.GPGMethod_GPG_SIGN
 	return ui
 }
 
@@ -1043,6 +1047,11 @@ func (u *testProvisionUI) printf(format string, a ...interface{}) {
 func (u *testProvisionUI) ChooseProvisioningMethod(_ context.Context, _ keybase1.ChooseProvisioningMethodArg) (keybase1.ProvisionMethod, error) {
 	u.printf("ChooseProvisioningMethod")
 	return u.method, nil
+}
+
+func (u *testProvisionUI) ChooseGPGMethod(_ context.Context, _ keybase1.ChooseGPGMethodArg) (keybase1.GPGMethod, error) {
+	u.printf("ChooseGPGMethod")
+	return u.gpgMethod, nil
 }
 
 func (u *testProvisionUI) ChooseDeviceType(_ context.Context, _ keybase1.ChooseDeviceTypeArg) (keybase1.DeviceType, error) {

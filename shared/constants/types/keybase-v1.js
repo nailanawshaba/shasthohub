@@ -249,6 +249,11 @@ export const gpgUi = {
     'cli': 1,
     'gui': 2,
     'kbfs': 3
+  },
+  'MerkleTreeID': {
+    'master': 0,
+    'kbfsPublic': 1,
+    'kbfsPrivate': 2
   }
 }
 
@@ -1024,12 +1029,22 @@ export const provisionUi = {
     'gui': 2,
     'kbfs': 3
   },
+  'MerkleTreeID': {
+    'master': 0,
+    'kbfsPublic': 1,
+    'kbfsPrivate': 2
+  },
   'ProvisionMethod': {
     'device': 0,
     'paperKey': 1,
     'passphrase': 2,
     'gpgImport': 3,
     'gpgSign': 4
+  },
+  'GPGMethod': {
+    'gpgNone': 0,
+    'gpgImport': 1,
+    'gpgSign': 2
   },
   'DeviceType': {
     'desktop': 0,
