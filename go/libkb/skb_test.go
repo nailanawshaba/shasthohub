@@ -141,10 +141,12 @@ func TestBasicSecretStore(t *testing.T) {
 	}
 
 	skb := makeTestSKB(t, lks)
-	testSecretStore := TestSecretStore{}
+	testSecretStore := TestSecretStore{accountName: "skb_basic_secret_store"}
 	testPromptAndUnlock(t, skb, &testSecretStore)
 
-	if string(testSecretStore.Secret) != string(expectedSecret) {
+	defer testSecretStore.ClearSecret()
+	secret, _ := testSecretStore.RetrieveSecret()
+	if string(secret) != string(expectedSecret) {
 		t.Errorf("secret doesn't match expected value")
 	}
 
@@ -170,14 +172,15 @@ func TestCorruptSecretStore(t *testing.T) {
 	}
 
 	skb := makeTestSKB(t, lks)
-	testSecretStore := TestSecretStore{
-		Secret: []byte("corrupt"),
-	}
-	testPromptAndUnlock(t, skb, &testSecretStore)
+	var testSecretStore SecretStore = TestSecretStore{accountName: "skb_corrupt_secret_store"}
+	testSecretStore.StoreSecret([]byte("corrupt"))
+	defer testSecretStore.ClearSecret()
+	testPromptAndUnlock(t, skb, testSecretStore)
 
 	// The corrupt secret value should be overwritten by the new
 	// correct one.
-	if string(testSecretStore.Secret) != string(expectedSecret) {
+	secret, _ := testSecretStore.RetrieveSecret()
+	if string(secret) != string(expectedSecret) {
 		t.Errorf("secret doesn't match expected value")
 	}
 }
@@ -198,13 +201,15 @@ func TestUnusedSecretStore(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testSecretStore := TestSecretStore{}
-	testPromptAndUnlock(t, skb, &testSecretStore)
+	var testSecretStore SecretStore = TestSecretStore{accountName: "skb_unused_secret_store"}
+	defer testSecretStore.ClearSecret()
+	testPromptAndUnlock(t, skb, testSecretStore)
 
 	// Since there is a non-nil passphraseStream in the login
 	// state, nothing should be stored in the secret store (since
 	// no prompt was shown).
-	if len(testSecretStore.Secret) > 0 {
+	secret, _ := testSecretStore.RetrieveSecret()
+	if len(secret) > 0 {
 		t.Errorf("secret unexpectedly non-empty")
 	}
 }

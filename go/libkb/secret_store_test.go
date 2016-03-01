@@ -6,6 +6,7 @@ package libkb
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"testing"
 )
 
@@ -19,30 +20,40 @@ func NewTestSecretStore(context SecretStoreContext, accountName NormalizedUserna
 	return TestSecretStore{context, accountName}
 }
 
-func (tss *TestSecretStore) RetrieveSecret() (ret []byte, err error) {
-	G.Log.Debug("| TestSecretStore::RetrieveSecret(%d)", len(tss.Secret))
+var secretStoreNoneMap = map[NormalizedUsername][]byte{}
 
-	ret = SecretStoreNoneMap[tss.accountName]
+func (tss TestSecretStore) RetrieveSecret() (ret []byte, err error) {
 
-	if ret == nil || len(ret) == 0 {
+	ret, ok := secretStoreNoneMap[tss.accountName]
+
+	G.Log.Debug("| TestSecretStore::RetrieveSecret(%d)", len(ret))
+
+	if !ok {
 		return nil, errors.New("No secret to retrieve")
 	}
 
-	return ret, nil
+	return
 }
 
-func (tss *TestSecretStore) StoreSecret(secret []byte) error {
+func (tss TestSecretStore) StoreSecret(secret []byte) error {
 	G.Log.Debug("| TestSecretStore::StoreSecret(%d)", len(secret))
 
-	userSecretsMap[tss.accountName] = secret
+	secretStoreNoneMap[tss.accountName] = secret
 	return nil
 }
 
-func (tss *TestSecretStore) ClearSecret() error {
+func (tss TestSecretStore) ClearSecret() error {
 	G.Log.Debug("| TestSecretStore::ClearSecret()")
 
-	delete(userSecretsMap, tss.accountName)
+	delete(secretStoreNoneMap, tss.accountName)
 	return nil
+}
+
+func GetTestUsersWithStoredSecrets(c SecretStoreContext) (ret []string, err error) {
+	for name, _ := range secretStoreNoneMap {
+		ret = append(ret, string(name))
+	}
+	return
 }
 
 func TestSecretStoreOps(t *testing.T) {
@@ -54,8 +65,15 @@ func TestSecretStoreOps(t *testing.T) {
 	expectedSecret1 := []byte("test secret 1")
 	expectedSecret2 := []byte("test secret 2")
 
-	libkb.NewTestSecretStoreFunc = NewTestSecretStore
-	secretStore := NewSecretStore()
+	if !HasSecretStore() {
+		NewTestSecretStoreFunc = NewTestSecretStore
+		GetUsersWithStoredSecretsFunc = GetTestUsersWithStoredSecrets
+		defer func() {
+			NewTestSecretStoreFunc = nil
+			GetUsersWithStoredSecretsFunc = nil
+		}()
+	}
+	secretStore := NewSecretStore(tc.G, nu)
 	var err error
 
 	if err = secretStore.ClearSecret(); err != nil {
@@ -104,7 +122,14 @@ func TestSecretStoreOps(t *testing.T) {
 
 func TestGetUsersWithStoredSecrets(t *testing.T) {
 
-	libkb.NewTestSecretStoreFunc = NewTestSecretStore
+	if !HasSecretStore() {
+		NewTestSecretStoreFunc = NewTestSecretStore
+		GetUsersWithStoredSecretsFunc = GetTestUsersWithStoredSecrets
+		defer func() {
+			NewTestSecretStoreFunc = nil
+			GetUsersWithStoredSecretsFunc = nil
+		}()
+	}
 
 	tc := SetupTest(t, "get users with stored secrets")
 	defer tc.Cleanup()
@@ -134,6 +159,9 @@ func TestGetUsersWithStoredSecrets(t *testing.T) {
 	if len(usernames) != len(expectedUsernames) {
 		t.Errorf("Expected %d usernames, got %d", len(expectedUsernames), len(usernames))
 	}
+
+	// TODO: were these supposed to already be in order?
+	sort.Strings(usernames)
 
 	for i := 0; i < len(usernames); i++ {
 		if usernames[i] != expectedUsernames[i] {

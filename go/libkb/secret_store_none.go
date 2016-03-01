@@ -5,7 +5,9 @@
 
 package libkb
 
+// These can be set to mocks by a test
 var NewTestSecretStoreFunc func(context SecretStoreContext, accountName NormalizedUsername) SecretStore
+var GetUsersWithStoredSecretsFunc func(c SecretStoreContext) ([]string, error)
 
 func NewSecretStore(c SecretStoreContext, username NormalizedUsername) SecretStore {
 	if NewTestSecretStoreFunc != nil {
@@ -19,8 +21,8 @@ func HasSecretStore() bool {
 }
 
 func GetUsersWithStoredSecrets(c SecretStoreContext) ([]string, error) {
-	if NewTestSecretStoreFunc != nil {
-		return GetTestUsersWithStoredSecrets(c)
+	if GetUsersWithStoredSecretsFunc != nil {
+		return GetUsersWithStoredSecretsFunc(c)
 	}
 	return nil, nil
 }
