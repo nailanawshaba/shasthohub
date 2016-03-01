@@ -5,15 +5,23 @@
 
 package libkb
 
+var NewTestSecretStoreFunc func(context SecretStoreContext, accountName NormalizedUsername) SecretStore
+
 func NewSecretStore(c SecretStoreContext, username NormalizedUsername) SecretStore {
+	if NewTestSecretStoreFunc != nil {
+		return NewTestSecretStoreFunc(c, username)
+	}
 	return nil
 }
 
 func HasSecretStore() bool {
-	return false
+	return NewTestSecretStoreFunc != nil
 }
 
 func GetUsersWithStoredSecrets(c SecretStoreContext) ([]string, error) {
+	if NewTestSecretStoreFunc != nil {
+		return GetTestUsersWithStoredSecrets(c)
+	}
 	return nil, nil
 }
 

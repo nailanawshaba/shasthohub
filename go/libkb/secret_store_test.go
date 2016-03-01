@@ -11,37 +11,41 @@ import (
 
 // Used by tests that want to mock out the secret store.
 type TestSecretStore struct {
-	Secret []byte
+	context     SecretStoreContext
+	accountName NormalizedUsername
 }
 
-func (tss *TestSecretStore) RetrieveSecret() ([]byte, error) {
+func NewTestSecretStore(context SecretStoreContext, accountName NormalizedUsername) SecretStore {
+	return TestSecretStore{context, accountName}
+}
+
+func (tss *TestSecretStore) RetrieveSecret() (ret []byte, err error) {
 	G.Log.Debug("| TestSecretStore::RetrieveSecret(%d)", len(tss.Secret))
 
-	if len(tss.Secret) == 0 {
+	ret = SecretStoreNoneMap[tss.accountName]
+
+	if ret == nil || len(ret) == 0 {
 		return nil, errors.New("No secret to retrieve")
 	}
 
-	return tss.Secret, nil
+	return ret, nil
 }
 
 func (tss *TestSecretStore) StoreSecret(secret []byte) error {
 	G.Log.Debug("| TestSecretStore::StoreSecret(%d)", len(secret))
 
-	tss.Secret = secret
+	userSecretsMap[tss.accountName] = secret
 	return nil
 }
 
 func (tss *TestSecretStore) ClearSecret() error {
 	G.Log.Debug("| TestSecretStore::ClearSecret()")
 
-	tss.Secret = nil
+	delete(userSecretsMap, tss.accountName)
 	return nil
 }
 
 func TestSecretStoreOps(t *testing.T) {
-	if !HasSecretStore() {
-		t.Skip("Skipping test since there is no secret store")
-	}
 
 	tc := SetupTest(t, "secret store ops")
 	defer tc.Cleanup()
@@ -50,8 +54,8 @@ func TestSecretStoreOps(t *testing.T) {
 	expectedSecret1 := []byte("test secret 1")
 	expectedSecret2 := []byte("test secret 2")
 
-	secretStore := NewSecretStore(tc.G, nu)
-
+	libkb.NewTestSecretStoreFunc = NewTestSecretStore
+	secretStore := NewSecretStore()
 	var err error
 
 	if err = secretStore.ClearSecret(); err != nil {
@@ -99,9 +103,8 @@ func TestSecretStoreOps(t *testing.T) {
 }
 
 func TestGetUsersWithStoredSecrets(t *testing.T) {
-	if !HasSecretStore() {
-		t.Skip("Skipping test since there is no secret store")
-	}
+
+	libkb.NewTestSecretStoreFunc = NewTestSecretStore
 
 	tc := SetupTest(t, "get users with stored secrets")
 	defer tc.Cleanup()

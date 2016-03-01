@@ -411,9 +411,9 @@ func (r PostAuthProofRes) loginResult() (*loginAPIResult, error) {
 // particular key for that user.
 type getSecretKeyFn func(*Keyrings, *User) (GenericKey, error)
 
-// pubkeyLoginHelper looks for a locally available private key and
-// tries to establish a session via public key signature.
-func (s *LoginState) pubkeyLoginHelper(lctx LoginContext, username string, getSecretKeyFn getSecretKeyFn) (err error) {
+// pubkeyLoginKeyHelper looks for a locally available private key and
+// returns it
+func (s *LoginState) pubkeyLoginKeyHelper(lctx LoginContext, username string, getSecretKeyFn getSecretKeyFn) (key GenericKey, me *User, err error) {
 	s.G().Log.Debug("+ pubkeyLoginHelper()")
 	defer func() {
 		if err != nil {
@@ -421,7 +421,7 @@ func (s *LoginState) pubkeyLoginHelper(lctx LoginContext, username string, getSe
 				s.G().Log.Info("error clearing secret syncer: %s", e)
 			}
 		}
-		s.G().Log.Debug("- pubkeyLoginHelper() -> %s", ErrToOk(err))
+		s.G().Log.Debug("- pubkeyLoginKeyHelper() -> %s", ErrToOk(err))
 	}()
 
 	nu := NewNormalizedUsername(username)
@@ -431,7 +431,6 @@ func (s *LoginState) pubkeyLoginHelper(lctx LoginContext, username string, getSe
 		return
 	}
 
-	var me *User
 	if me, err = LoadUser(LoadUserArg{Name: username, LoginContext: lctx, Contextified: NewContextified(s.G())}); err != nil {
 		return
 	}
@@ -440,15 +439,11 @@ func (s *LoginState) pubkeyLoginHelper(lctx LoginContext, username string, getSe
 	if !lctx.SecretSyncer().HasDevices() {
 		s.G().Log.Debug("| No synced devices, pubkey login impossible.")
 		err = NoDeviceError{Reason: "no synced devices during pubkey login"}
-		return err
+		return
 	}
 
-	var key GenericKey
-	if key, err = getSecretKeyFn(s.G().Keyrings, me); err != nil {
-		return err
-	}
-
-	return s.pubkeyLoginWithKey(lctx, me, key)
+	key, err = getSecretKeyFn(s.G().Keyrings, me)
+	return
 }
 
 func (s *LoginState) pubkeyLoginWithKey(lctx LoginContext, me *User, key GenericKey) error {
@@ -536,10 +531,12 @@ func (s *LoginState) switchUser(lctx LoginContext, username string) error {
 
 // Like pubkeyLoginHelper, but ignores most errors.
 func (s *LoginState) tryPubkeyLoginHelper(lctx LoginContext, username string, getSecretKeyFn getSecretKeyFn) (loggedIn bool, err error) {
-	if err = s.pubkeyLoginHelper(lctx, username, getSecretKeyFn); err == nil {
-		s.G().Log.Debug("| Pubkey login succeeded")
-		loggedIn = true
-		return
+	if key, me, err2 := s.pubkeyLoginKeyHelper(lctx, username, getSecretKeyFn); err2 == nil {
+		if err = s.pubkeyLoginWithKey(lctx, me, key); err == nil {
+			s.G().Log.Debug("| Pubkey login succeeded")
+			loggedIn = true
+			return true, nil
+		}
 	}
 
 	if _, ok := err.(CanceledError); ok {
@@ -857,15 +854,10 @@ func (s *LoginState) requests() {
 	}
 }
 
-func (s *LoginState) loginWithStoredSecret(lctx LoginContext, username string) error {
-	if loggedIn, err := s.checkLoggedIn(lctx, username, false); err != nil {
-		return err
-	} else if loggedIn {
-		return nil
-	}
+func (s *LoginState) getStoredSecretDeviceSigningKey(lctx LoginContext, username string) (GenericKey, *User, error) {
 
 	if err := s.switchUser(lctx, username); err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	getSecretKeyFn := func(keyrings *Keyrings, me *User) (GenericKey, error) {
@@ -880,7 +872,22 @@ func (s *LoginState) loginWithStoredSecret(lctx LoginContext, username string) e
 		}
 		return key, nil
 	}
-	return s.pubkeyLoginHelper(lctx, username, getSecretKeyFn)
+
+	return s.pubkeyLoginKeyHelper(lctx, username, getSecretKeyFn)
+}
+
+func (s *LoginState) loginWithStoredSecret(lctx LoginContext, username string) error {
+	if loggedIn, err := s.checkLoggedIn(lctx, username, false); err != nil {
+		return err
+	} else if loggedIn {
+		return nil
+	}
+
+	key, me, err := s.getStoredSecretDeviceSigningKey(lctx, username)
+	if err == nil {
+		return s.pubkeyLoginWithKey(lctx, me, key)
+	}
+	return err
 }
 
 func (s *LoginState) loginWithPassphrase(lctx LoginContext, username, passphrase string, storeSecret bool) error {

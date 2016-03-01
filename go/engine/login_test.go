@@ -1015,6 +1015,25 @@ func TestLoginStreamCache(t *testing.T) {
 	}
 }
 
+//// We have obviated the unlock command by combining it with login.
+//func TestLoginSecretStore(t *testing.T) {
+//	tc := SetupEngineTest(t, "login")
+//	defer tc.Cleanup()
+
+//	u1 := CreateAndSignupFakeUser(tc, "login")
+
+//	secretStore := NewSecretStore(tc.G, "login")
+//	if err := secretStore.StoreSecret([]byte{}); err != nil {
+//		t.Error(err)
+//	}
+
+//	tc.G.LoginState().Account(func(a *libkb.Account) {
+//		a.ClearStreamCache()
+//	}, "clear stream cache")
+
+//	// A user with a secret store and no stream cache should still be considered logged in
+//}
+
 type testProvisionUI struct {
 	secretCh               chan kex2.Secret
 	method                 keybase1.ProvisionMethod
