@@ -38,14 +38,6 @@ func newSession(g *GlobalContext) *Session {
 	return &Session{Contextified: Contextified{g}}
 }
 
-// NewSessionThin creates a minimal (thin) session of just the uid and username.
-// Clients of the daemon that use the session protocol need this.
-func NewSessionThin(uid keybase1.UID, username NormalizedUsername, token string) *Session {
-	// XXX should this set valid to true?  daemon won't return a
-	// session unless valid is true, so...
-	return &Session{uid: uid, username: &username, token: token, valid: true}
-}
-
 func (s *Session) IsLoggedIn() bool {
 	return s.valid
 }
@@ -82,10 +74,6 @@ func (s *Session) GetUID() keybase1.UID {
 
 func (s *Session) GetToken() string {
 	return s.token
-}
-
-func (s *Session) GetCsrf() string {
-	return s.csrf
 }
 
 func (s *Session) APIArgs() (token, csrf string) {
