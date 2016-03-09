@@ -33,11 +33,24 @@ func newSession(g *GlobalContext) *Session {
 }
 
 func (s *Session) IsLoggedIn() bool {
-	return s.valid
+	ok, err := s.loadAndCheck()
+	if err != nil {
+		s.G().Log.Debug("IsLoggedIn, loadAndCheck error: %s", err)
+		return false
+	}
+	return ok
 }
 
 // true if user is logged in and has a device fully provisioned
 func (s *Session) IsLoggedInAndProvisioned() bool {
+	ok, err := s.loadAndCheck()
+	if err != nil {
+		s.G().Log.Debug("IsLoggedInAndProvisioned, loadAndCheck error: %s", err)
+		return false
+	}
+	if !ok {
+		return false
+	}
 	if !s.valid {
 		return false
 	}

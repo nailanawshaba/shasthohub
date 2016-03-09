@@ -46,13 +46,14 @@ func (e *loginProvisionedDevice) SubConsumers() []libkb.UIConsumer {
 
 func (e *loginProvisionedDevice) Run(ctx *Context) error {
 	// already logged in?
-	in, err := e.G().LoginState().LoggedInProvisionedLoad()
-	if err == nil && in {
+	in := e.G().LoginState().LoggedInProvisioned()
+	if in {
 		if len(e.username) == 0 || e.G().Env.GetUsername() == libkb.NewNormalizedUsername(e.username) {
 			return nil
 		}
 	}
 
+	var err error
 	var config *libkb.UserConfig
 	loadUserArg := libkb.LoadUserArg{
 		PublicKeyOptional: true,

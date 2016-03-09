@@ -37,8 +37,8 @@ type LoginState struct {
 // allows them safe access to various parts of the LoginState during
 // the login process.
 type LoginContext interface {
-	LoggedInLoad() (bool, error)
-	LoggedInProvisionedLoad() (bool, error)
+	LoggedIn() bool
+	LoggedInProvisioned() bool
 	Logout() error
 
 	CreateStreamCache(tsec *triplesec.Cipher, pps *PassphraseStream)
@@ -72,7 +72,7 @@ type LoginContext interface {
 
 type LoggedInHelper interface {
 	GetUID() keybase1.UID
-	LoggedInLoad() (bool, error)
+	LoggedIn() bool
 }
 
 type loginHandler func(LoginContext) error
@@ -493,11 +493,7 @@ func (s *LoginState) checkLoggedIn(lctx LoginContext, username string, force boo
 	s.G().Log.Debug("+ checkedLoggedIn()")
 	defer func() { s.G().Log.Debug("- checkedLoggedIn() -> %t, %s", loggedIn, ErrToOk(err)) }()
 
-	var loggedInTmp bool
-	if loggedInTmp, err = lctx.LoggedInLoad(); err != nil {
-		s.G().Log.Debug("| Session failed to load")
-		return
-	}
+	loggedInTmp := lctx.LoggedIn()
 
 	nu1 := lctx.LocalSession().GetUsername()
 	nu2 := NewNormalizedUsername(username)
@@ -1001,24 +997,16 @@ func (s *LoginState) LoggedIn() bool {
 	return res
 }
 
-func (s *LoginState) LoggedInLoad() (lin bool, err error) {
-	aerr := s.Account(func(a *Account) {
-		lin, err = a.LoggedInLoad()
-	}, "LoggedInLoad")
-	if aerr != nil {
-		return false, aerr
+func (s *LoginState) LoggedInProvisioned() bool {
+	var res bool
+	err := s.Account(func(a *Account) {
+		res = a.LoggedInProvisioned()
+	}, "LoggedIn")
+	if err != nil {
+		s.G().Log.Warning("error getting Account: %s", err)
+		return false
 	}
-	return lin, err
-}
-
-func (s *LoginState) LoggedInProvisionedLoad() (lin bool, err error) {
-	aerr := s.Account(func(a *Account) {
-		lin, err = a.LoggedInProvisionedLoad()
-	}, "LoggedInProvisionedLoad")
-	if aerr != nil {
-		return false, aerr
-	}
-	return
+	return res
 }
 
 func (s *LoginState) PassphraseStream() (*PassphraseStream, error) {

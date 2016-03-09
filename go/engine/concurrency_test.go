@@ -62,7 +62,6 @@ func TestConcurrentLogin(t *testing.T) {
 						s.GetUID()
 					}, "GetUID")
 					tc.G.LoginState().LoggedIn()
-					tc.G.LoginState().LoggedInLoad()
 				}
 			}
 		}(i)

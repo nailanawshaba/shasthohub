@@ -184,10 +184,7 @@ func (fu *FakeUser) NewSecretUI() *libkb.TestSecretUI {
 }
 
 func AssertProvisioned(tc libkb.TestContext) error {
-	prov, err := tc.G.LoginState().LoggedInProvisionedLoad()
-	if err != nil {
-		return err
-	}
+	prov := tc.G.LoginState().LoggedInProvisioned()
 	if !prov {
 		return libkb.LoginRequiredError{}
 	}
@@ -195,10 +192,7 @@ func AssertProvisioned(tc libkb.TestContext) error {
 }
 
 func AssertNotProvisioned(tc libkb.TestContext) error {
-	prov, err := tc.G.LoginState().LoggedInProvisionedLoad()
-	if err != nil {
-		return err
-	}
+	prov := tc.G.LoginState().LoggedInProvisioned()
 	if prov {
 		return errors.New("AssertNotProvisioned failed:  user is provisioned")
 	}
@@ -220,8 +214,7 @@ func AssertLoggedOut(tc libkb.TestContext) error {
 }
 
 func LoggedIn(tc libkb.TestContext) bool {
-	lin, _ := tc.G.LoginState().LoggedInLoad()
-	return lin
+	return tc.G.LoginState().LoggedIn()
 }
 
 func Logout(tc libkb.TestContext) {

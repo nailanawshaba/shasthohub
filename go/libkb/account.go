@@ -83,23 +83,13 @@ func (a *Account) UnloadLocalSession() {
 	a.localSession = newSession(a.G())
 }
 
-// LoggedIn returns true if the user is logged in.  It does not
-// try to load the session.
+// LoggedIn returns true if the user is logged in.
 func (a *Account) LoggedIn() bool {
 	return a.LocalSession().IsLoggedIn()
 }
 
-func (a *Account) LoggedInAndProvisioined() bool {
+func (a *Account) LoggedInProvisioned() bool {
 	return a.LocalSession().IsLoggedInAndProvisioned()
-}
-
-// LoggedInLoad will load and check the session with the api server if necessary.
-func (a *Account) LoggedInLoad() (bool, error) {
-	return a.LocalSession().loadAndCheck()
-}
-
-func (a *Account) LoggedInProvisionedLoad() (bool, error) {
-	return a.LocalSession().loadAndCheckProvisioned()
 }
 
 func (a *Account) LoadLoginSession(emailOrUsername string) error {

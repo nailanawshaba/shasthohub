@@ -15,18 +15,18 @@ func IsLoggedIn(e Engine, ctx *Context) (ret bool, uid keybase1.UID, err error) 
 	if lih = ctx.LoginContext; lih == nil {
 		lih = e.G().LoginState()
 	}
-	ret, err = lih.LoggedInLoad()
-	if ret && err == nil {
+	ret = lih.LoggedIn()
+	if ret {
 		uid = lih.GetUID()
 	}
 	return ret, uid, err
 }
 
-func IsProvisioned(e Engine, ctx *Context) (bool, error) {
+func IsProvisioned(e Engine, ctx *Context) bool {
 	if ctx.LoginContext != nil {
-		return ctx.LoginContext.LoggedInProvisionedLoad()
+		return ctx.LoginContext.LoggedInProvisioned()
 	}
-	return e.G().LoginState().LoggedInProvisionedLoad()
+	return e.G().LoginState().LoggedInProvisioned()
 }
 
 type keypair struct {

@@ -48,11 +48,7 @@ func NewScanKeys(secui libkb.SecretUI, g *libkb.GlobalContext) (*ScanKeys, error
 		g.Log.Debug("- NewScanKeys -> %s", err)
 	}()
 
-	lin, err := g.LoginState().LoggedInLoad()
-	if err != nil {
-		return nil, err
-	}
-	if !lin {
+	if !g.LoginState().LoggedIn() {
 		return sk, nil
 	}
 

@@ -53,12 +53,7 @@ func runPrereqs(e Engine, ctx *Context) (err error) {
 	}
 
 	if prq.Device {
-		var ok bool
-		ok, err = IsProvisioned(e, ctx)
-		if err != nil {
-			return err
-		}
-		if !ok {
+		if !IsProvisioned(e, ctx) {
 			if e.G().Env.GetStandalone() {
 				if serr := tryStandaloneLogin(e, ctx); serr == nil {
 					return nil
