@@ -9,7 +9,6 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/base32"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -25,6 +24,7 @@ import (
 
 	"github.com/keybase/client/go/logger"
 	keybase1 "github.com/keybase/client/go/protocol"
+	"github.com/keybase/client/go/util"
 )
 
 // PrereleaseBuild can be set at compile time for prerelease builds.
@@ -47,36 +47,17 @@ func ErrToOk(err error) string {
 	return "ERROR: " + err.Error()
 }
 
-// exists returns whether the given file or directory exists or not
+// Deprecated; Use util.FileExists
 func FileExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
+	return util.FileExists(path)
 }
 
 func MakeParentDirs(filename string) error {
-
-	dir, _ := filepath.Split(filename)
-	exists, err := FileExists(dir)
-	if err != nil {
-		G.Log.Errorf("Can't see if parent dir %s exists", dir)
-		return err
-	}
-
-	if !exists {
-		err = os.MkdirAll(dir, PermDir)
-		if err != nil {
-			G.Log.Errorf("Can't make parent dir %s", dir)
-			return err
-		}
+	dir, err := util.MakeParentDirs(filename, PermDir)
+	if dir != "" {
 		G.Log.Debug("Created parent directory %s", dir)
 	}
-	return nil
+	return err
 }
 
 func FastByteArrayEq(a, b []byte) bool {
@@ -162,39 +143,6 @@ func DrainPipe(rc io.Reader, sink func(string)) error {
 	return scanner.Err()
 }
 
-type SafeWriter interface {
-	GetFilename() string
-	WriteTo(io.Writer) (int64, error)
-}
-
-// SafeWriteToFile to safely write to a file. Use mode=0 for default permissions.
-func SafeWriteToFile(t SafeWriter, mode os.FileMode) error {
-	fn := t.GetFilename()
-	G.Log.Debug(fmt.Sprintf("+ Writing to %s", fn))
-	tmpfn, tmp, err := OpenTempFile(fn, "", mode)
-	G.Log.Debug(fmt.Sprintf("| Temporary file generated: %s", tmpfn))
-	if err != nil {
-		return err
-	}
-
-	_, err = t.WriteTo(tmp)
-	if err == nil {
-		err = tmp.Close()
-		if err == nil {
-			err = os.Rename(tmpfn, fn)
-		} else {
-			G.Log.Error(fmt.Sprintf("Error closing temporary file %s: %s", tmpfn, err))
-			os.Remove(tmpfn)
-		}
-	} else {
-		G.Log.Error(fmt.Sprintf("Error writing temporary file %s: %s", tmpfn, err))
-		tmp.Close()
-		os.Remove(tmpfn)
-	}
-	G.Log.Debug(fmt.Sprintf("- Wrote to %s -> %s", fn, ErrToOk(err)))
-	return err
-}
-
 // Pluralize returns pluralized string with value.
 // For example,
 //   Pluralize(1, "zebra", "zebras", true) => "1 zebra"
@@ -247,12 +195,9 @@ func IsValidHostname(s string) bool {
 	return true
 }
 
+// Deprecated; Use util.RandBytes
 func RandBytes(length int) ([]byte, error) {
-	buf := make([]byte, length)
-	if _, err := rand.Read(buf); err != nil {
-		return nil, err
-	}
-	return buf, nil
+	return util.RandBytes(length)
 }
 
 func XORBytes(dst, a, b []byte) int {
@@ -369,17 +314,9 @@ func IsDirEmpty(dir string) (bool, error) {
 	return false, err // Either not empty or error, suits both cases
 }
 
-// RandString returns random (base32) string with prefix.
+// Deprecated; Use util.RandString
 func RandString(prefix string, numbytes int) (string, error) {
-	buf, err := RandBytes(numbytes)
-	if err != nil {
-		return "", err
-	}
-	str := base32.StdEncoding.EncodeToString(buf)
-	if prefix != "" {
-		str = strings.Join([]string{prefix, str}, "")
-	}
-	return str, nil
+	return util.RandString(prefix, numbytes)
 }
 
 func Trace(log logger.Logger, msg string, f func() error) func() {

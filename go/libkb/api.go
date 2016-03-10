@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/keybase/client/go/util"
 	jsonw "github.com/keybase/go-jsonw"
 )
 
@@ -207,7 +208,7 @@ func doRequestShared(api Requester, arg APIArg, req *http.Request, wantJSONRes b
 	internalResp, err := cli.cli.Do(req)
 	defer func() {
 		if internalResp != nil && err != nil {
-			DiscardAndCloseBody(internalResp)
+			util.DiscardAndCloseBody(internalResp)
 		}
 	}()
 
@@ -438,7 +439,7 @@ func (a *InternalAPIEngine) GetDecode(arg APIArg, v APIResponseWrapper) error {
 	if err != nil {
 		return err
 	}
-	defer DiscardAndCloseBody(resp)
+	defer util.DiscardAndCloseBody(resp)
 	dec := json.NewDecoder(resp.Body)
 	if err = dec.Decode(&v); err != nil {
 		return err
@@ -487,7 +488,7 @@ func (a *InternalAPIEngine) PostDecode(arg APIArg, v APIResponseWrapper) error {
 	if err != nil {
 		return err
 	}
-	defer DiscardAndCloseBody(resp)
+	defer util.DiscardAndCloseBody(resp)
 	dec := json.NewDecoder(resp.Body)
 	if err = dec.Decode(&v); err != nil {
 		return err
@@ -512,7 +513,7 @@ func (a *InternalAPIEngine) DoRequest(arg APIArg, req *http.Request) (*APIRes, e
 	if err != nil {
 		return nil, err
 	}
-	defer DiscardAndCloseBody(resp)
+	defer util.DiscardAndCloseBody(resp)
 
 	status, err := jw.AtKey("status").ToDictionary()
 	if err != nil {
@@ -583,7 +584,7 @@ func (api *ExternalAPIEngine) DoRequest(
 	if err != nil {
 		return
 	}
-	defer DiscardAndCloseBody(resp)
+	defer util.DiscardAndCloseBody(resp)
 
 	switch restype {
 	case XAPIResJSON:

@@ -16,12 +16,12 @@ import (
 	"time"
 
 	"github.com/blang/semver"
-	"github.com/keybase/client/go/libkb"
 	"github.com/keybase/client/go/logger"
 	"github.com/keybase/client/go/lsof"
 	keybase1 "github.com/keybase/client/go/protocol"
 	zip "github.com/keybase/client/go/tools/zip"
 	"github.com/keybase/client/go/updater/sources"
+	"github.com/keybase/client/go/util"
 	"golang.org/x/net/context"
 )
 
@@ -34,8 +34,12 @@ type Updater struct {
 	cancelPrompt context.CancelFunc
 }
 
+type UpdateUI interface {
+	keybase1.UpdateUiInterface
+}
+
 type Context interface {
-	GetUpdateUI() (libkb.UpdateUI, error)
+	GetUpdateUI() (UpdateUI, error)
 	AfterUpdateApply(willRestart bool) error
 	Verify(r io.Reader, signature string) error
 }
@@ -51,6 +55,7 @@ type Config interface {
 	SetUpdateLastChecked(t keybase1.Time) error
 	GetRunModeAsString() string
 	GetMountDir() string
+	GetDefaultUpdaterInstructions() (string, error)
 }
 
 func NewUpdater(options keybase1.UpdateOptions, source sources.UpdateSource, config Config, log logger.Logger) *Updater {
@@ -109,7 +114,7 @@ func (u *Updater) checkForUpdate(skipAssetDownload bool, force bool, requested b
 	// Update instruction might be empty, if so we'll fill in with the default
 	// instructions for the platform.
 	if update.Instructions == nil || *update.Instructions == "" {
-		instructions, err := libkb.PlatformSpecificUpgradeInstructionsString()
+		instructions, err := u.config.GetDefaultUpdaterInstructions()
 		if err != nil {
 			u.log.Errorf("Error trying to get update instructions: %s", err)
 		}
@@ -181,7 +186,7 @@ func (u *Updater) checkDigest(digest string, localPath string) error {
 	if digest == "" {
 		return fmt.Errorf("Missing digest")
 	}
-	calcDigest, err := libkb.DigestForFileAtPath(localPath)
+	calcDigest, err := util.DigestForFileAtPath(localPath)
 	if err != nil {
 		return err
 	}
@@ -200,7 +205,7 @@ func (u *Updater) downloadAsset(asset keybase1.Asset) (fpath string, cached bool
 
 	filename := asset.Name
 	fpath = pathForUpdaterFilename(filename)
-	err = libkb.MakeParentDirs(fpath)
+	_, err = util.MakeParentDirs(fpath, 0700)
 	if err != nil {
 		return
 	}
@@ -250,7 +255,7 @@ func (u *Updater) downloadAsset(asset keybase1.Asset) (fpath string, cached bool
 		err = fmt.Errorf("No response")
 		return
 	}
-	defer libkb.DiscardAndCloseBody(resp)
+	defer util.DiscardAndCloseBody(resp)
 	if resp.StatusCode == http.StatusNotModified {
 		u.log.Info("Using cached file: %s", fpath)
 		cached = true
@@ -295,7 +300,7 @@ func (u *Updater) downloadAsset(asset keybase1.Asset) (fpath string, cached bool
 }
 
 func (u *Updater) save(savePath string, resp http.Response) error {
-	file, err := os.OpenFile(savePath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, libkb.PermFile)
+	file, err := os.OpenFile(savePath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
 		return err
 	}
@@ -465,9 +470,9 @@ func (u *Updater) update(ctx Context, force bool, requested bool) (update *keyba
 	return
 }
 
-func (u *Updater) updateUI(ctx Context) (updateUI libkb.UpdateUI, err error) {
+func (u *Updater) updateUI(ctx Context) (updateUI UpdateUI, err error) {
 	if ctx == nil {
-		err = libkb.NoUIError{Which: "Update"}
+		err = fmt.Errorf("No Update UI was available")
 		return
 	}
 
@@ -514,15 +519,15 @@ func (u *Updater) promptForUpdateAction(ctx Context, update keybase1.Update) (er
 	switch updatePromptResponse.Action {
 	case keybase1.UpdateAction_UPDATE:
 	case keybase1.UpdateAction_SKIP:
-		err = libkb.NewCanceledError("Skipped update")
+		err = fmt.Errorf("Skipped update")
 		u.config.SetUpdatePreferenceSkip(update.Version)
 	case keybase1.UpdateAction_SNOOZE:
-		err = libkb.NewCanceledError("Snoozed update")
+		err = fmt.Errorf("Snoozed update")
 		u.config.SetUpdatePreferenceSnoozeUntil(updatePromptResponse.SnoozeUntil)
 	case keybase1.UpdateAction_CANCEL:
-		err = libkb.NewCanceledError("Canceled by user")
+		err = fmt.Errorf("Canceled by user")
 	default:
-		err = libkb.NewCanceledError("Canceled by service")
+		err = fmt.Errorf("Canceled by service")
 	}
 	return
 }
@@ -566,13 +571,13 @@ func (u *Updater) promptForAppInUse(ctx Context, update keybase1.Update, process
 	u.log.Debug("Update (app in use) response: %#v", updateInUseResponse)
 	switch updateInUseResponse.Action {
 	case keybase1.UpdateAppInUseAction_CANCEL:
-		return libkb.NewCanceledError("Canceled by user")
+		return fmt.Errorf("Canceled by user")
 	case keybase1.UpdateAppInUseAction_FORCE:
 		// Continue
 	case keybase1.UpdateAppInUseAction_KILL_PROCESSES:
 		panic("Unimplemented") // TODO: Kill processes
 	default:
-		return libkb.NewCanceledError("Canceled by service")
+		return fmt.Errorf("Canceled by service")
 	}
 	return nil
 }
@@ -621,7 +626,7 @@ func (u *Updater) checkInUse(ctx Context, update keybase1.Update) error {
 
 func (u *Updater) checkRestart(ctx Context) (updateQuitResponse keybase1.UpdateQuitRes, err error) {
 	if ctx == nil {
-		err = libkb.NoUIError{Which: "Update"}
+		err = fmt.Errorf("No Update UI available")
 		return
 	}
 
@@ -725,7 +730,7 @@ func (u *Updater) verifySignature(ctx Context, update keybase1.Update) error {
 
 // waitForUI waits for a UI to be available. A UI might be missing for a few
 // seconds between restarts.
-func (u *Updater) waitForUI(ctx Context, wait time.Duration) (updateUI libkb.UpdateUI, err error) {
+func (u *Updater) waitForUI(ctx Context, wait time.Duration) (updateUI UpdateUI, err error) {
 	t := time.Now()
 	i := 1
 	for time.Now().Sub(t) < wait {

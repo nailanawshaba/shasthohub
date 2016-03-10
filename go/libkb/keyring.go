@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/keybase/client/go/util"
 	"github.com/keybase/go-crypto/openpgp"
 	triplesec "github.com/keybase/go-triplesec"
 )
@@ -138,7 +139,7 @@ func (k KeyringFile) WriteTo(w io.Writer) (int64, error) {
 func (k KeyringFile) GetFilename() string { return k.filename }
 
 func (k KeyringFile) Save() error {
-	return SafeWriteToFile(k, 0)
+	return util.SafeWriteToFile(k, 0, k.G().Log)
 }
 
 type SecretKeyType int

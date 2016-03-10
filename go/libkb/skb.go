@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	keybase1 "github.com/keybase/client/go/protocol"
+	"github.com/keybase/client/go/util"
 	triplesec "github.com/keybase/go-triplesec"
 )
 
@@ -637,7 +638,7 @@ func (k *SKBKeyringFile) Save() error {
 	if !k.dirty {
 		return nil
 	}
-	if err := SafeWriteToFile(*k, 0); err != nil {
+	if err := util.SafeWriteToFile(*k, 0, G.Log); err != nil {
 		return err
 	}
 	k.dirty = false

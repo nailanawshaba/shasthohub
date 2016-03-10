@@ -18,8 +18,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/keybase/client/go/libkb"
 	"github.com/keybase/client/go/logger"
+	"github.com/keybase/client/go/util"
 )
 
 // Service defines a service
@@ -163,13 +163,13 @@ func (s Service) install(p Plist, plistDest string) error {
 	plist := p.plistXML()
 
 	// See GH issue: https://github.com/keybase/client/pull/1399#issuecomment-164810645
-	if err := libkb.MakeParentDirs(plistDest); err != nil {
+	if _, err := util.MakeParentDirs(plistDest, 0700); err != nil {
 		return err
 	}
 
 	s.info("Saving %s", plistDest)
-	file := libkb.NewFile(plistDest, []byte(plist), 0644)
-	if err := file.Save(); err != nil {
+	file := util.NewFile(plistDest, []byte(plist), 0644)
+	if err := file.Save(s.log); err != nil {
 		return err
 	}
 

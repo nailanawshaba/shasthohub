@@ -12,6 +12,7 @@ import (
 	"github.com/keybase/client/go/libkb"
 	"github.com/keybase/client/go/logger"
 	keybase1 "github.com/keybase/client/go/protocol"
+	"github.com/keybase/client/go/util"
 )
 
 // RemoteUpdateSource finds releases/updates from custom url feed (used primarily for testing)
@@ -49,7 +50,7 @@ func (k RemoteUpdateSource) FindUpdate(options keybase1.UpdateOptions) (update *
 	k.log.Info("Request %#v", sourceURL)
 	resp, err := client.Do(req)
 	if resp != nil {
-		defer libkb.DiscardAndCloseBody(resp)
+		defer util.DiscardAndCloseBody(resp)
 	}
 	if err != nil {
 		return

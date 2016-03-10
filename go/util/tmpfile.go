@@ -1,7 +1,7 @@
 // Copyright 2015 Keybase, Inc. All rights reserved. Use of
 // this source code is governed by the included BSD license.
 
-package libkb
+package util
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ func OpenTempFile(prefix string, suffix string, mode os.FileMode) (string, *os.F
 	}
 	flags := os.O_WRONLY | os.O_CREATE | os.O_EXCL
 	if mode == 0 {
-		mode = PermFile
+		mode = 0600
 	}
 	file, err := os.OpenFile(filename, flags, mode)
 	return filename, file, err

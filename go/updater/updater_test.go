@@ -12,9 +12,9 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/keybase/client/go/libkb"
 	"github.com/keybase/client/go/logger"
 	keybase1 "github.com/keybase/client/go/protocol"
+	"github.com/keybase/client/go/util"
 	"golang.org/x/net/context"
 )
 
@@ -39,7 +39,7 @@ func (u testUpdateUI) UpdateQuit(_ context.Context) (keybase1.UpdateQuitRes, err
 	return keybase1.UpdateQuitRes{Quit: false}, nil
 }
 
-func (u testUpdateUI) GetUpdateUI() (libkb.UpdateUI, error) {
+func (u testUpdateUI) GetUpdateUI() (UpdateUI, error) {
 	return u, nil
 }
 
@@ -52,7 +52,7 @@ func (u testUpdateUI) UpdateAppInUse(context.Context, keybase1.UpdateAppInUseArg
 }
 
 func (u testUpdateUI) Verify(r io.Reader, signature string) error {
-	digest, err := libkb.Digest(r)
+	digest, err := util.Digest(r)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (u testUpdateSource) FindUpdate(config keybase1.UpdateOptions) (*keybase1.U
 	}
 
 	if path != "" {
-		digest, err := libkb.DigestForFileAtPath(path)
+		digest, err := util.DigestForFileAtPath(path)
 		if err != nil {
 			return nil, err
 		}
@@ -155,6 +155,10 @@ func (c testConfig) GetMountDir() string {
 	return filepath.Join(os.Getenv("HOME"), "keybase.test")
 }
 
+func (c testConfig) GetDefaultUpdaterInstructions() (string, error) {
+	return "Default update instructions", nil
+}
+
 func NewDefaultTestUpdateConfig() keybase1.UpdateOptions {
 	return keybase1.UpdateOptions{
 		Version:             "1.0.0",
@@ -211,7 +215,7 @@ func TestChangeUpdateFailSignature(t *testing.T) {
 	changeAsset := func(u *keybase1.Update, path string) {
 		// Write new file over existing (fix digest but not signature)
 		createTestUpdateFile(path, u.Version)
-		digest, _ := libkb.DigestForFileAtPath(path)
+		digest, _ := util.DigestForFileAtPath(path)
 		t.Logf("Wrote a new update file: %s (%s)", path, digest)
 		u.Asset.Digest = digest
 	}

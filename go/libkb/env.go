@@ -926,3 +926,7 @@ func (e *Env) GetMountDir() string {
 func (e *Env) GetAppStartMode() AppStartMode {
 	return e.config.GetAppStartMode()
 }
+
+func (e *Env) GetDefaultUpdaterInstructions() (string, error) {
+	return PlatformSpecificUpgradeInstructionsString()
+}
