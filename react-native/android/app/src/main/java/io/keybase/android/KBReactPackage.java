@@ -13,6 +13,7 @@ import java.util.List;
 import io.keybase.android.components.VisiblePassReactEditTextManager;
 import io.keybase.android.modules.KeybaseEngine;
 import io.keybase.android.modules.KillableModule;
+import io.keybase.android.modules.ShakeModule;
 
 public class KBReactPackage implements com.facebook.react.ReactPackage {
     private List<KillableModule> killableModules = new ArrayList<>();
@@ -27,10 +28,13 @@ public class KBReactPackage implements com.facebook.react.ReactPackage {
         }
 
         final KeybaseEngine kbEngine = new KeybaseEngine(reactApplicationContext);
+        final ShakeModule shakeModule = new ShakeModule(reactApplicationContext);
         killableModules.add(kbEngine);
+        killableModules.add(shakeModule);
 
         List<NativeModule> modules = new ArrayList<>();
         modules.add(kbEngine);
+        modules.add(shakeModule);
 
         return modules;
     }

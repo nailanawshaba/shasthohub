@@ -1,11 +1,14 @@
 package io.keybase.android;
 
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.content.Intent;
+import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.KeyEvent;
 
 import com.burnweb.rnpermissions.RNPermissionsPackage;
@@ -13,6 +16,7 @@ import com.eguma.barcodescanner.BarcodeScanner;
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.ReactRootView;
+import com.facebook.react.common.ShakeDetector;
 import com.facebook.react.shell.MainReactPackage;
 
 import java.io.IOException;
@@ -32,6 +36,8 @@ public class MainActivity extends ReactActivity {
 
     private ReactInstanceManager mReactInstanceManager;
     private ReactRootView mReactRootView;
+    private ShakeDetector shakeDetector;
+    private boolean isShakeDetectorStarted = false;
 
     /**
      * Returns the name of the main component registered from JavaScript.

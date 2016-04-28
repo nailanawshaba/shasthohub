@@ -21,6 +21,8 @@ import ListenLogUi from './native/listen-log-ui'
 import {listenForNotifications} from './actions/notifications'
 import hello from './util/hello'
 
+import onShake from './common-adapters/shake'
+
 const tabs: {[key: VisibleTab]: {module: any}} = {
   [profileTab]: {module: Login, name: 'Login'},
   [devicesTab]: {module: Devices, name: 'Devices'},
@@ -62,6 +64,8 @@ class Nav extends Component {
     super(props)
     this.props.bootstrap()
     this.props.listenForNotifications()
+
+    onShake(() => console.log("shake it like it's hot!"))
 
     // Handle logUi.log
     ListenLogUi()
