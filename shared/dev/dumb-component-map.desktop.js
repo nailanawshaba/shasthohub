@@ -14,7 +14,7 @@ import ProfileMap from '../profile/dumb'
 import SearchMap from '../search/dumb'
 import type {DumbComponentMap} from './dumb'
 
-const map : DumbComponentMap = {
+const map: DumbComponentMap = {
   ...CommonMap,
   ...DevicesMap,
   ...LoginMap,

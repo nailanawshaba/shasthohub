@@ -3,41 +3,14 @@
 import React, {Component} from 'react'
 
 import type {IconType} from '../../common-adapters/icon'
-
-export type ExtraInfo = {
-  service: 'external',
-  icon: IconType,
-  serviceUsername: string, // i.e. with twitter it would be malgorithms
-  serviceAvatar: ?string, // i.e. with twitter it would be their twitter avatar url
-  fullNameOnService: ?string // Say with twitter we know malgorithms is "Chris Coyne"
-} | {
-  service: 'keybase',
-  username: string,
-  fullName: string,
-  isFollowing: boolean
-} | {
-  service: 'none',
-  fullName: string
-}
-
-export type SearchResult = {
-  service: 'keybase',
-  username: string,
-  isFollowing: boolean,
-  extraInfo: ExtraInfo
-} | {
-  service: 'external',
-  icon: IconType,
-  username: string,
-  extraInfo: ExtraInfo
-}
+import type {SearchResult} from '../../constants/search'
 
 export type Props = {
   searchHintText: string,
   searchText: ?string,
   searchIcon: IconType,
-  results: Array<SearchResult>
+  results: Array<SearchResult>,
+  onSearch: (text: string) => void
 }
 
 export default class Render extends Component<void, Props, void> { }
-
