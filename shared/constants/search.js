@@ -1,6 +1,6 @@
 // @flow
 
-import type {IconType} from '../../common-adapters/icon'
+import type {IconType} from '../common-adapters/icon'
 import type {TypedAction} from '../constants/types/flux'
 
 export type ExtraInfo = {
@@ -39,3 +39,7 @@ export type Results = TypedAction<'search:results', {term: string, results: Arra
 
 export type SearchActions = Search | Results
 export type SearchPlatforms = 'Keybase' | 'Twitter' | 'Github' | 'Reddit' | 'Coinbase' | 'Hackernews'
+
+export function platformToIcon (platform: SearchPlatforms): any {
+  return 'TODO'
+}

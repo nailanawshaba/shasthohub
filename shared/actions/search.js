@@ -1,8 +1,10 @@
 // @flow
 // import engine from '../engine'
 import * as Constants from '../constants/search'
+import {platformToIcon} from '../constants/search'
+import {filterNull} from '../util/arrays'
 import type {TypedAsyncAction} from '../constants/types/flux'
-import type {Search, Results, SearchResult, SearchPlatforms} from '../constants/search'
+import type {Search, Results, SearchResult, ExtraInfo, SearchPlatforms} from '../constants/search'
 import type {UserSearchResult} from '../constants/types/flow-types'
 
 type RawResult = Array<{
@@ -23,8 +25,36 @@ type RawResult = Array<{
   }
 }>
 
+
+function parseFullName (rr: RawResult): string {
+  if (rr.keybase) {
+    return rr.keybase.full_name || ''
+  } else if (rr.service) {
+    return rr.service.full_name || ''
+  }
+
+  return ''
+}
+
+// TODO(MM) fix type
+function parseExtraInfo (platform: SearchPlatforms, rr: RawResult): any /* ExtraInfo */ {
+  const fullName = parseFullName(rr)
+
+  if (platform === 'Keybase') {
+    // TODO (mm) We don't currently get non keybase extra info when searching in keybase
+
+    return {
+      service: 'none',
+      fullName
+    }
+  }
+  if (rr.service) {
+  }
+}
+
 function rawResults (term: string, platform: SearchPlatforms, rresults: Array<RawResult>) : Results {
-  const r: Array<SearchResult> = rresults.map(rr => {
+  const results: Array<SearchResult> = filterNull(rresults.map(rr => {
+    console.log('rr:', rr)
     if (platform === 'Keybase') {
       if (rr.keybase) {
         return {
@@ -48,12 +78,14 @@ function rawResults (term: string, platform: SearchPlatforms, rresults: Array<Ra
           }
         }
       }
+
+      return null
     }
-  })
+  }))
 
   return {
     type: Constants.results,
-    payload: {term, results: r}
+    payload: {term, results}
   }
 }
 

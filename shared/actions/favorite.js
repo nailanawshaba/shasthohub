@@ -97,7 +97,7 @@ let previousNotify = null
 
 export function favoriteList (): (dispatch: Dispatch) => void {
   return (dispatch, getState) => {
-    const params: FavoriteFavoriteListRpc = {
+    const params: FavoriteGetFavoritesRpc = {
       param: {},
       incomingCallMap: {},
       method: 'favorite.getFavorites',
