@@ -24,6 +24,9 @@ canary="s3://${BUCKET_NAME:-prerelease.keybase.io}/build_canary_file"
 echo build canary | s3cmd put - "$canary"
 s3cmd del "$canary"
 
+# Same with the GitHub token.
+cp /GITHUB_TOKEN/.github_token ~
+
 # Copy the SSH configs to the home dir. We copy instead of sharing directly
 # from the host, because SSH complains if ~/.ssh/config is owned by anyone
 # other than the current user. Cloning repos below will test these credentials.
