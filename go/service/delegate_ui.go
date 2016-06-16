@@ -48,8 +48,10 @@ func (d *DelegateUICtlHandler) RegisterUpdateUI(_ context.Context) error {
 	return nil
 }
 
-func (d *DelegateUICtlHandler) RegisterGregorUI(_ context.Context) error {
-	d.G().UIRouter.SetUI(d.id, libkb.GregorUIKind)
+func (d *DelegateUICtlHandler) RegisterGregorFirehose(_ context.Context) error {
+	if d.G().GregorListener != nil {
+		d.G().GregorListener.PushHandler(newGregorFirehoseHandler(d.G(), d.id, d.xp))
+	}
 	return nil
 }
 
