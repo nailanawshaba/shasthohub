@@ -23,7 +23,8 @@
     },
     "reconnected": {
       "request": [],
-      "response": null
+      "response": null,
+      "oneway": true
     }
   },
   "namespace": "keybase.1"

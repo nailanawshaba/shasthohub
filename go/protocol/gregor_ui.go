@@ -50,7 +50,7 @@ func GregorUIProtocol(i GregorUIInterface) rpc.Protocol {
 					err = i.Reconnected(ctx)
 					return
 				},
-				MethodType: rpc.MethodCall,
+				MethodType: rpc.MethodNotify,
 			},
 		},
 	}
@@ -67,6 +67,6 @@ func (c GregorUIClient) PushMessage(ctx context.Context, messages []gregor1.Mess
 }
 
 func (c GregorUIClient) Reconnected(ctx context.Context) (err error) {
-	err = c.Cli.Call(ctx, "keybase.1.gregorUI.reconnected", []interface{}{ReconnectedArg{}}, nil)
+	err = c.Cli.Notify(ctx, "keybase.1.gregorUI.reconnected", []interface{}{ReconnectedArg{}})
 	return
 }
