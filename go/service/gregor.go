@@ -279,6 +279,8 @@ func (g *gregorHandler) OnConnect(ctx context.Context, conn *rpc.Connection,
 		return err
 	}
 
+	g.genericHandleReconnection()
+
 	// Sync down events since we have been dead
 	replayedMsgs, consumedMsgs, err := g.serverSync(ctx, gregor1.IncomingClient{Cli: cli})
 	if err != nil {
@@ -323,23 +325,39 @@ func (g *gregorHandler) ShouldRetryOnConnect(err error) bool {
 	return true
 }
 
-func (g *gregorHandler) forwardMessage(m gregor1.Message) {
+func (g *gregorHandler) getGregorUI() keybase1.GregorUIInterface {
 	if g.G().UIRouter == nil {
 		g.Debug("no UI router available when broadcast message arrived")
-		return
+		return nil
 	}
 	ui, err := g.G().UIRouter.GetGregorUI()
 	if err != nil {
-		g.Warning("error fetch a gregor UI router: %s", err)
-		return
+		g.Warning("error fetching a push UI router: %s", err)
+		return nil
 	}
 	if ui == nil {
-		g.Debug("no-op on message, since no Gregor UIs are registerd")
-		return
+		g.Debug("no-op on message, since no push UIs are registerd")
+		return nil
 	}
-	err = ui.PushMessage(context.Background(), []gregor1.Message{m})
-	if err != nil {
-		g.Warning("Error pushing message to gregor UI: %s", err)
+	return ui
+}
+
+func (g *gregorHandler) genericHandleReconnection() {
+	if gui := g.getGregorUI(); gui != nil {
+		err := gui.Reconnected(context.Background())
+		if err != nil {
+			g.Warning("Error pushing message to push UI: %s", err)
+		}
+	}
+	return
+}
+
+func (g *gregorHandler) genericForwardMessage(m gregor1.Message) {
+	if gui := g.getGregorUI(); gui != nil {
+		err := gui.PushMessage(context.Background(), []gregor1.Message{m})
+		if err != nil {
+			g.Warning("Error pushing message to push UI: %s", err)
+		}
 	}
 	return
 }
@@ -354,7 +372,7 @@ func (g *gregorHandler) BroadcastMessage(ctx context.Context, m gregor1.Message)
 	g.gregorCli.StateMachineConsumeMessage(m)
 
 	// Forward to electron or whichever UI is listening for gregor updates
-	g.forwardMessage(m)
+	g.genericForwardMessage(m)
 
 	// Handle the message
 	ibm := m.ToInBandMessage()

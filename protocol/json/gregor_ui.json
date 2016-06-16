@@ -20,6 +20,10 @@
         }
       ],
       "response": null
+    },
+    "reconnected": {
+      "request": [],
+      "response": null
     }
   },
   "namespace": "keybase.1"

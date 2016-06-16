@@ -13,8 +13,12 @@ type PushMessageArg struct {
 	Messages []gregor1.Message `codec:"messages" json:"messages"`
 }
 
+type ReconnectedArg struct {
+}
+
 type GregorUIInterface interface {
 	PushMessage(context.Context, []gregor1.Message) error
+	Reconnected(context.Context) error
 }
 
 func GregorUIProtocol(i GregorUIInterface) rpc.Protocol {
@@ -37,6 +41,17 @@ func GregorUIProtocol(i GregorUIInterface) rpc.Protocol {
 				},
 				MethodType: rpc.MethodCall,
 			},
+			"reconnected": {
+				MakeArg: func() interface{} {
+					ret := make([]ReconnectedArg, 1)
+					return &ret
+				},
+				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
+					err = i.Reconnected(ctx)
+					return
+				},
+				MethodType: rpc.MethodCall,
+			},
 		},
 	}
 }
@@ -48,5 +63,10 @@ type GregorUIClient struct {
 func (c GregorUIClient) PushMessage(ctx context.Context, messages []gregor1.Message) (err error) {
 	__arg := PushMessageArg{Messages: messages}
 	err = c.Cli.Call(ctx, "keybase.1.gregorUI.pushMessage", []interface{}{__arg}, nil)
+	return
+}
+
+func (c GregorUIClient) Reconnected(ctx context.Context) (err error) {
+	err = c.Cli.Call(ctx, "keybase.1.gregorUI.reconnected", []interface{}{ReconnectedArg{}}, nil)
 	return
 }

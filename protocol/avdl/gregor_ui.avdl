@@ -3,4 +3,5 @@
 protocol gregorUI {
   import idl "github.com/keybase/gregor/protocol/gregor1" as gregor1;
   void pushMessage(array<gregor1.Message> messages);
+  void reconnected();
 }
