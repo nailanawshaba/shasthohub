@@ -415,7 +415,6 @@ type UIRouter interface {
 	GetUpdateUI() (UpdateUI, error)
 	GetRekeyUI() (keybase1.RekeyUIInterface, int, error)
 	GetRekeyUINoSessionID() (keybase1.RekeyUIInterface, error)
-	GetGregorUI() (keybase1.GregorUIInterface, error)
 
 	Shutdown()
 }

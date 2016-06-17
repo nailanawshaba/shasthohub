@@ -53,14 +53,14 @@ func (h *IdentifyUIHandler) toggleAlwaysAlive(alive bool) {
 type gregorFirehoseHandler struct {
 	libkb.Contextified
 	connID libkb.ConnectionID
-	cli    rpc.Client
+	cli    keybase1.GregorUIClient
 }
 
 func newGregorFirehoseHandler(g *libkb.GlobalContext, connID libkb.ConnectionID, xp rpc.Transporter) *gregorFirehoseHandler {
 	return &gregorFirehoseHandler{
 		Contextified: libkb.NewContextified(g),
 		connID:       connID,
-		cli:          keybase1.GregorUIClient{Cli: rpc.NewClient(xp)},
+		cli:          keybase1.GregorUIClient{Cli: rpc.NewClient(xp, libkb.ErrorUnwrapper{})},
 	}
 }
 
@@ -224,17 +224,36 @@ func (g *gregorHandler) PushHandler(handler libkb.GregorInBandMessageHandler) {
 	}
 }
 
+// PushFirehoseHandler pushes a new firehose handler onto the list of currently
+// active firehose handles. We can have several of these active at once. All
+// get the "firehose" of gregor events. They're removed lazily as their underlying
+// connections die.
 func (g *gregorHandler) PushFirehoseHandler(handler libkb.GregorFirehoseHandler) {
 	g.Lock()
 	defer g.Unlock()
 	g.firehoseHandlers = append(g.firehoseHandlers, handler)
 }
 
-func (g *gregorHandler) iterateOverFirehoseHandlers(f func(h gregorFirehoseHandler)) {
+// iterateOverFirehoseHandlers applies the function f to all live fireshose handlers
+// and then resets the list to only include the live ones.
+func (g *gregorHandler) iterateOverFirehoseHandlers(f func(h libkb.GregorFirehoseHandler)) {
+	var freshHandlers []libkb.GregorFirehoseHandler
+	for _, h := range g.firehoseHandlers {
+		if h.IsAlive() {
+			f(h)
+			freshHandlers = append(freshHandlers, h)
+		}
+	}
+	g.firehoseHandlers = freshHandlers
+	return
+}
 
-	// XXXX work starting here....
-	// var v []gregor1.
+func (g *gregorHandler) pushMessagesIntoFirehoses(m []gregor1.Message) {
+	g.iterateOverFirehoseHandlers(func(h libkb.GregorFirehoseHandler) { h.PushMessages(m) })
+}
 
+func (g *gregorHandler) sendReconnectsToFirehoses() {
+	g.iterateOverFirehoseHandlers(func(h libkb.GregorFirehoseHandler) { h.Reconnected() })
 }
 
 // replayInBandMessages will replay all the messages in the current state from
@@ -324,7 +343,7 @@ func (g *gregorHandler) OnConnect(ctx context.Context, conn *rpc.Connection,
 		return err
 	}
 
-	g.genericHandleReconnection()
+	g.sendReconnectsToFirehoses()
 
 	// Sync down events since we have been dead
 	replayedMsgs, consumedMsgs, err := g.serverSync(ctx, gregor1.IncomingClient{Cli: cli})
@@ -370,43 +389,6 @@ func (g *gregorHandler) ShouldRetryOnConnect(err error) bool {
 	return true
 }
 
-func (g *gregorHandler) getGregorUI() keybase1.GregorUIInterface {
-	if g.G().UIRouter == nil {
-		g.Debug("no UI router available when broadcast message arrived")
-		return nil
-	}
-	ui, err := g.G().UIRouter.GetGregorUI()
-	if err != nil {
-		g.Warning("error fetching a push UI router: %s", err)
-		return nil
-	}
-	if ui == nil {
-		g.Debug("no-op on message, since no push UIs are registerd")
-		return nil
-	}
-	return ui
-}
-
-func (g *gregorHandler) genericHandleReconnection() {
-	if gui := g.getGregorUI(); gui != nil {
-		err := gui.Reconnected(context.Background())
-		if err != nil {
-			g.Warning("Error pushing message to push UI: %s", err)
-		}
-	}
-	return
-}
-
-func (g *gregorHandler) genericForwardMessage(m gregor1.Message) {
-	if gui := g.getGregorUI(); gui != nil {
-		err := gui.PushMessage(context.Background(), []gregor1.Message{m})
-		if err != nil {
-			g.Warning("Error pushing message to push UI: %s", err)
-		}
-	}
-	return
-}
-
 // BroadcastMessage is called when we receive a new messages from gregord. Grabs
 // the lock protect the state machine and handleInBandMessage
 func (g *gregorHandler) BroadcastMessage(ctx context.Context, m gregor1.Message) error {
@@ -417,7 +399,7 @@ func (g *gregorHandler) BroadcastMessage(ctx context.Context, m gregor1.Message)
 	g.gregorCli.StateMachineConsumeMessage(m)
 
 	// Forward to electron or whichever UI is listening for gregor updates
-	g.genericForwardMessage(m)
+	g.pushMessagesIntoFirehoses([]gregor1.Message{m})
 
 	// Handle the message
 	ibm := m.ToInBandMessage()

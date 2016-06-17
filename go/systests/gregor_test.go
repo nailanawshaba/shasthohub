@@ -22,7 +22,7 @@ type electronMock struct {
 	reconCh chan struct{}
 }
 
-func (e *electronMock) PushMessage(ctx context.Context, messages []gregor1.Message) (err error) {
+func (e *electronMock) PushMessages(ctx context.Context, messages []gregor1.Message) (err error) {
 	for _, m := range messages {
 		e.msgCh <- m
 	}
@@ -90,7 +90,7 @@ func TestGregorForwardToElectron(t *testing.T) {
 	err = srv.Register(keybase1.GregorUIProtocol(em))
 	check()
 	ncli := keybase1.DelegateUiCtlClient{Cli: cli}
-	err = ncli.RegisterGregorUI(context.TODO())
+	err = ncli.RegisterGregorFirehose(context.TODO())
 	check()
 
 	// Spin until gregor comes up; it should come up after signup
@@ -108,7 +108,7 @@ func TestGregorForwardToElectron(t *testing.T) {
 
 	select {
 	case <-em.reconCh:
-	case <-time.After(10 * time.Second):
+	case <-time.After(3 * time.Second):
 		t.Fatalf("never got a reconnect message")
 	}
 
