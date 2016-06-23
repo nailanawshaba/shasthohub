@@ -1,7 +1,7 @@
 // Copyright 2015 Keybase, Inc. All rights reserved. Use of
 // this source code is governed by the included BSD license.
 
-package keybase
+package bind
 
 import (
 	"encoding/base64"
@@ -21,52 +21,47 @@ var logSendContext libkb.LogSendContext
 var kbfsConfig libkbfs.Config
 
 // Init ServerURI should match run mode environment.
-func Init(homeDir string, logFile string, runModeStr string, serverURI string, accessGroupOverride bool) {
-	startOnce.Do(func() {
-		fmt.Println("Go: Initializing")
-		fmt.Printf("Go: Using log: %s\n", logFile)
-		kbCtx := libkb.G
-		kbCtx.Init()
-		usage := libkb.Usage{
-			Config:    true,
-			API:       true,
-			KbKeyring: true,
-		}
-		runMode, err := libkb.StringToRunMode(runModeStr)
-		if err != nil {
-			fmt.Println("Error decoding run mode", err, runModeStr)
-		}
-		config := libkb.AppConfig{HomeDir: homeDir, LogFile: logFile, RunMode: runMode, Debug: true, LocalRPCDebug: "Acsvip", ServerURI: serverURI, SecurityAccessGroupOverride: accessGroupOverride}
-		err = kbCtx.Configure(config, usage)
-		if err != nil {
-			panic(err)
-		}
+func Init(homeDir string, logFile string, runModeStr string, accessGroupOverride bool) error {
+	kbCtx := libkb.G
+	kbCtx.Init()
+	usage := libkb.Usage{
+		Config:    true,
+		API:       true,
+		KbKeyring: true,
+	}
+	runMode, err := libkb.StringToRunMode(runModeStr)
+	if err != nil {
+		return err
+	}
+	config := libkb.AppConfig{HomeDir: homeDir, LogFile: logFile, RunMode: runMode, Debug: true, LocalRPCDebug: "Acsvip", SecurityAccessGroupOverride: accessGroupOverride}
+	err = kbCtx.Configure(config, usage)
+	if err != nil {
+		return err
+	}
 
-		svc := service.NewService(kbCtx, false)
-		svc.StartLoopbackServer()
-		kbCtx.SetService()
-		kbCtx.SetUIRouter(service.NewUIRouter(kbCtx))
+	svc := service.NewService(kbCtx, false)
+	svc.StartLoopbackServer()
+	kbCtx.SetService()
+	kbCtx.SetUIRouter(service.NewUIRouter(kbCtx))
 
-		serviceLog := config.GetLogFile()
-		logs := libkb.Logs{
-			Service: serviceLog,
-		}
+	serviceLog := config.GetLogFile()
+	logs := libkb.Logs{
+		Service: serviceLog,
+	}
 
-		logSendContext = libkb.LogSendContext{
-			Contextified: libkb.NewContextified(kbCtx),
-			Logs:         logs,
-		}
+	logSendContext = libkb.LogSendContext{
+		Contextified: libkb.NewContextified(kbCtx),
+		Logs:         logs,
+	}
 
-		kbfsParams := libkbfs.DefaultInitParams(kbCtx)
-		onInterruptFn := func() {}
-		kbfsConfig, err = libkbfs.Init(kbCtx, kbfsParams, onInterruptFn, kbCtx.Log)
-		if err != nil {
-			panic(err)
-		}
+	kbfsParams := libkbfs.DefaultInitParams(kbCtx)
+	onInterruptFn := func() {}
+	kbfsConfig, err = libkbfs.Init(kbCtx, kbfsParams, onInterruptFn, kbCtx.Log)
+	if err != nil {
+		return err
+	}
 
-		Reset()
-		fmt.Println("Go: Done")
-	})
+	return Reset()
 }
 
 // LogSend sends a log to kb
@@ -125,7 +120,7 @@ func ReadB64() string {
 }
 
 // Reset resets the socket connection
-func Reset() {
+func Reset() bool {
 	if conn != nil {
 		conn.Close()
 	}
@@ -136,5 +131,7 @@ func Reset() {
 
 	if err != nil {
 		reportError(fmt.Errorf("Socket error: %s", err))
+		return false
 	}
+	return true
 }

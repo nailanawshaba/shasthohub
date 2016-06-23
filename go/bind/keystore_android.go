@@ -3,7 +3,7 @@
 
 // +build android
 
-package keybase
+package bind
 
 import "github.com/keybase/client/go/libkb"
 
