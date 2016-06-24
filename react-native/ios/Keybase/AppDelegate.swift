@@ -44,7 +44,7 @@ class AppDelegate: UIResponder {
 
     let logFile = (home as NSString).stringByAppendingPathComponent("ios.log");
 
-    engine = Engine(settings: [
+    engine = try! Engine(settings: [
       "runmode": AppDefault.RunMode.stringValue!,
       "homedir": home,
       "logFile": logFile,

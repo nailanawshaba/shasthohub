@@ -46,7 +46,7 @@ if [ ! -f "$GOPATH/bin/gomobile" ]; then
   gomobile init
 fi
 
-package="github.com/keybase/client/go/loopback"
+package="github.com/keybase/client/go/bind"
 
 if [ "$1" = "ios" ]; then
   ios_dest="$dir/ios/keybase.framework"
