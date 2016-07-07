@@ -9,9 +9,9 @@
 #import "FinderSync.h"
 
 #import <KBKit/KBFinder.h>
-#import <KBKit/KBWorkspace.h>
+#import <CocoaLumberjack/CocoaLumberjack.h>
 
-#define KBLog NSLog
+static const DDLogLevel ddLogLevel = DDLogLevelDebug;
 
 @interface FinderSync ()
 @property KBFinder *finder;
@@ -21,8 +21,12 @@
 
 - (instancetype)init {
   if ((self = [super init])) {
-    [KBWorkspace setupLogging];
-    KBLog(@"FinderSync init");    
+    [DDLog addLogger:DDASLLogger.sharedInstance withLevel:DDLogLevelDebug];
+    DDLogInfo(@"FinderSync init");
+    NSString *mountDir = @"/keybase";
+    DDLogDebug(@"Finder sync using: %@", mountDir);
+    FIFinderSyncController.defaultController.directoryURLs = [NSSet setWithObject:[NSURL fileURLWithPath:mountDir]];
+
     _finder = [[KBFinder alloc] initWithFinderSyncController:FIFinderSyncController.defaultController];
   }
   return self;
@@ -31,17 +35,17 @@
 - (void)beginObservingDirectoryAtURL:(NSURL *)URL {
   // The user is now seeing the container's contents.
   // If they see it in more than one view at a time, we're only told once.
-  KBLog(@"beginObservingDirectoryAtURL:%@", URL.filePathURL);
+  DDLogInfo(@"beginObservingDirectoryAtURL:%@", URL.filePathURL);
 }
 
 - (void)endObservingDirectoryAtURL:(NSURL *)URL {
   // The user is no longer seeing the container's contents.
-  KBLog(@"endObservingDirectoryAtURL:%@", URL.filePathURL);
+  DDLogInfo(@"endObservingDirectoryAtURL:%@", URL.filePathURL);
 }
 
 - (void)requestBadgeIdentifierForURL:(NSURL *)URL {
   [_finder badgeIdForPath:URL.filePathURL.path completion:^(NSString *badgeId) {
-    KBLog(@"Badge for path: %@: %@", URL.filePathURL.path, badgeId);
+    DDLogInfo(@"Badge for path: %@: %@", URL.filePathURL.path, badgeId);
     [FIFinderSyncController.defaultController setBadgeIdentifier:badgeId forURL:URL];
   }];
 }

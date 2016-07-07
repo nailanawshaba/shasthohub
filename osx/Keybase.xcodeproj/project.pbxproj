@@ -24,6 +24,7 @@
 		0057B0C61AE57A7A00BFB0E7 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0057B0C21AE57A7A00BFB0E7 /* main.m */; };
 		0057B0DB1AE57B5900BFB0E7 /* keybase.Helper in Copy Files */ = {isa = PBXBuildFile; fileRef = 0057B0B41AE57A4900BFB0E7 /* keybase.Helper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		006D68101C7D014600B1CA0B /* kbfuse.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 006D680F1C7D014600B1CA0B /* kbfuse.bundle */; };
+		0070D4A01D2EF812002205BC /* FinderSync.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 004624B11B2917AB00E218AC /* FinderSync.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		009E135C1B27654200C72B28 /* ShareViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 009E135B1B27654200C72B28 /* ShareViewController.xib */; };
 		009E136B1B27B39300C72B28 /* icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 009E136A1B27B39300C72B28 /* icon.icns */; };
 		009E136F1B27B39300C72B28 /* ActionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 009E136E1B27B39300C72B28 /* ActionViewController.m */; };
@@ -37,6 +38,7 @@
 		00E1CEF61C4432F900ED3A35 /* Settings.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E1CEF41C4432F900ED3A35 /* Settings.m */; };
 		140F37DCFE61D8AA9A83FF5C /* libPods-keybase.Helper.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AF01BC4A44FA5C6796C1C820 /* libPods-keybase.Helper.a */; };
 		2B53DDCDBBFA7E3B74F64EE3 /* libPods-Status.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ECBDAE14DC630518EBC27C76 /* libPods-Status.a */; };
+		B2F71C62B551EA849BFF4079 /* libPods-FinderSync.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C4D8072668634E53BD7BAEB /* libPods-FinderSync.a */; };
 		E144464761C164A1896A2D78 /* libPods-Installer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C3C8C0FAD444743EC88E6FF1 /* libPods-Installer.a */; };
 /* End PBXBuildFile section */
 
@@ -61,6 +63,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 0057B0B31AE57A4900BFB0E7;
 			remoteInfo = Helper;
+		};
+		0070D4A11D2EF812002205BC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 00CC43411A3A9E6C006118A9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 004624B01B2917AB00E218AC;
+			remoteInfo = FinderSync;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -93,6 +102,17 @@
 				0057B0DB1AE57B5900BFB0E7 /* keybase.Helper in Copy Files */,
 			);
 			name = "Copy Files";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0070D4A31D2EF812002205BC /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				0070D4A01D2EF812002205BC /* FinderSync.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -160,17 +180,18 @@
 		00E1CEF41C4432F900ED3A35 /* Settings.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Settings.m; sourceTree = "<group>"; };
 		00F808061A4A5F600038BC63 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		10F5D4AFBFC1E22180FEFFCD /* Pods-Installer.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Installer.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Installer/Pods-Installer.debug.xcconfig"; sourceTree = "<group>"; };
+		2C4D8072668634E53BD7BAEB /* libPods-FinderSync.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-FinderSync.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		398CF2F9A9EB653FFE008EB6 /* Pods-Installer.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Installer.release.xcconfig"; path = "Pods/Target Support Files/Pods-Installer/Pods-Installer.release.xcconfig"; sourceTree = "<group>"; };
 		50CECECF69AD315C4D376EB8 /* Pods-keybase.Helper.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-keybase.Helper.release.xcconfig"; path = "Pods/Target Support Files/Pods-keybase.Helper/Pods-keybase.Helper.release.xcconfig"; sourceTree = "<group>"; };
+		51B2260D8BE792500B365297 /* Pods-FinderSync.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FinderSync.release.xcconfig"; path = "Pods/Target Support Files/Pods-FinderSync/Pods-FinderSync.release.xcconfig"; sourceTree = "<group>"; };
 		8A6B4620AD7904EFA1B59736 /* Pods-Status.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Status.release.xcconfig"; path = "Pods/Target Support Files/Pods-Status/Pods-Status.release.xcconfig"; sourceTree = "<group>"; };
+		922071013AE14BBF5ECA36A3 /* Pods-FinderSync.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FinderSync.debug.xcconfig"; path = "Pods/Target Support Files/Pods-FinderSync/Pods-FinderSync.debug.xcconfig"; sourceTree = "<group>"; };
 		A15A4EEA7C37D549AE45695A /* Pods-Status.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Status.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Status/Pods-Status.debug.xcconfig"; sourceTree = "<group>"; };
 		AF01BC4A44FA5C6796C1C820 /* libPods-keybase.Helper.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-keybase.Helper.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C3C8C0FAD444743EC88E6FF1 /* libPods-Installer.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Installer.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		D2BEDB094F7E7A69C2DD1031 /* Pods-Keybase.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Keybase.release.xcconfig"; path = "Pods/Target Support Files/Pods-Keybase/Pods-Keybase.release.xcconfig"; sourceTree = "<group>"; };
 		DA5BD47C7019FB979DD332FE /* libPods-Keybase.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Keybase.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DF54D7C94B2D7756B784F46B /* Pods-keybase.Helper.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-keybase.Helper.debug.xcconfig"; path = "Pods/Target Support Files/Pods-keybase.Helper/Pods-keybase.Helper.debug.xcconfig"; sourceTree = "<group>"; };
 		ECBDAE14DC630518EBC27C76 /* libPods-Status.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Status.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		FEBE5DD9D5816FD9CB306E1D /* Pods-Keybase.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Keybase.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Keybase/Pods-Keybase.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -195,6 +216,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				004624CE1B2A3BE300E218AC /* FinderSync.framework in Frameworks */,
+				B2F71C62B551EA849BFF4079 /* libPods-FinderSync.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -434,6 +456,7 @@
 				AF01BC4A44FA5C6796C1C820 /* libPods-keybase.Helper.a */,
 				C3C8C0FAD444743EC88E6FF1 /* libPods-Installer.a */,
 				ECBDAE14DC630518EBC27C76 /* libPods-Status.a */,
+				2C4D8072668634E53BD7BAEB /* libPods-FinderSync.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -450,14 +473,14 @@
 		8470D57F499F34CBF2C57F18 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				FEBE5DD9D5816FD9CB306E1D /* Pods-Keybase.debug.xcconfig */,
-				D2BEDB094F7E7A69C2DD1031 /* Pods-Keybase.release.xcconfig */,
 				DF54D7C94B2D7756B784F46B /* Pods-keybase.Helper.debug.xcconfig */,
 				50CECECF69AD315C4D376EB8 /* Pods-keybase.Helper.release.xcconfig */,
 				10F5D4AFBFC1E22180FEFFCD /* Pods-Installer.debug.xcconfig */,
 				398CF2F9A9EB653FFE008EB6 /* Pods-Installer.release.xcconfig */,
 				A15A4EEA7C37D549AE45695A /* Pods-Status.debug.xcconfig */,
 				8A6B4620AD7904EFA1B59736 /* Pods-Status.release.xcconfig */,
+				922071013AE14BBF5ECA36A3 /* Pods-FinderSync.debug.xcconfig */,
+				51B2260D8BE792500B365297 /* Pods-FinderSync.release.xcconfig */,
 			);
 			name = Pods;
 			sourceTree = "<group>";
@@ -492,10 +515,12 @@
 				0036081A1C442ED200B3300E /* Resources */,
 				6DDFBFD461DBB29084739629 /* [CP] Embed Pods Frameworks */,
 				38CEFEB2D5410D87D00C3A1C /* [CP] Copy Pods Resources */,
+				0070D4A31D2EF812002205BC /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				0070D4A21D2EF812002205BC /* PBXTargetDependency */,
 			);
 			name = Status;
 			productName = Status;
@@ -506,9 +531,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 004624BE1B2917AB00E218AC /* Build configuration list for PBXNativeTarget "FinderSync" */;
 			buildPhases = (
+				8B03B5C818A019B5776825F9 /* [CP] Check Pods Manifest.lock */,
 				004624AD1B2917AB00E218AC /* Sources */,
 				004624AE1B2917AB00E218AC /* Frameworks */,
 				004624AF1B2917AB00E218AC /* Resources */,
+				BEE834EA7533DA9910C7476D /* [CP] Embed Pods Frameworks */,
+				DAE629871868FD5E5AEE1714 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -644,6 +672,9 @@
 								enabled = 1;
 							};
 							com.apple.Keychain = {
+								enabled = 1;
+							};
+							com.apple.Sandbox = {
 								enabled = 1;
 							};
 						};
@@ -885,6 +916,21 @@
 			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-Installer/Pods-Installer-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
+		8B03B5C818A019B5776825F9 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
+			showEnvVarsInLog = 0;
+		};
 		BC1C8B68EFC6983159FD7C76 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -898,6 +944,36 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-Installer/Pods-Installer-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		BEE834EA7533DA9910C7476D /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-FinderSync/Pods-FinderSync-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		DAE629871868FD5E5AEE1714 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-FinderSync/Pods-FinderSync-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -985,6 +1061,11 @@
 			target = 0057B0B31AE57A4900BFB0E7 /* keybase.Helper */;
 			targetProxy = 0057B0D81AE57B4800BFB0E7 /* PBXContainerItemProxy */;
 		};
+		0070D4A21D2EF812002205BC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 004624B01B2917AB00E218AC /* FinderSync */;
+			targetProxy = 0070D4A11D2EF812002205BC /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
@@ -1052,7 +1133,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Status/Status.entitlements;
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Developer ID Application";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
@@ -1071,7 +1152,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Status/Status.entitlements;
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Developer ID Application";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
@@ -1086,9 +1167,11 @@
 		};
 		004624BC1B2917AB00E218AC /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 922071013AE14BBF5ECA36A3 /* Pods-FinderSync.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/FinderSync/FinderSync.entitlements;
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1098,7 +1181,7 @@
 				);
 				INFOPLIST_FILE = Extensions/FinderSync/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "keybase.Keybase.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = keybase.Status.FinderSync;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				SKIP_INSTALL = YES;
@@ -1107,15 +1190,17 @@
 		};
 		004624BD1B2917AB00E218AC /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 51B2260D8BE792500B365297 /* Pods-FinderSync.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/FinderSync/FinderSync.entitlements;
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				INFOPLIST_FILE = Extensions/FinderSync/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "keybase.Keybase.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = keybase.Status.FinderSync;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
 				SKIP_INSTALL = YES;
@@ -1178,7 +1263,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/Action/Action.entitlements;
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Developer ID Application";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1199,7 +1284,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Extensions/Action/Action.entitlements;
-				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_IDENTITY = "Developer ID Application";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
