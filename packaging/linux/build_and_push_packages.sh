@@ -42,6 +42,8 @@ if [ ! "${NOWAIT:-}" = "1" ]; then
   if [ "$mode" != "production" ] ; then
     echo "Checking kbfs CI"
     "$release_bin" wait-ci --repo="kbfs" --commit="$(git -C $kbfs_dir rev-parse HEAD)" --context="Jenkins job master" --context="continuous-integration/appveyor/branch"
+    echo "Checking kbfs-server CI"
+    "$release_bin" wait-ci --repo="kbfs-server" --commit=`git -C $kbfs_dir log -1 --pretty=format:%h` --context="Jenkins job master"
   fi
 fi
 
