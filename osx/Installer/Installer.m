@@ -116,6 +116,8 @@ typedef NS_ENUM (NSInteger, KBExit) {
 
   BOOL loginItemEnabled = [[environment configValueForKey:@"darwin.login_item" defaultValue:nil error:nil] boolValue];
   [KBInstaller setLoginItemEnabled:loginItemEnabled config:environment.config appPath:self.settings.appPath];
+
+  [KBInstaller setFileIconsWithConfig:environment.config];
 }
 
 - (void)checkError:(NSError *)error environment:(KBEnvironment *)environment completion:(void (^)(NSError *error, KBExit exit))completion {

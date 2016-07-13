@@ -122,4 +122,34 @@
   DDLogDebug(@"Login items changed: %@", changed ? @"Yes" : @"No");
 }
 
++ (void)setFileIconsWithConfig:(KBEnvConfig *)config {
+  NSURL *URL = [NSURL fileURLWithPath:config.mountDir];
+  DDLogDebug(@"Set icons for %@", URL);
+  NSDirectoryEnumerator *enumerator = [[NSFileManager defaultManager] enumeratorAtURL:URL includingPropertiesForKeys:@[NSURLNameKey, NSURLIsDirectoryKey] options:NSDirectoryEnumerationSkipsHiddenFiles errorHandler:^BOOL(NSURL *url, NSError *error) {
+    if (error) {
+      DDLogError(@"Error: %@", error);
+      return NO;
+    }
+    return YES;
+  }];
+
+  NSImage *image = [NSImage imageNamed:NSImageNameFolderSmart];
+
+  for (NSURL *fileURL in enumerator) {
+    NSNumber *isDirectory;
+    [fileURL getResourceValue:&isDirectory forKey:NSURLIsDirectoryKey error:nil];
+
+    if ([isDirectory boolValue]) {
+      NSString *filename;
+      [fileURL getResourceValue:&filename forKey:NSURLNameKey error:nil];
+      [enumerator skipDescendants];
+
+      DDLogDebug(@"Set icon for %@ (%@)", filename, [fileURL path]);
+      if (![NSWorkspace.sharedWorkspace setIcon:image forFile:filename options:0]) {
+        DDLogError(@"There was an error setting the icon: %@");
+      }
+    }
+  }
+}
+
 @end

@@ -20,5 +20,6 @@
 
 + (void)setLoginItemEnabled:(BOOL)loginItemEnabled config:(KBEnvConfig *)config appPath:(NSString *)appPath;
 + (void)setFileListFavoriteEnabled:(BOOL)fileListFavoriteEnabled config:(KBEnvConfig *)config;
++ (void)setFileIconsWithConfig:(KBEnvConfig *)config;
 
 @end
