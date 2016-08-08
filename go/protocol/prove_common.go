@@ -64,6 +64,7 @@ const (
 	ProofStatus_UNKNOWN_TYPE      ProofStatus = 305
 	ProofStatus_NO_HINT           ProofStatus = 306
 	ProofStatus_BAD_HINT_TEXT     ProofStatus = 307
+	ProofStatus_INVALID_PVL       ProofStatus = 308
 )
 
 type ProofType int
