@@ -16,6 +16,7 @@ import (
 )
 
 type CmdSigsRevoke struct {
+	libkb.Contextified
 	queries []string
 }
 
@@ -35,15 +36,15 @@ func (c *CmdSigsRevoke) ParseArgv(ctx *cli.Context) error {
 }
 
 func (c *CmdSigsRevoke) Run() error {
-	cli, err := GetRevokeClient()
+	cli, err := GetRevokeClient(c.G())
 	if err != nil {
 		return err
 	}
 
 	protocols := []rpc.Protocol{
-		NewSecretUIProtocol(G),
+		NewSecretUIProtocol(c.G()),
 	}
-	if err = RegisterProtocols(protocols); err != nil {
+	if err = RegisterProtocolsWithContext(protocols, c.G()); err != nil {
 		return err
 	}
 
@@ -52,12 +53,13 @@ func (c *CmdSigsRevoke) Run() error {
 	})
 }
 
-func NewCmdSigsRevoke(cl *libcmdline.CommandLine) cli.Command {
+func NewCmdSigsRevoke(cl *libcmdline.CommandLine, g *libkb.GlobalContext) cli.Command {
 	return cli.Command{
 		Name:         "revoke",
-		ArgumentHelp: "<id> ...",
+		ArgumentHelp: "<sig-id>",
+		Usage:        "revoke a signature by sig ID",
 		Action: func(c *cli.Context) {
-			cl.ChooseCommand(&CmdSigsRevoke{}, "revoke", c)
+			cl.ChooseCommand(&CmdSigsRevoke{Contextified: libkb.NewContextified(g)}, "revoke", c)
 		},
 		Flags: nil,
 	}
