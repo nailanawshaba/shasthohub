@@ -19,6 +19,8 @@ type DNSChecker struct {
 	proof RemoteProofChainLink
 }
 
+var _ ProofChecker = (*DNSChecker)(nil)
+
 func NewDNSChecker(p RemoteProofChainLink) (*DNSChecker, ProofError) {
 	return &DNSChecker{p}, nil
 }

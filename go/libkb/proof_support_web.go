@@ -21,6 +21,8 @@ type WebChecker struct {
 	proof RemoteProofChainLink
 }
 
+var _ ProofChecker = (*WebChecker)(nil)
+
 var webKeybaseFiles = []string{".well-known/keybase.txt", "keybase.txt"}
 
 func NewWebChecker(p RemoteProofChainLink) (*WebChecker, ProofError) {

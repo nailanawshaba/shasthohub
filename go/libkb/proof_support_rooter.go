@@ -22,6 +22,8 @@ type RooterChecker struct {
 	proof RemoteProofChainLink
 }
 
+var _ ProofChecker = (*RooterChecker)(nil)
+
 func NewRooterChecker(p RemoteProofChainLink) (*RooterChecker, ProofError) {
 	return &RooterChecker{p}, nil
 }

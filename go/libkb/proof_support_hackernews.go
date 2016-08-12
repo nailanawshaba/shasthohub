@@ -19,6 +19,8 @@ type HackerNewsChecker struct {
 	proof RemoteProofChainLink
 }
 
+var _ ProofChecker = (*HackerNewsChecker)(nil)
+
 func (h *HackerNewsChecker) GetTorError() ProofError { return nil }
 
 func APIBase(un string) string {

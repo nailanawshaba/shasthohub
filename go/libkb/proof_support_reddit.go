@@ -20,6 +20,8 @@ type RedditChecker struct {
 	proof RemoteProofChainLink
 }
 
+var _ ProofChecker = (*RedditChecker)(nil)
+
 const (
 	RedditPrefix = "https://www.reddit.com"
 	RedditSub    = RedditPrefix + "/r/keybaseproofs"

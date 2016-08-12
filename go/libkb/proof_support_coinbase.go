@@ -20,6 +20,8 @@ type CoinbaseChecker struct {
 	proof RemoteProofChainLink
 }
 
+var _ ProofChecker = (*CoinbaseChecker)(nil)
+
 func NewCoinbaseChecker(p RemoteProofChainLink) (*CoinbaseChecker, ProofError) {
 	return &CoinbaseChecker{p}, nil
 }

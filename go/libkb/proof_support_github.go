@@ -19,6 +19,8 @@ type GithubChecker struct {
 	proof RemoteProofChainLink
 }
 
+var _ ProofChecker = (*GithubChecker)(nil)
+
 func NewGithubChecker(p RemoteProofChainLink) (*GithubChecker, ProofError) {
 	return &GithubChecker{p}, nil
 }

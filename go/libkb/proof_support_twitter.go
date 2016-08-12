@@ -20,6 +20,8 @@ type TwitterChecker struct {
 	proof RemoteProofChainLink
 }
 
+var _ ProofChecker = (*TwitterChecker)(nil)
+
 func NewTwitterChecker(p RemoteProofChainLink) (*TwitterChecker, ProofError) {
 	return &TwitterChecker{p}, nil
 }
