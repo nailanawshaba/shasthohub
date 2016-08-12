@@ -60,6 +60,13 @@ func (rc *WebChecker) CheckHint(g *GlobalContext, h SigHint) ProofError {
 }
 
 func (rc *WebChecker) CheckStatus(g *GlobalContext, h SigHint) ProofError {
+	if UsePvl {
+		return CheckProof(g, &hardcodedPVL, keybase1.ProofType_GENERIC_WEB_SITE, rc.proof, h)
+	}
+	return rc.CheckStatusOld(g, h)
+}
+
+func (rc *WebChecker) CheckStatusOld(g *GlobalContext, h SigHint) ProofError {
 	res, err := g.XAPI.GetText(NewAPIArg(g, h.apiURL))
 
 	if err != nil {

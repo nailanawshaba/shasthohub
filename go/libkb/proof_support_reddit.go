@@ -111,6 +111,13 @@ func (rc *RedditChecker) CheckData(h SigHint, dat *jsonw.Wrapper) ProofError {
 }
 
 func (rc *RedditChecker) CheckStatus(g *GlobalContext, h SigHint) ProofError {
+	if UsePvl {
+		return CheckProof(g, &hardcodedPVL, keybase1.ProofType_REDDIT, rc.proof, h)
+	}
+	return rc.CheckStatusOld(g, h)
+}
+
+func (rc *RedditChecker) CheckStatusOld(g *GlobalContext, h SigHint) ProofError {
 	res, err := g.XAPI.Get(NewAPIArg(g, h.apiURL))
 	if err != nil {
 		return XapiError(err, h.apiURL)
