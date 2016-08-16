@@ -10,19 +10,19 @@ import (
 	"golang.org/x/net/context"
 )
 
-type TestHandler struct {
+type TestRPCHandler struct {
 	*BaseHandler
 	libkb.Contextified
 }
 
-func NewTestHandler(xp rpc.Transporter, g *libkb.GlobalContext) *TestHandler {
-	return &TestHandler{
+func NewTestRPCHandler(xp rpc.Transporter, g *libkb.GlobalContext) *TestRPCHandler {
+	return &TestRPCHandler{
 		BaseHandler:  NewBaseHandler(xp),
 		Contextified: libkb.NewContextified(g),
 	}
 }
 
-func (t TestHandler) Test(ctx context.Context, arg keybase1.TestArg) (test keybase1.Test, err error) {
+func (t TestRPCHandler) Test(ctx context.Context, arg keybase1.TestArg) (test keybase1.Test, err error) {
 	client := t.rpcClient()
 	cbArg := keybase1.TestCallbackArg{Name: arg.Name, SessionID: arg.SessionID}
 	var cbReply string
@@ -35,11 +35,11 @@ func (t TestHandler) Test(ctx context.Context, arg keybase1.TestArg) (test keyba
 	return
 }
 
-func (t TestHandler) TestCallback(_ context.Context, arg keybase1.TestCallbackArg) (s string, err error) {
+func (t TestRPCHandler) TestCallback(_ context.Context, arg keybase1.TestCallbackArg) (s string, err error) {
 	return
 }
 
-func (t TestHandler) Panic(_ context.Context, message string) error {
+func (t TestRPCHandler) Panic(_ context.Context, message string) error {
 	t.G().Log.Info("Received panic() RPC")
 	go func() {
 		panic(message)

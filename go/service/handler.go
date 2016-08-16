@@ -68,51 +68,51 @@ func (h *BaseHandler) rpcClient() *rpc.Client {
 	return h.cli
 }
 
-func (h *BaseHandler) getLoginUICli() *keybase1.LoginUiClient {
+func (h *BaseHandler) GetLoginUICli() *keybase1.LoginUiClient {
 	return h.loginCli
 }
 
-func (h *BaseHandler) getLoginUI(sessionID int) libkb.LoginUI {
-	return &LoginUI{sessionID, h.getLoginUICli()}
+func (h *BaseHandler) GetLoginUI(sessionID int) libkb.LoginUI {
+	return &LoginUI{sessionID, h.GetLoginUICli()}
 }
 
-func (h *BaseHandler) getGPGUI(sessionID int) libkb.GPGUI {
+func (h *BaseHandler) GetGPGUI(sessionID int) libkb.GPGUI {
 	return NewRemoteGPGUI(sessionID, h.rpcClient())
 }
 
-func (h *BaseHandler) getSecretUICli() *keybase1.SecretUiClient {
+func (h *BaseHandler) GetSecretUICli() *keybase1.SecretUiClient {
 	return h.secretCli
 }
 
-func (h *BaseHandler) getSecretUI(sessionID int, g *libkb.GlobalContext) libkb.SecretUI {
+func (h *BaseHandler) GetSecretUI(sessionID int, g *libkb.GlobalContext) libkb.SecretUI {
 	return &SecretUI{
 		sessionID:    sessionID,
-		cli:          h.getSecretUICli(),
+		cli:          h.GetSecretUICli(),
 		Contextified: libkb.NewContextified(g),
 	}
 }
 
-func (h *BaseHandler) getLogUICli() *keybase1.LogUiClient {
+func (h *BaseHandler) GetLogUICli() *keybase1.LogUiClient {
 	return h.logCli
 }
 
-func (h *BaseHandler) getLogUI(sessionID int) libkb.LogUI {
-	return &LogUI{sessionID, h.getLogUICli()}
+func (h *BaseHandler) GetLogUI(sessionID int) libkb.LogUI {
+	return &LogUI{sessionID, h.GetLogUICli()}
 }
 
-func (h *BaseHandler) getProvisionUI(sessionID int) libkb.ProvisionUI {
+func (h *BaseHandler) GetProvisionUI(sessionID int) libkb.ProvisionUI {
 	return NewRemoteProvisionUI(sessionID, h.rpcClient())
 }
 
-func (h *BaseHandler) getPgpUI(sessionID int) libkb.PgpUI {
+func (h *BaseHandler) GetPgpUI(sessionID int) libkb.PgpUI {
 	return NewRemotePgpUI(sessionID, h.rpcClient())
 }
 
-func (h *BaseHandler) getStreamUICli() *keybase1.StreamUiClient {
+func (h *BaseHandler) GetStreamUICli() *keybase1.StreamUiClient {
 	return &keybase1.StreamUiClient{Cli: h.rpcClient()}
 }
 
-func (h *BaseHandler) getSaltpackUI(sessionID int) libkb.SaltpackUI {
+func (h *BaseHandler) GetSaltpackUI(sessionID int) libkb.SaltpackUI {
 	return NewRemoteSaltpackUI(sessionID, h.rpcClient())
 }
 
@@ -121,7 +121,7 @@ func (h *BaseHandler) NewRemoteIdentifyUI(sessionID int, g *libkb.GlobalContext)
 	return &RemoteIdentifyUI{
 		sessionID:    sessionID,
 		uicli:        keybase1.IdentifyUiClient{Cli: c},
-		logUI:        h.getLogUI(sessionID),
+		logUI:        h.GetLogUI(sessionID),
 		Contextified: libkb.NewContextified(g),
 	}
 }

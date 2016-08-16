@@ -16,26 +16,43 @@ import (
 	"github.com/keybase/client/go/engine"
 	"github.com/keybase/client/go/libkb"
 	keybase1 "github.com/keybase/client/go/protocol"
-	rpc "github.com/keybase/go-framed-msgpack-rpc"
 	jsonw "github.com/keybase/go-jsonw"
 )
 
 type ConfigHandler struct {
 	libkb.Contextified
-	xp     rpc.Transporter
+	serviceInfo ConfigServiceInfo
+}
+
+type ConfigServiceInfo interface {
+	GetForkType() keybase1.ForkType
+	GetConnectionID() libkb.ConnectionID
+}
+
+type configServiceInfo struct {
 	svc    *Service
 	connID libkb.ConnectionID
 }
 
 var _ keybase1.ConfigInterface = (*ConfigHandler)(nil)
 
-func NewConfigHandler(xp rpc.Transporter, i libkb.ConnectionID, g *libkb.GlobalContext, svc *Service) *ConfigHandler {
+func NewConfigHandler(g *libkb.GlobalContext, serviceInfo ConfigServiceInfo) *ConfigHandler {
 	return &ConfigHandler{
 		Contextified: libkb.NewContextified(g),
-		xp:           xp,
-		svc:          svc,
-		connID:       i,
+		serviceInfo:  serviceInfo,
 	}
+}
+
+func NewConfigRPCHandler(i libkb.ConnectionID, g *libkb.GlobalContext, svc *Service) *ConfigHandler {
+	return NewConfigHandler(g, configServiceInfo{svc: svc, connID: i})
+}
+
+func (c configServiceInfo) GetForkType() keybase1.ForkType {
+	return c.svc.ForkType
+}
+
+func (c configServiceInfo) GetConnectionID() libkb.ConnectionID {
+	return c.connID
 }
 
 func (h ConfigHandler) GetCurrentStatus(_ context.Context, sessionID int) (res keybase1.GetCurrentStatusRes, err error) {
@@ -228,11 +245,11 @@ func (h ConfigHandler) GetConfig(_ context.Context, sessionID int) (keybase1.Con
 
 	c.ConfigPath = h.G().Env.GetConfigFilename()
 	c.Label = h.G().Env.GetLabel()
-	if h.svc != nil {
-		if h.svc.ForkType == keybase1.ForkType_AUTO {
+	if h.serviceInfo != nil {
+		if h.serviceInfo.GetForkType() == keybase1.ForkType_AUTO {
 			c.IsAutoForked = true
 		}
-		c.ForkType = h.svc.ForkType
+		c.ForkType = h.serviceInfo.GetForkType()
 	}
 
 	return c, nil
@@ -291,7 +308,7 @@ func mergeIntoPath(g *libkb.GlobalContext, p2 string) error {
 }
 
 func (h ConfigHandler) HelloIAm(_ context.Context, arg keybase1.ClientDetails) error {
-	return h.G().ConnectionManager.Label(h.connID, arg)
+	return h.G().ConnectionManager.Label(h.serviceInfo.GetConnectionID(), arg)
 }
 
 func (h ConfigHandler) CheckAPIServerOutOfDateWarning(_ context.Context) (keybase1.OutOfDateInfo, error) {

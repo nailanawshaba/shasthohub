@@ -8,18 +8,30 @@ import (
 
 	"github.com/keybase/client/go/libkb"
 	keybase1 "github.com/keybase/client/go/protocol"
-	rpc "github.com/keybase/go-framed-msgpack-rpc"
+	"github.com/keybase/go-framed-msgpack-rpc"
 )
 
 type KBFSHandler struct {
-	*BaseHandler
 	libkb.Contextified
 }
 
-func NewKBFSHandler(xp rpc.Transporter, g *libkb.GlobalContext) *KBFSHandler {
+var _ keybase1.KbfsInterface = (*KBFSHandler)(nil)
+
+type KBFSRPCHandler struct {
+	*BaseHandler
+	*KBFSHandler
+}
+
+func NewKBFSHandler(g *libkb.GlobalContext) *KBFSHandler {
 	return &KBFSHandler{
-		BaseHandler:  NewBaseHandler(xp),
 		Contextified: libkb.NewContextified(g),
+	}
+}
+
+func NewKBFSRPCHandler(xp rpc.Transporter, g *libkb.GlobalContext) *KBFSRPCHandler {
+	return &KBFSRPCHandler{
+		BaseHandler: NewBaseHandler(xp),
+		KBFSHandler: NewKBFSHandler(g),
 	}
 }
 

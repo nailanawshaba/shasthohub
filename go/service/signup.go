@@ -12,14 +12,37 @@ import (
 )
 
 type SignupHandler struct {
-	*BaseHandler
 	libkb.Contextified
+	ui SignupUICn
 }
 
-func NewSignupHandler(xp rpc.Transporter, g *libkb.GlobalContext) *SignupHandler {
+var _ keybase1.SignupInterface = (*SignupHandler)(nil)
+
+type SignupRPCHandler struct {
+	*BaseHandler
+	*SignupHandler
+}
+
+// SignupUICn resolves UI for signup requests
+type SignupUICn interface {
+	GetSecretUI(sessionID int, g *libkb.GlobalContext) libkb.SecretUI
+	GetLogUI(sessionID int) libkb.LogUI
+	GetLoginUI(sessionID int) libkb.LoginUI
+	GetGPGUI(sessionID int) libkb.GPGUI
+}
+
+func NewSignupHandler(g *libkb.GlobalContext, ui SignupUICn) *SignupHandler {
 	return &SignupHandler{
-		BaseHandler:  NewBaseHandler(xp),
 		Contextified: libkb.NewContextified(g),
+		ui:           ui,
+	}
+}
+
+func NewSignupRPCHandler(xp rpc.Transporter, g *libkb.GlobalContext) *SignupRPCHandler {
+	handler := NewBaseHandler(xp)
+	return &SignupRPCHandler{
+		BaseHandler:   handler,
+		SignupHandler: NewSignupHandler(g, handler),
 	}
 }
 
@@ -29,10 +52,10 @@ func (h *SignupHandler) CheckUsernameAvailable(_ context.Context, arg keybase1.C
 
 func (h *SignupHandler) Signup(_ context.Context, arg keybase1.SignupArg) (res keybase1.SignupRes, err error) {
 	ctx := &engine.Context{
-		LogUI:     h.getLogUI(arg.SessionID),
-		GPGUI:     h.getGPGUI(arg.SessionID),
-		SecretUI:  h.getSecretUI(arg.SessionID, h.G()),
-		LoginUI:   h.getLoginUI(arg.SessionID),
+		LogUI:     h.ui.GetLogUI(arg.SessionID),
+		GPGUI:     h.ui.GetGPGUI(arg.SessionID),
+		SecretUI:  h.ui.GetSecretUI(arg.SessionID, h.G()),
+		LoginUI:   h.ui.GetLoginUI(arg.SessionID),
 		SessionID: arg.SessionID,
 	}
 	runarg := engine.SignupEngineRunArg{

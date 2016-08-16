@@ -13,24 +13,48 @@ import (
 	"golang.org/x/net/context"
 )
 
-// DeviceHandler is the RPC handler for the device interface.
+// DeviceHandler implements keybase1.DeviceInterface
 type DeviceHandler struct {
-	*BaseHandler
 	libkb.Contextified
+	ui DeviceUI
 }
 
-// NewDeviceHandler creates a DeviceHandler for the xp transport.
-func NewDeviceHandler(xp rpc.Transporter, g *libkb.GlobalContext) *DeviceHandler {
+var _ keybase1.DeviceInterface = (*DeviceHandler)(nil)
+
+// DeviceRPCHandler is the RPC handler for the device interface
+type DeviceRPCHandler struct {
+	*BaseHandler
+	*DeviceHandler
+}
+
+// DeviceUI resolves UI for login requests
+type DeviceUI interface {
+	GetSecretUI(sessionID int, g *libkb.GlobalContext) libkb.SecretUI
+	GetLogUI(sessionID int) libkb.LogUI
+	GetProvisionUI(sessionID int) libkb.ProvisionUI
+}
+
+// NewDeviceHandler creates a DeviceHandler
+func NewDeviceHandler(g *libkb.GlobalContext, ui DeviceUI) *DeviceHandler {
 	return &DeviceHandler{
-		BaseHandler:  NewBaseHandler(xp),
 		Contextified: libkb.NewContextified(g),
+		ui:           ui,
+	}
+}
+
+// NewDeviceRPCHandler creates a DeviceHandler for the xp transport.
+func NewDeviceRPCHandler(xp rpc.Transporter, g *libkb.GlobalContext) *DeviceRPCHandler {
+	handler := NewBaseHandler(xp)
+	return &DeviceRPCHandler{
+		BaseHandler:   handler,
+		DeviceHandler: NewDeviceHandler(g, handler),
 	}
 }
 
 // DeviceList returns a list of all the devices for a user.
 func (h *DeviceHandler) DeviceList(_ context.Context, sessionID int) ([]keybase1.Device, error) {
 	ctx := &engine.Context{
-		LogUI:     h.getLogUI(sessionID),
+		LogUI:     h.ui.GetLogUI(sessionID),
 		SessionID: sessionID,
 	}
 	eng := engine.NewDevList(h.G())
@@ -44,7 +68,7 @@ func (h *DeviceHandler) DeviceList(_ context.Context, sessionID int) ([]keybase1
 // with detailed history and provisioner, revoker information.
 func (h *DeviceHandler) DeviceHistoryList(nctx context.Context, sessionID int) ([]keybase1.DeviceDetail, error) {
 	ctx := &engine.Context{
-		LogUI:      h.getLogUI(sessionID),
+		LogUI:      h.ui.GetLogUI(sessionID),
 		NetContext: nctx,
 		SessionID:  sessionID,
 	}
@@ -59,8 +83,8 @@ func (h *DeviceHandler) DeviceHistoryList(nctx context.Context, sessionID int) (
 // provisioner (device X/C1)
 func (h *DeviceHandler) DeviceAdd(c context.Context, sessionID int) error {
 	ctx := &engine.Context{
-		ProvisionUI: h.getProvisionUI(sessionID),
-		SecretUI:    h.getSecretUI(sessionID, h.G()),
+		ProvisionUI: h.ui.GetProvisionUI(sessionID),
+		SecretUI:    h.ui.GetSecretUI(sessionID, h.G()),
 		SessionID:   sessionID,
 		NetContext:  c,
 	}

@@ -12,22 +12,40 @@ import (
 )
 
 type BTCHandler struct {
-	*BaseHandler
 	libkb.Contextified
+	ui BTCUI
 }
 
-func NewBTCHandler(xp rpc.Transporter, g *libkb.GlobalContext) *BTCHandler {
+type BTCRPCHandler struct {
+	*BaseHandler
+	*BTCHandler
+}
+
+// BTCUI resolves UI for login requests
+type BTCUI interface {
+	GetSecretUI(sessionID int, g *libkb.GlobalContext) libkb.SecretUI
+	GetLogUI(sessionID int) libkb.LogUI
+}
+
+func NewBTCHandler(g *libkb.GlobalContext, ui BTCUI) *BTCHandler {
 	return &BTCHandler{
-		BaseHandler:  NewBaseHandler(xp),
 		Contextified: libkb.NewContextified(g),
+	}
+}
+
+func NewBTCRPCHandler(xp rpc.Transporter, g *libkb.GlobalContext) *BTCRPCHandler {
+	handler := NewBaseHandler(xp)
+	return &BTCRPCHandler{
+		BaseHandler: handler,
+		BTCHandler:  NewBTCHandler(g, handler),
 	}
 }
 
 // BTC creates a BTCEngine and runs it.
 func (h *BTCHandler) RegisterBTC(_ context.Context, arg keybase1.RegisterBTCArg) error {
 	ctx := engine.Context{
-		LogUI:     h.getLogUI(arg.SessionID),
-		SecretUI:  h.getSecretUI(arg.SessionID, h.G()),
+		LogUI:     h.ui.GetLogUI(arg.SessionID),
+		SecretUI:  h.ui.GetSecretUI(arg.SessionID, h.G()),
 		SessionID: arg.SessionID,
 	}
 	eng := engine.NewBTCEngine(arg.Address, arg.Force, h.G())

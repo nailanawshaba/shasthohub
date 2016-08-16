@@ -52,7 +52,7 @@ func (e errorSecretUI) GetPassphrase(keybase1.GUIEntryArg, *keybase1.SecretEntry
 	return keybase1.GetPassphraseRes{}, libkb.LoginRequiredError{Context: e.reason}
 }
 
-func (c *CryptoHandler) getSecretUI(sessionID int, reason string) libkb.SecretUI {
+func (c *CryptoHandler) GetSecretUI(sessionID int, reason string) libkb.SecretUI {
 	secretUI := c.getDelegatedSecretUI(sessionID)
 	if secretUI != nil {
 		return secretUI
@@ -65,7 +65,7 @@ func (c *CryptoHandler) getSecretUI(sessionID int, reason string) libkb.SecretUI
 
 func (c *CryptoHandler) secretUIMaker(sessionID int, reason string) func() libkb.SecretUI {
 	f := func() libkb.SecretUI {
-		return c.getSecretUI(sessionID, reason)
+		return c.GetSecretUI(sessionID, reason)
 	}
 	return f
 }

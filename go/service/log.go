@@ -11,19 +11,36 @@ import (
 	rpc "github.com/keybase/go-framed-msgpack-rpc"
 )
 
-// LogHandler is the RPC handler for the log interface.
 type LogHandler struct {
-	*BaseHandler
 	logReg *logRegister
 	libkb.Contextified
+	ui LogUICn
 }
 
-// NewLogHandler creates a LogHandler for the xp transport.
-func NewLogHandler(xp rpc.Transporter, logReg *logRegister, g *libkb.GlobalContext) *LogHandler {
+// LogRPCHandler is the RPC handler for the log interface.
+type LogRPCHandler struct {
+	*BaseHandler
+	*LogHandler
+}
+
+type LogUICn interface {
+	GetLogUICli() *keybase1.LogUiClient
+}
+
+func NewLogHandler(logReg *logRegister, g *libkb.GlobalContext, ui LogUICn) *LogHandler {
 	return &LogHandler{
-		BaseHandler:  NewBaseHandler(xp),
 		logReg:       logReg,
 		Contextified: libkb.NewContextified(g),
+		ui:           ui,
+	}
+}
+
+// NewLogRPCHandler creates a LogHandler for the xp transport.
+func NewLogRPCHandler(xp rpc.Transporter, logReg *logRegister, g *libkb.GlobalContext) *LogRPCHandler {
+	handler := NewBaseHandler(xp)
+	return &LogRPCHandler{
+		BaseHandler: handler,
+		LogHandler:  NewLogHandler(logReg, g, handler),
 	}
 }
 
@@ -37,7 +54,7 @@ func (h *LogHandler) RegisterLogger(_ context.Context, arg keybase1.RegisterLogg
 		return nil
 	}
 
-	ui := &LogUI{sessionID: arg.SessionID, cli: h.getLogUICli()}
+	ui := &LogUI{sessionID: arg.SessionID, cli: h.ui.GetLogUICli()}
 	err = h.logReg.RegisterLogger(arg, ui)
 	return err
 }

@@ -15,14 +15,37 @@ import (
 
 type LoginHandler struct {
 	libkb.Contextified
-	*BaseHandler
 	identifyUI libkb.IdentifyUI
+	ui         LoginUICn
 }
 
-func NewLoginHandler(xp rpc.Transporter, g *libkb.GlobalContext) *LoginHandler {
+var _ keybase1.LoginInterface = (*LoginHandler)(nil)
+
+type LoginRPCHandler struct {
+	*BaseHandler
+	*LoginHandler
+}
+
+// LoginUICn resolves UI for login requests
+type LoginUICn interface {
+	GetSecretUI(sessionID int, g *libkb.GlobalContext) libkb.SecretUI
+	GetLogUI(sessionID int) libkb.LogUI
+	GetLoginUI(sessionID int) libkb.LoginUI
+	GetProvisionUI(sessionID int) libkb.ProvisionUI
+	GetGPGUI(sessionID int) libkb.GPGUI
+}
+
+func NewLoginHandler(g *libkb.GlobalContext, ui LoginUICn) *LoginHandler {
 	return &LoginHandler{
-		BaseHandler:  NewBaseHandler(xp),
 		Contextified: libkb.NewContextified(g),
+	}
+}
+
+func NewLoginRPCHandler(xp rpc.Transporter, g *libkb.GlobalContext) *LoginRPCHandler {
+	handler := NewBaseHandler(xp)
+	return &LoginRPCHandler{
+		BaseHandler:  handler,
+		LoginHandler: NewLoginHandler(g, handler),
 	}
 }
 
@@ -37,8 +60,8 @@ func (h *LoginHandler) Logout(_ context.Context, sessionID int) error {
 func (h *LoginHandler) Deprovision(_ context.Context, arg keybase1.DeprovisionArg) error {
 	eng := engine.NewDeprovisionEngine(h.G(), arg.Username, arg.DoRevoke)
 	ctx := engine.Context{
-		LogUI:     h.getLogUI(arg.SessionID),
-		SecretUI:  h.getSecretUI(arg.SessionID, h.G()),
+		LogUI:     h.ui.GetLogUI(arg.SessionID),
+		SecretUI:  h.ui.GetSecretUI(arg.SessionID, h.G()),
 		SessionID: arg.SessionID,
 	}
 	return engine.RunEngine(eng, &ctx)
@@ -68,9 +91,9 @@ func (h *LoginHandler) ClearStoredSecret(_ context.Context, arg keybase1.ClearSt
 
 func (h *LoginHandler) PaperKey(_ context.Context, sessionID int) error {
 	ctx := &engine.Context{
-		LogUI:     h.getLogUI(sessionID),
-		LoginUI:   h.getLoginUI(sessionID),
-		SecretUI:  h.getSecretUI(sessionID, h.G()),
+		LogUI:     h.ui.GetLogUI(sessionID),
+		LoginUI:   h.ui.GetLoginUI(sessionID),
+		SecretUI:  h.ui.GetSecretUI(sessionID, h.G()),
 		SessionID: sessionID,
 	}
 	eng := engine.NewPaperKey(h.G())
@@ -79,7 +102,7 @@ func (h *LoginHandler) PaperKey(_ context.Context, sessionID int) error {
 
 func (h *LoginHandler) PaperKeySubmit(_ context.Context, arg keybase1.PaperKeySubmitArg) error {
 	ctx := &engine.Context{
-		LogUI:     h.getLogUI(arg.SessionID),
+		LogUI:     h.ui.GetLogUI(arg.SessionID),
 		SessionID: arg.SessionID,
 	}
 	eng := engine.NewPaperKeySubmit(h.G(), arg.PaperPhrase)
@@ -88,8 +111,8 @@ func (h *LoginHandler) PaperKeySubmit(_ context.Context, arg keybase1.PaperKeySu
 
 func (h *LoginHandler) Unlock(_ context.Context, sessionID int) error {
 	ctx := &engine.Context{
-		LogUI:     h.getLogUI(sessionID),
-		SecretUI:  h.getSecretUI(sessionID, h.G()),
+		LogUI:     h.ui.GetLogUI(sessionID),
+		SecretUI:  h.ui.GetSecretUI(sessionID, h.G()),
 		SessionID: sessionID,
 	}
 	eng := engine.NewUnlock(h.G())
@@ -98,8 +121,8 @@ func (h *LoginHandler) Unlock(_ context.Context, sessionID int) error {
 
 func (h *LoginHandler) UnlockWithPassphrase(_ context.Context, arg keybase1.UnlockWithPassphraseArg) error {
 	ctx := &engine.Context{
-		LogUI:     h.getLogUI(arg.SessionID),
-		SecretUI:  h.getSecretUI(arg.SessionID, h.G()),
+		LogUI:     h.ui.GetLogUI(arg.SessionID),
+		SecretUI:  h.ui.GetSecretUI(arg.SessionID, h.G()),
 		SessionID: arg.SessionID,
 	}
 	eng := engine.NewUnlockWithPassphrase(h.G(), arg.Passphrase)
@@ -108,11 +131,11 @@ func (h *LoginHandler) UnlockWithPassphrase(_ context.Context, arg keybase1.Unlo
 
 func (h *LoginHandler) Login(ctx context.Context, arg keybase1.LoginArg) error {
 	ectx := &engine.Context{
-		LogUI:       h.getLogUI(arg.SessionID),
-		LoginUI:     h.getLoginUI(arg.SessionID),
-		ProvisionUI: h.getProvisionUI(arg.SessionID),
-		SecretUI:    h.getSecretUI(arg.SessionID, h.G()),
-		GPGUI:       h.getGPGUI(arg.SessionID),
+		LogUI:       h.ui.GetLogUI(arg.SessionID),
+		LoginUI:     h.ui.GetLoginUI(arg.SessionID),
+		ProvisionUI: h.ui.GetProvisionUI(arg.SessionID),
+		SecretUI:    h.ui.GetSecretUI(arg.SessionID, h.G()),
+		GPGUI:       h.ui.GetGPGUI(arg.SessionID),
 		NetContext:  ctx,
 		SessionID:   arg.SessionID,
 	}
@@ -125,9 +148,9 @@ func (h *LoginHandler) PGPProvision(ctx context.Context, arg keybase1.PGPProvisi
 		return errors.New("PGPProvision is a devel-only RPC")
 	}
 	ectx := &engine.Context{
-		LogUI:      h.getLogUI(arg.SessionID),
-		LoginUI:    h.getLoginUI(arg.SessionID),
-		SecretUI:   h.getSecretUI(arg.SessionID, h.G()),
+		LogUI:      h.ui.GetLogUI(arg.SessionID),
+		LoginUI:    h.ui.GetLoginUI(arg.SessionID),
+		SecretUI:   h.ui.GetSecretUI(arg.SessionID, h.G()),
 		NetContext: ctx,
 		SessionID:  arg.SessionID,
 	}

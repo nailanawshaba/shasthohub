@@ -16,6 +16,20 @@ import (
 type ProveHandler struct {
 	*BaseHandler
 	libkb.Contextified
+	ui ProveUICn
+}
+
+var _ keybase1.ProveInterface = (*ProveHandler)(nil)
+
+type ProveRPCHandler struct {
+	*BaseHandler
+	*ProveHandler
+}
+
+// ProveUICn resolves UI for prove requests
+type ProveUICn interface {
+	GetSecretUI(sessionID int, g *libkb.GlobalContext) libkb.SecretUI
+	GetLogUI(sessionID int) libkb.LogUI
 }
 
 type proveUI struct {
@@ -24,10 +38,19 @@ type proveUI struct {
 }
 
 // NewProveHandler makes a new ProveHandler object from an RPC transport.
-func NewProveHandler(xp rpc.Transporter, g *libkb.GlobalContext) *ProveHandler {
+func NewProveHandler(g *libkb.GlobalContext, ui ProveUICn) *ProveHandler {
 	return &ProveHandler{
-		BaseHandler:  NewBaseHandler(xp),
 		Contextified: libkb.NewContextified(g),
+		ui:           ui,
+	}
+}
+
+// NewProveRPCHandler makes a new ProveHandler object from an RPC transport.
+func NewProveRPCHandler(xp rpc.Transporter, g *libkb.GlobalContext) *ProveRPCHandler {
+	handler := NewBaseHandler(xp)
+	return &ProveRPCHandler{
+		BaseHandler:  handler,
+		ProveHandler: NewProveHandler(g, handler),
 	}
 }
 
@@ -60,17 +83,17 @@ func (p *proveUI) DisplayRecheckWarning(ctx context.Context, arg keybase1.Displa
 	return p.cli.DisplayRecheckWarning(ctx, arg)
 }
 
-func (ph *ProveHandler) getProveUI(sessionID int) libkb.ProveUI {
+func (ph *ProveHandler) GetProveUI(sessionID int) libkb.ProveUI {
 	return &proveUI{sessionID, keybase1.ProveUiClient{Cli: ph.rpcClient()}}
 }
 
-// Prove handles the `keybase.1.startProof` RPC.
+// StartProof handles the `keybase.1.startProof` RPC.
 func (ph *ProveHandler) StartProof(_ context.Context, arg keybase1.StartProofArg) (res keybase1.StartProofResult, err error) {
 	eng := engine.NewProve(&arg, ph.G())
 	ctx := engine.Context{
-		ProveUI:   ph.getProveUI(arg.SessionID),
-		SecretUI:  ph.getSecretUI(arg.SessionID, ph.G()),
-		LogUI:     ph.getLogUI(arg.SessionID),
+		ProveUI:   ph.GetProveUI(arg.SessionID),
+		SecretUI:  ph.ui.GetSecretUI(arg.SessionID, ph.G()),
+		LogUI:     ph.ui.GetLogUI(arg.SessionID),
 		SessionID: arg.SessionID,
 	}
 	err = engine.RunEngine(eng, &ctx)

@@ -11,17 +11,27 @@ import (
 	"golang.org/x/net/context"
 )
 
-// SigsHandler is the RPC handler for the sigs interface.
 type SigsHandler struct {
-	*BaseHandler
 	libkb.Contextified
 }
 
-// NewSigsHandler creates a SigsHandler for the xp transport.
-func NewSigsHandler(xp rpc.Transporter, g *libkb.GlobalContext) *SigsHandler {
+// SigsRPCHandler is the RPC handler for the sigs interface.
+type SigsRPCHandler struct {
+	*BaseHandler
+	*SigsHandler
+}
+
+func NewSigsHandler(g *libkb.GlobalContext) *SigsHandler {
 	return &SigsHandler{
-		BaseHandler:  NewBaseHandler(xp),
 		Contextified: libkb.NewContextified(g),
+	}
+}
+
+// NewSigsRPCHandler creates a SigsHandler for the xp transport.
+func NewSigsRPCHandler(xp rpc.Transporter, g *libkb.GlobalContext) *SigsRPCHandler {
+	return &SigsRPCHandler{
+		BaseHandler: NewBaseHandler(xp),
+		SigsHandler: NewSigsHandler(g),
 	}
 }
 

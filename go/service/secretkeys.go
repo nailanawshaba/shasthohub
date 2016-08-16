@@ -13,25 +13,25 @@ import (
 	"golang.org/x/net/context"
 )
 
-type SecretKeysHandler struct {
+type SecretKeysRPCHandler struct {
 	*BaseHandler
 	libkb.Contextified
 }
 
-func NewSecretKeysHandler(xp rpc.Transporter, g *libkb.GlobalContext) *SecretKeysHandler {
-	return &SecretKeysHandler{
+func NewSecretKeysRPCHandler(xp rpc.Transporter, g *libkb.GlobalContext) *SecretKeysRPCHandler {
+	return &SecretKeysRPCHandler{
 		BaseHandler:  NewBaseHandler(xp),
 		Contextified: libkb.NewContextified(g),
 	}
 }
 
-func (h *SecretKeysHandler) GetSecretKeys(_ context.Context, sessionID int) (keybase1.SecretKeys, error) {
+func (h *SecretKeysRPCHandler) GetSecretKeys(_ context.Context, sessionID int) (keybase1.SecretKeys, error) {
 	if h.G().Env.GetRunMode() == libkb.ProductionRunMode {
 		return keybase1.SecretKeys{}, errors.New("GetSecretKeys is a devel-only RPC")
 	}
 	ctx := engine.Context{
-		LogUI:     h.getLogUI(sessionID),
-		SecretUI:  h.getSecretUI(sessionID, h.G()),
+		LogUI:     h.GetLogUI(sessionID),
+		SecretUI:  h.GetSecretUI(sessionID, h.G()),
 		SessionID: sessionID,
 	}
 	eng := engine.NewSecretKeysEngine(h.G())

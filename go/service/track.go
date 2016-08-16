@@ -13,21 +13,41 @@ import (
 	"golang.org/x/net/context"
 )
 
-// TrackHandler is the RPC handler for the track interface.
+// TrackHandler implements keybase1.TrackInterface
 type TrackHandler struct {
-	*BaseHandler
 	libkb.Contextified
 
 	lastCheckTime time.Time
+	ui            TrackUI
+}
+
+type TrackRPCHandler struct {
+	*BaseHandler
+	*TrackHandler
 }
 
 var _ keybase1.TrackInterface = (*TrackHandler)(nil)
 
-// NewTrackHandler creates a TrackHandler for the xp transport.
-func NewTrackHandler(xp rpc.Transporter, g *libkb.GlobalContext) *TrackHandler {
+// TrackUI resolves UI for track requests
+type TrackUI interface {
+	GetSecretUI(sessionID int, g *libkb.GlobalContext) libkb.SecretUI
+	NewRemoteIdentifyUI(sessionID int, g *libkb.GlobalContext) *RemoteIdentifyUI
+}
+
+// NewTrackHandler creates a TrackHandler
+func NewTrackHandler(g *libkb.GlobalContext, ui TrackUI) *TrackHandler {
 	return &TrackHandler{
-		BaseHandler:  NewBaseHandler(xp),
 		Contextified: libkb.NewContextified(g),
+		ui:           ui,
+	}
+}
+
+// NewTrackRPCHandler creates a TrackHandler for the xp transport.
+func NewTrackRPCHandler(xp rpc.Transporter, g *libkb.GlobalContext) *TrackRPCHandler {
+	handler := NewBaseHandler(xp)
+	return &TrackRPCHandler{
+		BaseHandler:  handler,
+		TrackHandler: NewTrackHandler(g, handler),
 	}
 }
 
@@ -39,8 +59,8 @@ func (h *TrackHandler) Track(_ context.Context, arg keybase1.TrackArg) error {
 		ForceRemoteCheck: arg.ForceRemoteCheck,
 	}
 	ctx := engine.Context{
-		IdentifyUI: h.NewRemoteIdentifyUI(arg.SessionID, h.G()),
-		SecretUI:   h.getSecretUI(arg.SessionID, h.G()),
+		IdentifyUI: h.ui.NewRemoteIdentifyUI(arg.SessionID, h.G()),
+		SecretUI:   h.ui.GetSecretUI(arg.SessionID, h.G()),
 		SessionID:  arg.SessionID,
 	}
 	eng := engine.NewTrackEngine(&earg, h.G())
@@ -53,8 +73,8 @@ func (h *TrackHandler) TrackWithToken(_ context.Context, arg keybase1.TrackWithT
 		Options: arg.Options,
 	}
 	ctx := engine.Context{
-		IdentifyUI: h.NewRemoteIdentifyUI(arg.SessionID, h.G()),
-		SecretUI:   h.getSecretUI(arg.SessionID, h.G()),
+		IdentifyUI: h.ui.NewRemoteIdentifyUI(arg.SessionID, h.G()),
+		SecretUI:   h.ui.GetSecretUI(arg.SessionID, h.G()),
 		SessionID:  arg.SessionID,
 	}
 	eng := engine.NewTrackToken(&earg, h.G())
@@ -81,7 +101,7 @@ func (h *TrackHandler) Untrack(_ context.Context, arg keybase1.UntrackArg) error
 		Username: arg.Username,
 	}
 	ctx := engine.Context{
-		SecretUI:  h.getSecretUI(arg.SessionID, h.G()),
+		SecretUI:  h.ui.GetSecretUI(arg.SessionID, h.G()),
 		SessionID: arg.SessionID,
 	}
 	eng := engine.NewUntrackEngine(&earg, h.G())

@@ -73,7 +73,7 @@ func (h *chatLocalHandler) PostLocal(ctx context.Context, arg keybase1.PostLocal
 	}
 
 	// get device signing key for this user
-	signingKey, err := engine.GetMySecretKey(h.G(), h.getSecretUI, libkb.DeviceSigningKeyType, "sign chat message")
+	signingKey, err := engine.GetMySecretKey(h.G(), h.GetSecretUI, libkb.DeviceSigningKeyType, "sign chat message")
 	if err != nil {
 		return err
 	}
@@ -96,16 +96,16 @@ func (h *chatLocalHandler) PostLocal(ctx context.Context, arg keybase1.PostLocal
 	return h.remoteClient().PostRemote(ctx, rarg)
 }
 
-// getSecretUI returns a SecretUI, preferring a delegated SecretUI if
+// GetSecretUI returns a SecretUI, preferring a delegated SecretUI if
 // possible.
-func (h *chatLocalHandler) getSecretUI() libkb.SecretUI {
+func (h *chatLocalHandler) GetSecretUI() libkb.SecretUI {
 	ui, err := h.G().UIRouter.GetSecretUI(0)
 	if err == nil && ui != nil {
 		h.G().Log.Debug("chatLocalHandler: using delegated SecretUI")
 		return ui
 	}
 	h.G().Log.Debug("chatLocalHandler: using local SecretUI")
-	return h.BaseHandler.getSecretUI(0, h.G())
+	return h.BaseHandler.GetSecretUI(0, h.G())
 }
 
 // remoteClient returns a client connection to gregord.

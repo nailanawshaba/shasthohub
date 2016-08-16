@@ -23,21 +23,21 @@ func TestCryptoSecretUI(t *testing.T) {
 	// Should return errorSecretUI because UIRouter returned an
 	// error.
 	tc.G.SetUIRouter(fakeUIRouter{secretUIErr: errors.New("fake error")})
-	secretUI := c.getSecretUI(0, "")
+	secretUI := c.GetSecretUI(0, "")
 	if _, ok := secretUI.(errorSecretUI); !ok {
 		t.Errorf("secretUI %v is not an errorSecretUI", secretUI)
 	}
 
 	// Should return errorSecretUI because UIRouter returned nil.
 	tc.G.SetUIRouter(fakeUIRouter{})
-	secretUI = c.getSecretUI(0, "")
+	secretUI = c.GetSecretUI(0, "")
 	if _, ok := secretUI.(errorSecretUI); !ok {
 		t.Errorf("secretUI %v is not an errorSecretUI", secretUI)
 	}
 
 	// Should return nullSecretUI..
 	tc.G.SetUIRouter(fakeUIRouter{secretUI: nullSecretUI{}})
-	secretUI = c.getSecretUI(0, "")
+	secretUI = c.GetSecretUI(0, "")
 	if _, ok := secretUI.(nullSecretUI); !ok {
 		t.Errorf("secretUI %v is not a nullSecretUI", secretUI)
 	}

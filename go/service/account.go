@@ -12,28 +12,47 @@ import (
 )
 
 type AccountHandler struct {
-	*BaseHandler
 	libkb.Contextified
+	ui AccountUI
 }
 
-func NewAccountHandler(xp rpc.Transporter, g *libkb.GlobalContext) *AccountHandler {
+type AccountRPCHandler struct {
+	*BaseHandler
+	*AccountHandler
+}
+
+var _ keybase1.AccountInterface = (*AccountHandler)(nil)
+
+// AccountUI resolves UI for Account requests
+type AccountUI interface {
+	GetSecretUI(sessionID int, g *libkb.GlobalContext) libkb.SecretUI
+}
+
+func NewAccountHandler(g *libkb.GlobalContext, ui AccountUI) *AccountHandler {
 	return &AccountHandler{
-		BaseHandler:  NewBaseHandler(xp),
 		Contextified: libkb.NewContextified(g),
+	}
+}
+
+func NewAccountRPCHandler(xp rpc.Transporter, g *libkb.GlobalContext) *AccountRPCHandler {
+	handler := NewBaseHandler(xp)
+	return &AccountRPCHandler{
+		BaseHandler:    handler,
+		AccountHandler: NewAccountHandler(g, handler),
 	}
 }
 
 func (h *AccountHandler) PassphraseChange(_ context.Context, arg keybase1.PassphraseChangeArg) error {
 	eng := engine.NewPassphraseChange(&arg, h.G())
 	ctx := &engine.Context{
-		SecretUI:  h.getSecretUI(arg.SessionID, h.G()),
+		SecretUI:  h.ui.GetSecretUI(arg.SessionID, h.G()),
 		SessionID: arg.SessionID,
 	}
 	return engine.RunEngine(eng, ctx)
 }
 
 func (h *AccountHandler) PassphrasePrompt(_ context.Context, arg keybase1.PassphrasePromptArg) (keybase1.GetPassphraseRes, error) {
-	ui := h.getSecretUI(arg.SessionID, h.G())
+	ui := h.ui.GetSecretUI(arg.SessionID, h.G())
 	if h.G().UIRouter != nil {
 		delegateUI, err := h.G().UIRouter.GetSecretUI(arg.SessionID)
 		if err != nil {
