@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	keybase1 "github.com/keybase/client/go/protocol"
+	pvl "github.com/keybase/client/go/pvl"
 	jsonw "github.com/keybase/go-jsonw"
 )
 
@@ -58,8 +59,8 @@ func (h *HackerNewsChecker) CheckHint(g *GlobalContext, hint SigHint) ProofError
 }
 
 func (h *HackerNewsChecker) CheckStatus(g *GlobalContext, hint SigHint) ProofError {
-	if UsePvl {
-		return CheckProof(g, &hardcodedPVL, keybase1.ProofType_HACKERNEWS, h.proof, hint)
+	if pvl.UsePvl {
+		return PvlCheckProof(g, &pvl.HardcodedPVL, keybase1.ProofType_HACKERNEWS, h.proof, hint)
 	}
 	return h.CheckStatusOld(g, hint)
 }

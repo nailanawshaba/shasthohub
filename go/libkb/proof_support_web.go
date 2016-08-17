@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	keybase1 "github.com/keybase/client/go/protocol"
+	pvl "github.com/keybase/client/go/pvl"
 	jsonw "github.com/keybase/go-jsonw"
 )
 
@@ -60,8 +61,8 @@ func (rc *WebChecker) CheckHint(g *GlobalContext, h SigHint) ProofError {
 }
 
 func (rc *WebChecker) CheckStatus(g *GlobalContext, h SigHint) ProofError {
-	if UsePvl {
-		return CheckProof(g, &hardcodedPVL, keybase1.ProofType_GENERIC_WEB_SITE, rc.proof, h)
+	if pvl.UsePvl {
+		return PvlCheckProof(g, &pvl.HardcodedPVL, keybase1.ProofType_GENERIC_WEB_SITE, rc.proof, h)
 	}
 	return rc.CheckStatusOld(g, h)
 }

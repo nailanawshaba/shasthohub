@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	keybase1 "github.com/keybase/client/go/protocol"
+	pvl "github.com/keybase/client/go/pvl"
 	jsonw "github.com/keybase/go-jsonw"
 )
 
@@ -40,8 +41,8 @@ func (rc *GithubChecker) CheckHint(g *GlobalContext, h SigHint) ProofError {
 }
 
 func (rc *GithubChecker) CheckStatus(g *GlobalContext, h SigHint) ProofError {
-	if UsePvl {
-		return CheckProof(g, &hardcodedPVL, keybase1.ProofType_GITHUB, rc.proof, h)
+	if pvl.UsePvl {
+		return PvlCheckProof(g, &pvl.HardcodedPVL, keybase1.ProofType_GITHUB, rc.proof, h)
 	}
 	return rc.CheckStatusOld(g, h)
 }

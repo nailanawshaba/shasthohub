@@ -1,7 +1,7 @@
 // Copyright 2015 Keybase, Inc. All rights reserved. Use of
 // this source code is governed by the included BSD license.
 
-package libkb
+package pvl
 
 import (
 	"log"
@@ -10,7 +10,7 @@ import (
 )
 
 // Filled from hardcodedPVLString by init.
-var hardcodedPVL jsonw.Wrapper
+var HardcodedPVL jsonw.Wrapper
 
 var hardcodedPVLString = `
 {
@@ -95,7 +95,7 @@ func init() {
 	if err != nil {
 		log.Panicf("could not read pvl json: %v", err)
 	}
-	hardcodedPVL = *wrapper
+	HardcodedPVL = *wrapper
 }
 
 // func init() {
@@ -113,5 +113,5 @@ func init() {
 // 	if err != nil {
 // 		log.Panicf("could not read pvl json file %v: %v", path, err)
 // 	}
-// 	hardcodedPVL = *wrapper
+// 	HardcodedPVL = *wrapper
 // }

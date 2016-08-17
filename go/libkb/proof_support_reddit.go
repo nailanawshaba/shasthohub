@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	keybase1 "github.com/keybase/client/go/protocol"
+	pvl "github.com/keybase/client/go/pvl"
 	jsonw "github.com/keybase/go-jsonw"
 )
 
@@ -111,8 +112,8 @@ func (rc *RedditChecker) CheckData(h SigHint, dat *jsonw.Wrapper) ProofError {
 }
 
 func (rc *RedditChecker) CheckStatus(g *GlobalContext, h SigHint) ProofError {
-	if UsePvl {
-		return CheckProof(g, &hardcodedPVL, keybase1.ProofType_REDDIT, rc.proof, h)
+	if pvl.UsePvl {
+		return PvlCheckProof(g, &pvl.HardcodedPVL, keybase1.ProofType_REDDIT, rc.proof, h)
 	}
 	return rc.CheckStatusOld(g, h)
 }

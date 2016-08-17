@@ -1,7 +1,7 @@
 // Copyright 2015 Keybase, Inc. All rights reserved. Use of
 // this source code is governed by the included BSD license.
 
-package libkb
+package pvl
 
 import (
 	b64 "encoding/base64"
@@ -70,7 +70,7 @@ const (
 	PvlTransformURL        = "transform_url"
 )
 
-type PvlStep func(*GlobalContext, *jsonw.Wrapper, PvlScriptState) (PvlScriptState, ProofError)
+type PvlStep func(PowerBox, *jsonw.Wrapper, PvlScriptState) (PvlScriptState, ProofError)
 
 var PvlSteps = map[string]PvlStep{
 	PvlAssertRegexMatch:    pvlStepAssertRegexMatch,
@@ -84,15 +84,9 @@ var PvlSteps = map[string]PvlStep{
 }
 
 // Checkproof verifies one proof by running the pvl on the provided proof information.
-func CheckProof(g *GlobalContext, pvl *jsonw.Wrapper, service keybase1.ProofType, link RemoteProofChainLink, h SigHint) ProofError {
+func CheckProof(g PowerBox, pvl *jsonw.Wrapper, service keybase1.ProofType) ProofError {
 	if perr := pvlValidateChunk(pvl, service); perr != nil {
 		return perr
-	}
-
-	sigBody, sigID, err := OpenSig(link.GetArmoredSig())
-	if err != nil {
-		return NewProofError(keybase1.ProofStatus_BAD_SIGNATURE,
-			"Bad signature: %v", err)
 	}
 
 	scripts, perr := pvlChunkGetScripts(pvl, service)
@@ -102,12 +96,12 @@ func CheckProof(g *GlobalContext, pvl *jsonw.Wrapper, service keybase1.ProofType
 
 	newstate := func() PvlScriptState {
 		vars := PvlScriptVariables{
-			UsernameService: link.GetRemoteUsername(), // Blank for DNS-proofs
-			UsernameKeybase: link.GetUsername(),
-			Sig:             sigBody,
-			SigIDMedium:     sigID.ToMediumID(),
-			SigIDShort:      sigID.ToShortID(),
-			Hostname:        link.GetHostname(), // Blank for non-{DNS/Web} proofs
+			UsernameService: g.UsernameService(), // Blank for DNS-proofs
+			UsernameKeybase: g.UsernameKeybase(),
+			Sig:             g.SigBody(),
+			SigIDMedium:     g.SigID().ToMediumID(),
+			SigIDShort:      g.SigID().ToShortID(),
+			Hostname:        g.Hostname(), // Blank for non-{DNS/Web} proofs
 		}
 
 		// Enforce prooftype-dependent variables.
@@ -122,8 +116,8 @@ func CheckProof(g *GlobalContext, pvl *jsonw.Wrapper, service keybase1.ProofType
 			PC:           0,
 			Service:      service,
 			Vars:         vars,
-			ActiveString: h.apiURL,
-			FetchURL:     h.apiURL,
+			ActiveString: g.HintURL(),
+			FetchURL:     g.HintURL(),
 			HasFetched:   false,
 			FetchResult:  nil,
 		}
@@ -322,12 +316,12 @@ func pvlValidateScript(script *jsonw.Wrapper, service keybase1.ProofType) ProofE
 
 // Run each script on each TXT record of each domain.
 // Succeed if any succeed.
-func pvlRunDNS(g *GlobalContext, scripts []*jsonw.Wrapper, startstate PvlScriptState) ProofError {
+func pvlRunDNS(g PowerBox, scripts []*jsonw.Wrapper, startstate PvlScriptState) ProofError {
 	userdomain := startstate.Vars.Hostname
 	domains := []string{userdomain, "_keybase." + userdomain}
 	var firsterr ProofError
 	for _, d := range domains {
-		g.Log.Debug("Trying DNS: %v", d)
+		g.Log().Debug("Trying DNS: %v", d)
 
 		err := pvlRunDNSOne(g, scripts, startstate, d)
 		if err == nil {
@@ -342,7 +336,7 @@ func pvlRunDNS(g *GlobalContext, scripts []*jsonw.Wrapper, startstate PvlScriptS
 }
 
 // Run each script on each TXT record of the domain.
-func pvlRunDNSOne(g *GlobalContext, scripts []*jsonw.Wrapper, startstate PvlScriptState, domain string) ProofError {
+func pvlRunDNSOne(g PowerBox, scripts []*jsonw.Wrapper, startstate PvlScriptState, domain string) ProofError {
 	txts, err := net.LookupTXT(domain)
 	if err != nil {
 		return NewProofError(keybase1.ProofStatus_DNS_ERROR,
@@ -350,7 +344,7 @@ func pvlRunDNSOne(g *GlobalContext, scripts []*jsonw.Wrapper, startstate PvlScri
 	}
 
 	for _, record := range txts {
-		g.Log.Debug("For %s, got TXT record: %s", domain, record)
+		g.Log().Debug("For %s, got TXT record: %s", domain, record)
 
 		// Try all scripts.
 		for _, script := range scripts {
@@ -368,7 +362,7 @@ func pvlRunDNSOne(g *GlobalContext, scripts []*jsonw.Wrapper, startstate PvlScri
 		len(txts), domain)
 }
 
-func pvlRunScript(g *GlobalContext, script *jsonw.Wrapper, startstate PvlScriptState) ProofError {
+func pvlRunScript(g PowerBox, script *jsonw.Wrapper, startstate PvlScriptState) ProofError {
 	var state = startstate
 	scriptlen, err := script.Len()
 	if err != nil {
@@ -405,7 +399,7 @@ func pvlRunScript(g *GlobalContext, script *jsonw.Wrapper, startstate PvlScriptS
 	return nil
 }
 
-func pvlStepInstruction(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
+func pvlStepInstruction(g PowerBox, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
 	for name, step := range PvlSteps {
 		if pvlJSONHasKey(ins, name) {
 			return step(g, ins, state)
@@ -416,7 +410,7 @@ func pvlStepInstruction(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptSta
 		"Unsupported PVL instruction %d", state.PC)
 }
 
-func pvlStepAssertRegexMatch(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
+func pvlStepAssertRegexMatch(g PowerBox, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
 	template, err := ins.AtKey(PvlAssertRegexMatch).GetString()
 	if err != nil {
 		return state, NewProofError(keybase1.ProofStatus_INVALID_PVL,
@@ -427,7 +421,7 @@ func pvlStepAssertRegexMatch(g *GlobalContext, ins *jsonw.Wrapper, state PvlScri
 		return state, perr
 	}
 	if !re.MatchString(state.ActiveString) {
-		g.Log.Debug("PVL regex did not match: %v %v", re, state.ActiveString)
+		g.Log().Debug("PVL regex did not match: %v %v", re, state.ActiveString)
 		return state, NewProofError(keybase1.ProofStatus_CONTENT_FAILURE,
 			"Regex did not match %v", re)
 	}
@@ -435,14 +429,14 @@ func pvlStepAssertRegexMatch(g *GlobalContext, ins *jsonw.Wrapper, state PvlScri
 	return state, nil
 }
 
-func pvlStepAssertFindBase64(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
+func pvlStepAssertFindBase64(g PowerBox, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
 	target, err := ins.AtKey(PvlAssertFindBase64).GetString()
 	if err != nil {
 		return state, NewProofError(keybase1.ProofStatus_INVALID_PVL,
 			"Could not assert target %v", ins)
 	}
 	if target == "sig" {
-		if FindBase64Block(state.ActiveString, state.Vars.Sig, false) {
+		if g.FindBase64Block(state.ActiveString, state.Vars.Sig) {
 			return state, nil
 		}
 		return state, NewProofError(keybase1.ProofStatus_TEXT_NOT_FOUND,
@@ -452,12 +446,12 @@ func pvlStepAssertFindBase64(g *GlobalContext, ins *jsonw.Wrapper, state PvlScri
 		"Can only assert_find_base64 for sig")
 }
 
-func pvlStepWhitespaceNormalize(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
-	state.ActiveString = WhitespaceNormalize(state.ActiveString)
+func pvlStepWhitespaceNormalize(g PowerBox, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
+	state.ActiveString = g.WhitespaceNormalize(state.ActiveString)
 	return state, nil
 }
 
-func pvlStepRegexCapture(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
+func pvlStepRegexCapture(g PowerBox, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
 	template, err := ins.AtKey(PvlRegexCapture).GetString()
 	if err != nil {
 		return state, NewProofError(keybase1.ProofStatus_INVALID_PVL,
@@ -469,7 +463,7 @@ func pvlStepRegexCapture(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptSt
 	}
 	match := re.FindStringSubmatch(state.ActiveString)
 	if len(match) < 2 {
-		g.Log.Debug("PVL regex capture did not match: %v %v", re, state.ActiveString)
+		g.Log().Debug("PVL regex capture did not match: %v %v", re, state.ActiveString)
 		return state, NewProofError(keybase1.ProofStatus_CONTENT_FAILURE,
 			"Regex capture did not match: %v", re)
 	}
@@ -477,7 +471,7 @@ func pvlStepRegexCapture(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptSt
 	return state, nil
 }
 
-func pvlStepFetch(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
+func pvlStepFetch(g PowerBox, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
 	fetchType, err := ins.AtKey(PvlFetch).GetString()
 	if err != nil {
 		return state, NewProofError(keybase1.ProofStatus_INVALID_PVL,
@@ -494,35 +488,35 @@ func pvlStepFetch(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptState) (P
 
 	switch PvlMode(fetchType) {
 	case PvlModeString:
-		res, err := g.XAPI.GetText(NewAPIArg(g, state.FetchURL))
+		res, err := g.GetText(state.FetchURL)
 		if err != nil {
-			return state, XapiError(err, state.FetchURL)
+			return state, err
 		}
 		state.FetchResult = &PvlFetchResult{
 			Mode:   PvlModeString,
-			String: res.Body,
+			String: res,
 		}
 		state.ActiveString = state.FetchResult.String
 		return state, nil
 	case PvlModeJSON:
-		res, err := g.XAPI.Get(NewAPIArg(g, state.FetchURL))
+		res, err := g.GetJSON(state.FetchURL)
 		if err != nil {
-			return state, XapiError(err, state.FetchURL)
+			return state, err
 		}
 		state.FetchResult = &PvlFetchResult{
 			Mode: PvlModeJSON,
-			JSON: res.Body,
+			JSON: res,
 		}
 		state.ActiveString = ""
 		return state, nil
 	case PvlModeHTML:
-		res, err := g.XAPI.GetHTML(NewAPIArg(g, state.FetchURL))
+		res, err := g.GetHTML(state.FetchURL)
 		if err != nil {
-			return state, XapiError(err, state.FetchURL)
+			return state, err
 		}
 		state.FetchResult = &PvlFetchResult{
 			Mode: PvlModeHTML,
-			HTML: res.GoQuery,
+			HTML: res,
 		}
 		state.ActiveString = ""
 		return state, nil
@@ -532,7 +526,7 @@ func pvlStepFetch(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptState) (P
 	}
 }
 
-func pvlStepSelectorJSON(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
+func pvlStepSelectorJSON(g PowerBox, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
 	if state.FetchResult == nil || state.FetchResult.Mode != PvlModeJSON {
 		return state, NewProofError(keybase1.ProofStatus_INVALID_PVL,
 			"Cannot use json selector with non-json fetch result")
@@ -568,7 +562,7 @@ func pvlStepSelectorJSON(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptSt
 	return state, nil
 }
 
-func pvlStepSelectorCSS(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
+func pvlStepSelectorCSS(g PowerBox, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
 	if state.FetchResult == nil || state.FetchResult.Mode != PvlModeHTML {
 		return state, NewProofError(keybase1.ProofStatus_INVALID_PVL,
 			"Cannot use css selector with non-html fetch result")
@@ -603,7 +597,7 @@ func pvlStepSelectorCSS(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptSta
 	return state, nil
 }
 
-func pvlStepTransformURL(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
+func pvlStepTransformURL(g PowerBox, ins *jsonw.Wrapper, state PvlScriptState) (PvlScriptState, ProofError) {
 	sourceTemplate, err := ins.AtKey(PvlTransformURL).GetString()
 	if err != nil {
 		return state, NewProofError(keybase1.ProofStatus_INVALID_PVL,
@@ -622,14 +616,14 @@ func pvlStepTransformURL(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptSt
 
 	match := re.FindStringSubmatch(state.FetchURL)
 	if len(match) < 1 {
-		g.Log.Debug("PVL regex transform did not match: %v %v", re, state.FetchURL)
+		g.Log().Debug("PVL regex transform did not match: %v %v", re, state.FetchURL)
 		return state, NewProofError(keybase1.ProofStatus_CONTENT_FAILURE,
 			"Regex transform did not match: %v", re)
 	}
 
 	newURL, err := pvlSubstitute(destTemplate, state.Vars, match)
 	if err != nil {
-		g.Log.Debug("PVL regex transform did not substitute: %v %v", re, state.FetchURL)
+		g.Log().Debug("PVL regex transform did not substitute: %v %v", re, state.FetchURL)
 		return state, NewProofError(keybase1.ProofStatus_BAD_API_URL,
 			"Regex transform did not substitute: %v %v", re, err)
 	}
@@ -642,7 +636,7 @@ func pvlStepTransformURL(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptSt
 // Run a PVL CSS selector.
 // selectors is a list like [ "div .foo", 0, ".bar"] ].
 // Each string runs a selector, each integer runs a Eq.
-func pvlRunCSSSelectorInner(g *GlobalContext, html *goquery.Selection, selectors *jsonw.Wrapper) (*goquery.Selection, ProofError) {
+func pvlRunCSSSelectorInner(g PowerBox, html *goquery.Selection, selectors *jsonw.Wrapper) (*goquery.Selection, ProofError) {
 	nselectors, err := selectors.Len()
 	if err != nil {
 		return nil, NewProofError(keybase1.ProofStatus_INVALID_PVL,
@@ -680,11 +674,11 @@ func pvlRunCSSSelectorInner(g *GlobalContext, html *goquery.Selection, selectors
 
 // Most failures here log instead of returning an error. If an error occurs, ([], nil) will be returned.
 // This is because a selector may descend into many subtrees and fail in all but one.
-func pvlRunSelectorJSONInner(g *GlobalContext, object *jsonw.Wrapper, selectors []*jsonw.Wrapper) ([]string, ProofError) {
+func pvlRunSelectorJSONInner(g PowerBox, object *jsonw.Wrapper, selectors []*jsonw.Wrapper) ([]string, ProofError) {
 	if len(selectors) == 0 {
 		s, err := pvlJSONStringOrMarshal(object)
 		if err != nil {
-			g.Log.Debug("PVL could not read object: %v", err)
+			g.Log().Debug("PVL could not read object: %v", err)
 			return make([]string, 0), nil
 		}
 		return []string{s}, nil
@@ -704,7 +698,7 @@ func pvlRunSelectorJSONInner(g *GlobalContext, object *jsonw.Wrapper, selectors 
 	case selectorIsIndex:
 		object, err := object.ToArray()
 		if err != nil {
-			g.Log.Debug("PVL json select by index from non-array: %v", err)
+			g.Log().Debug("PVL json select by index from non-array: %v", err)
 			return []string{}, nil
 		}
 
@@ -713,7 +707,7 @@ func pvlRunSelectorJSONInner(g *GlobalContext, object *jsonw.Wrapper, selectors 
 	case selectorIsKey:
 		object, err := object.ToDictionary()
 		if err != nil {
-			g.Log.Debug("PVL json select by key from non-map: %v", err)
+			g.Log().Debug("PVL json select by key from non-map: %v", err)
 			return []string{}, nil
 		}
 
@@ -722,7 +716,7 @@ func pvlRunSelectorJSONInner(g *GlobalContext, object *jsonw.Wrapper, selectors 
 	case selectorIsAll:
 		children, err := pvlJSONGetChildren(object)
 		if err != nil {
-			g.Log.Debug("PVL json select could not get children: %v", err)
+			g.Log().Debug("PVL json select could not get children: %v", err)
 			return []string{}, nil
 		}
 		var results []string

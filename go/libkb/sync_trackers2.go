@@ -5,9 +5,10 @@ package libkb
 
 import (
 	"fmt"
-	keybase1 "github.com/keybase/client/go/protocol"
 	"sync"
 	"time"
+
+	keybase1 "github.com/keybase/client/go/protocol"
 )
 
 type Tracker2Syncer struct {

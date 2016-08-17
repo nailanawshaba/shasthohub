@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	keybase1 "github.com/keybase/client/go/protocol"
+	pvl "github.com/keybase/client/go/pvl"
 	jsonw "github.com/keybase/go-jsonw"
 )
 
@@ -127,8 +128,8 @@ func (rc *RooterChecker) rewriteURL(g *GlobalContext, s string) (string, error) 
 }
 
 func (rc *RooterChecker) CheckStatus(g *GlobalContext, h SigHint) (perr ProofError) {
-	if UsePvl {
-		return CheckProof(g, &hardcodedPVL, keybase1.ProofType_ROOTER, rc.proof, h)
+	if pvl.UsePvl {
+		return PvlCheckProof(g, &pvl.HardcodedPVL, keybase1.ProofType_ROOTER, rc.proof, h)
 	}
 	return rc.CheckStatusOld(g, h)
 }
