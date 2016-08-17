@@ -24,12 +24,12 @@ var substituteTests = []substituteTest{
 }
 
 var sampleVars = PvlScriptVariables{
-	UsernameService:  "kronk",
-	UsernameKeybase:  "kronk_on_kb",
-	Sig:              []byte{1, 2, 3, 4, 5},
-	SigIDMedium:      "sig%{sig_id_medium}.*$(^)\\/",
-	SigIDShort:       "000",
-	Hostname: "example.com",
+	UsernameService: "kronk",
+	UsernameKeybase: "kronk_on_kb",
+	Sig:             []byte{1, 2, 3, 4, 5},
+	SigIDMedium:     "sig%{sig_id_medium}.*$(^)\\/",
+	SigIDShort:      "000",
+	Hostname:        "example.com",
 }
 
 func TestSubstitute(t *testing.T) {
