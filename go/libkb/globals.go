@@ -26,6 +26,7 @@ import (
 	"github.com/jonboulle/clockwork"
 	"github.com/keybase/client/go/logger"
 	keybase1 "github.com/keybase/client/go/protocol"
+	"github.com/keybase/client/go/sstore"
 )
 
 type ShutdownHook func() error
@@ -77,6 +78,7 @@ type GlobalContext struct {
 	clockMu             sync.Mutex             // protects Clock
 	clock               clockwork.Clock        // RealClock unless we're testing
 	SecretStoreAll      SecretStoreAll         // nil except for tests and supported platforms
+	SecretStorer        sstore.SecretStorer    // secret storer
 	hookMu              sync.RWMutex           // protects loginHooks, logoutHooks
 	loginHooks          []LoginHook            // call these on login
 	logoutHooks         []LogoutHook           // call these on logout
