@@ -9,6 +9,7 @@ import (
 	jsonw "github.com/keybase/go-jsonw"
 )
 
+// Filled from hardcodedPVLString by init.
 var hardcodedPVL jsonw.Wrapper
 
 var hardcodedPVLString = `

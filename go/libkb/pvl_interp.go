@@ -83,6 +83,7 @@ var PvlSteps = map[string]PvlStep{
 	PvlTransformURL:        pvlStepTransformURL,
 }
 
+// Checkproof verifies one proof by running the pvl on the provided proof information.
 func CheckProof(g *GlobalContext, pvl *jsonw.Wrapper, service keybase1.ProofType, link RemoteProofChainLink, h SigHint) ProofError {
 	if perr := pvlValidateChunk(pvl, service); perr != nil {
 		return perr
@@ -185,7 +186,7 @@ func pvlChunkGetScripts(pvl *jsonw.Wrapper, service keybase1.ProofType) ([]*json
 }
 
 // Check that a chunk of PVL is valid code.
-// Will always accept valid code, may not always notice invalidities.
+// Will always accept valid code, but may not always notice invalidities.
 func pvlValidateChunk(pvl *jsonw.Wrapper, service keybase1.ProofType) ProofError {
 	// Check the version.
 	version, err := pvl.AtKey("pvl_version").GetInt()
@@ -203,7 +204,7 @@ func pvlValidateChunk(pvl *jsonw.Wrapper, service keybase1.ProofType) ProofError
 		return perr
 	}
 
-	// Scan all scripts (for the service) for errors. Report the first error.
+	// Scan all the scripts (for this service) for errors. Report the first error.
 	var errs []ProofError
 	for _, script := range scripts {
 		perr = pvlValidateScript(script, service)
@@ -235,6 +236,8 @@ func pvlValidateScript(script *jsonw.Wrapper, service keybase1.ProofType) ProofE
 	for i := 0; i < scriptlen; i++ {
 		ins := script.AtIndex(i)
 		switch {
+
+		// These can always run, but must be cases so that the default case works.
 		case pvlJSONHasKey(ins, PvlAssertRegexMatch):
 		case pvlJSONHasKey(ins, PvlAssertFindBase64):
 		case pvlJSONHasKey(ins, PvlWhitespaceNormalize):
@@ -338,6 +341,7 @@ func pvlRunDNS(g *GlobalContext, scripts []*jsonw.Wrapper, startstate PvlScriptS
 	return firsterr
 }
 
+// Run each script on each TXT record of the domain.
 func pvlRunDNSOne(g *GlobalContext, scripts []*jsonw.Wrapper, startstate PvlScriptState, domain string) ProofError {
 	txts, err := net.LookupTXT(domain)
 	if err != nil {
@@ -387,6 +391,7 @@ func pvlRunScript(g *GlobalContext, script *jsonw.Wrapper, startstate PvlScriptS
 		newstate, perr := pvlStepInstruction(g, ins, state)
 		state = newstate
 		if perr != nil {
+			// Add additional info to INVALID_PVL errors.
 			if perr.GetProofStatus() == keybase1.ProofStatus_INVALID_PVL {
 				perr = NewProofError(keybase1.ProofStatus_INVALID_PVL,
 					fmt.Sprintf("Invalid PVL (%v): %v", state.PC, perr.GetDesc()))
@@ -396,7 +401,7 @@ func pvlRunScript(g *GlobalContext, script *jsonw.Wrapper, startstate PvlScriptS
 		state.PC++
 	}
 
-	// Script executed successfully and with no errors.
+	// Script executed successfully with no errors.
 	return nil
 }
 
@@ -415,7 +420,7 @@ func pvlStepAssertRegexMatch(g *GlobalContext, ins *jsonw.Wrapper, state PvlScri
 	template, err := ins.AtKey(PvlAssertRegexMatch).GetString()
 	if err != nil {
 		return state, NewProofError(keybase1.ProofStatus_INVALID_PVL,
-			"Could not get pattern %v", ins)
+			"Could not get template %v", ins)
 	}
 	re, perr := pvlInterpretRegex(template, state.Vars)
 	if perr != nil {
@@ -578,7 +583,7 @@ func pvlStepSelectorCSS(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptSta
 	attr, err := ins.AtKey("attr").GetString()
 	useAttr := err == nil
 
-	selection, perr := pvlRunCSSSelector(g, state.FetchResult.HTML.Selection, selectors)
+	selection, perr := pvlRunCSSSelectorInner(g, state.FetchResult.HTML.Selection, selectors)
 	if perr != nil {
 		return state, perr
 	}
@@ -637,7 +642,7 @@ func pvlStepTransformURL(g *GlobalContext, ins *jsonw.Wrapper, state PvlScriptSt
 // Run a PVL CSS selector.
 // selectors is a list like [ "div .foo", 0, ".bar"] ].
 // Each string runs a selector, each integer runs a Eq.
-func pvlRunCSSSelector(g *GlobalContext, html *goquery.Selection, selectors *jsonw.Wrapper) (*goquery.Selection, ProofError) {
+func pvlRunCSSSelectorInner(g *GlobalContext, html *goquery.Selection, selectors *jsonw.Wrapper) (*goquery.Selection, ProofError) {
 	nselectors, err := selectors.Len()
 	if err != nil {
 		return nil, NewProofError(keybase1.ProofStatus_INVALID_PVL,
@@ -733,6 +738,7 @@ func pvlRunSelectorJSONInner(g *GlobalContext, object *jsonw.Wrapper, selectors 
 		"Selector entry not recognized: %v", selector)
 }
 
+// Take a template, substitute variables, and build the Regexp.
 func pvlInterpretRegex(template string, vars PvlScriptVariables) (*regexp.Regexp, ProofError) {
 	perr := NewProofError(keybase1.ProofStatus_INVALID_PVL,
 		"Could not build regex %v", template)

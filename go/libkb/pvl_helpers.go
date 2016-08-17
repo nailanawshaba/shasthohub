@@ -67,6 +67,7 @@ func pvlJSONHasKey(w *jsonw.Wrapper, key string) bool {
 	return !w.AtKey(key).IsNil()
 }
 
+// Return the elements of an array.
 func pvlJSONUnpackArray(w *jsonw.Wrapper) ([]*jsonw.Wrapper, error) {
 	w, err := w.ToArray()
 	if err != nil {
@@ -83,6 +84,7 @@ func pvlJSONUnpackArray(w *jsonw.Wrapper) ([]*jsonw.Wrapper, error) {
 	return res, nil
 }
 
+// Return the elements of an array or values of a map.
 func pvlJSONGetChildren(w *jsonw.Wrapper) ([]*jsonw.Wrapper, error) {
 	dict, err := w.ToDictionary()
 	isDict := err == nil
