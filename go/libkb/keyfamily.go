@@ -603,11 +603,35 @@ func (ckf *ComputedKeyFamily) Revoke(tcl TypedChainLink) (err error) {
 
 // SetPGPHash sets the authoritative version (by hash) of a PGP key
 func (ckf *ComputedKeyFamily) SetActivePGPHash(kid keybase1.KID, hash string) {
-	if _, ok := ckf.cki.Infos[kid]; ok {
-		ckf.cki.Infos[kid].ActivePGPHash = hash
-	} else {
+	ckf.G().Log.Debug("| SetActivePGPHash(kid=%s, hash=%s)", kid, hash)
+	info := ckf.cki.Infos[kid]
+	if info == nil {
 		ckf.G().Log.Debug("| Skipped setting active hash, since key was never delegated")
+		return
 	}
+	info.ActivePGPHash = hash
+	keySet := ckf.kf.PGPKeySets[kid]
+	if keySet == nil {
+		ckf.G().Log.Debug("| Ignoring etime update due to unknonwn kid")
+	}
+	key := keySet.KeysByHash[hash]
+	if key == nil {
+		ckf.G().Log.Debug("| Ignoring etime update due to unknown key hash")
+		return
+	}
+
+	_, _, etime := ckf.getPGPKeyTimes(key)
+	info.SetETimePGP(etime)
+
+	if etime > 0 {
+		ckf.G().Log.Debug("| Etime update to %s", time.Unix(etime, 0))
+	} else if etime == 0 {
+		ckf.G().Log.Debug("| Etime update to ∞")
+	} else {
+		ckf.G().Log.Debug("| No etime update")
+	}
+
+	return
 }
 
 // revokeSigs operates on the per-signature revocations in the given
