@@ -521,7 +521,7 @@ func (c *ChainLink) GetSigID() keybase1.SigID {
 }
 
 func (c *ChainLink) GetSigCheckCache() (cki *ComputedKeyInfos) {
-	if c.sigVerified && c.cki != nil {
+	if c.sigVerified && c.cki != nil && c.cki.Version == ComputedKeyInfosVersion {
 		cki = c.cki
 	}
 	return

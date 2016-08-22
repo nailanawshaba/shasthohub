@@ -59,7 +59,7 @@ func (sc *SigChain) LocalDelegate(kf *KeyFamily, key GenericKey, sigID keybase1.
 
 	if len(sigID) > 0 {
 		var zeroTime time.Time
-		err = cki.Delegate(key.GetKID(), NowAsKeybaseTime(0), sigID, signingKid, signingKid, "" /* pgpHash */, isSibkey, time.Unix(0, 0), zeroTime)
+		err = cki.Delegate(key.GetKID(), NowAsKeybaseTime(0), sigID, signingKid, signingKid, "" /* pgpHash */, isSibkey, time.Unix(0, 0) /* ctime */, zeroTime /* etime */, 0 /* etimePGP */)
 	}
 
 	return
@@ -399,7 +399,7 @@ func (sc *SigChain) verifySubchain(kf KeyFamily, links []*ChainLink) (cached boo
 	}
 
 	cki = NewComputedKeyInfos(sc.G())
-	ckf := ComputedKeyFamily{kf: &kf, cki: cki, Contextified: sc.Contextified}
+	ckf := ComputedKeyFamily{kf: &kf, cki: cki, Contextified: sc.Contextified, username: un}
 
 	first := true
 
@@ -419,7 +419,7 @@ func (sc *SigChain) verifySubchain(kf KeyFamily, links []*ChainLink) (cached boo
 		sc.G().VDL.Log(VLog1, "| Verify link: %s", link.id)
 
 		if first {
-			if err = ckf.InsertEldestLink(tcl, un); err != nil {
+			if err = ckf.InsertEldestLink(tcl); err != nil {
 				return
 			}
 			first = false

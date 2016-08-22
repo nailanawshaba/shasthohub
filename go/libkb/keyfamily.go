@@ -39,6 +39,13 @@ type ComputedKeyInfo struct {
 	CTime int64 // In Seconds since the Epoch
 	ETime int64 // In Seconds since the Epoch or 0 if none
 
+	// Expiration time via PGP is optional, of course, since only
+	// PGP keys will have them. We let the PGP epxiration time overrule
+	// the Keybase expiration time, but further allow the PGP expiration
+	// time to be bumped forward at anytime.
+	ETimePGP          int64 // In seconds sine the Epoch or 0 in none
+	ETimePGPSpecified bool  // True if the EtimePGP was specified
+
 	// For subkeys, the KID of our parent (if valid)
 	Parent keybase1.KID
 
@@ -73,6 +80,10 @@ type ComputedKeyInfos struct {
 	Contextified
 
 	dirty bool // whether it needs to be written to disk or not
+
+	// Version written out to disk, so we can bump after new changes to
+	// the structure
+	Version int
 
 	// Map of KID to a computed info
 	Infos map[keybase1.KID]*ComputedKeyInfo
@@ -164,8 +175,9 @@ type KeyFamily struct {
 // is what we compute as a result of playing the user's sigchain forward.
 type ComputedKeyFamily struct {
 	Contextified
-	kf  *KeyFamily
-	cki *ComputedKeyInfos
+	kf       *KeyFamily
+	cki      *ComputedKeyInfos
+	username NormalizedUsername
 }
 
 // Insert inserts the given ComputedKeyInfo object 1 or 2 times,
@@ -229,11 +241,12 @@ func NewComputedKeyInfos(g *GlobalContext) *ComputedKeyInfos {
 		Sigs:          make(map[keybase1.SigID]*ComputedKeyInfo),
 		Devices:       make(map[keybase1.DeviceID]*Device),
 		KIDToDeviceID: make(map[keybase1.KID]keybase1.DeviceID),
+		Version:       ComputedKeyInfosVersion,
 	}
 }
 
-func NewComputedKeyInfo(eldest, sibkey bool, status KeyStatus, ctime, etime int64, activePGPHash string) ComputedKeyInfo {
-	return ComputedKeyInfo{
+func NewComputedKeyInfo(eldest, sibkey bool, status KeyStatus, ctime, etime int64, etimePGP int64, activePGPHash string) ComputedKeyInfo {
+	ret := ComputedKeyInfo{
 		Eldest:        eldest,
 		Sibkey:        sibkey,
 		Status:        status,
@@ -242,12 +255,14 @@ func NewComputedKeyInfo(eldest, sibkey bool, status KeyStatus, ctime, etime int6
 		Delegations:   make(map[keybase1.SigID]keybase1.KID),
 		ActivePGPHash: activePGPHash,
 	}
+	ret.SetETimePGP(etimePGP)
+	return ret
 }
 
 func (cki ComputedKeyInfos) InsertLocalEldestKey(kid keybase1.KID) {
 	// CTime and ETime are both initialized to zero, meaning that (until we get
 	// updates from the server) this key never expires.
-	eldestCki := NewComputedKeyInfo(true, true, KeyUncancelled, 0, 0, "" /* activePGPHash */)
+	eldestCki := NewComputedKeyInfo(true, true, KeyUncancelled, 0, 0, 0, "" /* activePGPHash */)
 	cki.Insert(kid, &eldestCki)
 }
 
@@ -258,7 +273,7 @@ func (cki ComputedKeyInfos) InsertServerEldestKey(eldestKey GenericKey, un Norma
 	if pgp, ok := eldestKey.(*PGPKeyBundle); ok {
 		match, ctime, etime := pgp.CheckIdentity(kbid)
 		if match {
-			eldestCki := NewComputedKeyInfo(true, true, KeyUncancelled, ctime, etime, "" /* activePGPHash */)
+			eldestCki := NewComputedKeyInfo(true, true, KeyUncancelled, ctime, 0, etime, "" /* activePGPHash */)
 			cki.Insert(eldestKey.GetKID(), &eldestCki)
 			return nil
 		}
@@ -267,7 +282,41 @@ func (cki ComputedKeyInfos) InsertServerEldestKey(eldestKey GenericKey, un Norma
 	return KeyFamilyError{"InsertServerEldestKey found a non-PGP key."}
 }
 
-func (ckf ComputedKeyFamily) InsertEldestLink(tcl TypedChainLink, username NormalizedUsername) (err error) {
+func (ckf ComputedKeyFamily) getPGPKeyTimes(key GenericKey) (found bool, ctime int64, etime int64) {
+	// The -1 sentinel means "value wasn't specified".  A value of 0 means
+	// that it was specified, and is infinity.
+	ctime = -1
+	etime = -1
+	pgp, ok := key.(*PGPKeyBundle)
+	if !ok {
+		return false, ctime, etime
+	}
+
+	kbid := KeybaseIdentity(ckf.username)
+	_, ctime, etime = pgp.CheckIdentity(kbid)
+	return true, ctime, etime
+}
+
+func (cki *ComputedKeyInfo) SetETime(kb int64, pgp int64) {
+	cki.ETime = kb
+	cki.SetETimePGP(pgp)
+}
+
+func (cki *ComputedKeyInfo) SetETimePGP(pgp int64) {
+	if pgp >= 0 {
+		cki.ETimePGP = pgp
+		cki.ETimePGPSpecified = true
+	}
+}
+
+func (cki *ComputedKeyInfo) GetETimeUnix() int64 {
+	if cki.ETimePGPSpecified && cki.ETimePGP >= 0 {
+		return cki.ETimePGP
+	}
+	return cki.ETime
+}
+
+func (ckf ComputedKeyFamily) InsertEldestLink(tcl TypedChainLink) (err error) {
 	kid := tcl.GetKID()
 	key, err := ckf.FindKeyWithKIDUnsafe(kid)
 	if err != nil {
@@ -284,11 +333,7 @@ func (ckf ComputedKeyFamily) InsertEldestLink(tcl TypedChainLink, username Norma
 	etimeKb = tcl.GetETime().Unix()
 
 	// Also check PGP key times.
-	var ctimePGP, etimePGP int64 = -1, -1
-	if pgp, ok := key.(*PGPKeyBundle); ok {
-		kbid := KeybaseIdentity(username)
-		_, ctimePGP, etimePGP = pgp.CheckIdentity(kbid)
-	}
+	_, ctimePGP, etimePGP := ckf.getPGPKeyTimes(key)
 
 	var ctime int64
 	if ctimePGP >= 0 {
@@ -297,14 +342,7 @@ func (ckf ComputedKeyFamily) InsertEldestLink(tcl TypedChainLink, username Norma
 		ctime = ctimeKb
 	}
 
-	var etime int64
-	if etimePGP >= 0 {
-		etime = etimePGP
-	} else {
-		etime = etimeKb
-	}
-
-	eldestCki := NewComputedKeyInfo(true, true, KeyUncancelled, ctime, etime, tcl.GetPGPFullHash())
+	eldestCki := NewComputedKeyInfo(true, true, KeyUncancelled, ctime, etimeKb, etimePGP, tcl.GetPGPFullHash())
 
 	ckf.cki.Insert(kid, &eldestCki)
 	return nil
@@ -398,19 +436,28 @@ func (ckf ComputedKeyFamily) FindKeyWithKIDUnsafe(kid keybase1.KID) (GenericKey,
 
 func (ckf ComputedKeyFamily) getCkiIfActiveAtTime(kid keybase1.KID, t time.Time) (ret *ComputedKeyInfo, err error) {
 	unixTime := t.Unix()
-	if ki := ckf.cki.Infos[kid]; ki == nil {
+	ki := ckf.cki.Infos[kid]
+	if ki == nil {
 		err = NoKeyError{fmt.Sprintf("The key '%s' wasn't found", kid)}
-	} else if ki.Status != KeyUncancelled {
-		err = KeyRevokedError{fmt.Sprintf("The key '%s' is no longer active", kid)}
-	} else if ki.ETime > 0 && unixTime > ki.ETime {
-		formatStr := "Mon Jan 2 15:04:05 -0700 MST 2006"
-		ckf.G().Log.Warning("Checking status of key %s\n    with respect to time [%s],\n    found it had expired at [%s].",
-			kid, t.Format(formatStr), time.Unix(ki.ETime, 0).Format(formatStr))
-		err = KeyExpiredError{fmt.Sprintf("The key '%s' expired at %s", kid, time.Unix(ki.ETime, 0))}
-	} else {
-		ret = ki
+		return nil, err
 	}
-	return
+
+	if ki.Status != KeyUncancelled {
+		err = KeyRevokedError{fmt.Sprintf("The key '%s' is no longer active", kid)}
+		return nil, err
+	}
+
+	eTimeUnix := ki.GetETimeUnix()
+	if eTimeUnix > 0 && unixTime > eTimeUnix {
+		formatStr := "Mon Jan 2 15:04:05 -0700 MST 2006"
+		etime := time.Unix(eTimeUnix, 0)
+		ckf.G().Log.Warning("Checking status of key %s\n    with respect to time [%s],\n    found it had expired at [%s].",
+			kid, t.Format(formatStr), etime.Format(formatStr))
+		err = KeyExpiredError{fmt.Sprintf("The key '%s' expired at %s", kid, etime)}
+		return nil, err
+	}
+
+	return ki, nil
 }
 
 func (ckf ComputedKeyFamily) getCkiIfActiveNow(kid keybase1.KID) (ret *ComputedKeyInfo, err error) {
@@ -493,26 +540,32 @@ func NowAsKeybaseTime(seqno int) *KeybaseTime {
 
 // Delegate performs a delegation to the key described in the given TypedChainLink.
 // This maybe be a sub- or sibkey delegation.
-func (ckf *ComputedKeyFamily) Delegate(tcl TypedChainLink) (err error) {
+func (ckf *ComputedKeyFamily) Delegate(tcl TypedChainLink) error {
 	kid := tcl.GetDelegatedKid()
 	sigid := tcl.GetSigID()
 	tm := TclToKeybaseTime(tcl)
 
-	if _, err := ckf.FindKeyWithKIDUnsafe(kid); err != nil {
+	key, err := ckf.FindKeyWithKIDUnsafe(kid)
+	if err != nil {
 		return KeyFamilyError{fmt.Sprintf("Delegated KID %s is not in the key family", kid.String())}
 	}
 
-	err = ckf.cki.Delegate(kid, tm, sigid, tcl.GetKID(), tcl.GetParentKid(), tcl.GetPGPFullHash(), (tcl.GetRole() == DLGSibkey), tcl.GetCTime(), tcl.GetETime())
-	return
+	// If it's a PGP key (it may or may not be), we can potentially be extending
+	// the expiration time via this delegation. So pass that expiration through
+	// here.
+	_, _, etimePGP := ckf.getPGPKeyTimes(key)
+
+	err = ckf.cki.Delegate(kid, tm, sigid, tcl.GetKID(), tcl.GetParentKid(), tcl.GetPGPFullHash(), (tcl.GetRole() == DLGSibkey), tcl.GetCTime(), tcl.GetETime(), etimePGP)
+	return err
 }
 
 // Delegate marks the given ComputedKeyInfos object that the given kid is now
 // delegated, as of time tm, in sigid, as signed by signingKid, etc.
-func (cki *ComputedKeyInfos) Delegate(kid keybase1.KID, tm *KeybaseTime, sigid keybase1.SigID, signingKid, parentKID keybase1.KID, pgpHash string, isSibkey bool, ctime, etime time.Time) (err error) {
+func (cki *ComputedKeyInfos) Delegate(kid keybase1.KID, tm *KeybaseTime, sigid keybase1.SigID, signingKid, parentKID keybase1.KID, pgpHash string, isSibkey bool, ctime, etime time.Time, etimePGP int64) (err error) {
 	cki.G().Log.Debug("ComputeKeyInfos::Delegate To %s with %s at sig %s", kid.String(), signingKid, sigid.ToDisplayString(true))
 	info, found := cki.Infos[kid]
 	if !found {
-		newInfo := NewComputedKeyInfo(false, false, KeyUncancelled, ctime.Unix(), etime.Unix(), pgpHash)
+		newInfo := NewComputedKeyInfo(false, false, KeyUncancelled, ctime.Unix(), etime.Unix(), etimePGP, pgpHash)
 		newInfo.DelegatedAt = tm
 		info = &newInfo
 		cki.Infos[kid] = info
@@ -520,6 +573,7 @@ func (cki *ComputedKeyInfos) Delegate(kid keybase1.KID, tm *KeybaseTime, sigid k
 		info.Status = KeyUncancelled
 		info.CTime = ctime.Unix()
 		info.ETime = etime.Unix()
+		info.SetETime(etime.Unix(), etimePGP)
 	}
 	info.Delegations[sigid] = signingKid
 	info.Sibkey = isSibkey

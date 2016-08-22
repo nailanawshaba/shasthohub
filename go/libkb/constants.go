@@ -443,3 +443,9 @@ const (
 	SignaturePrefixChatBody   SignaturePrefix = "Keybase-Chat-Header-1"
 	SignaturePrefixSigchain   SignaturePrefix = "Keybase-Sigchain-1"
 )
+
+const (
+	// Original version wasn't specified, so is implicitly 0
+	ComputedKeyInfosVersionOld0 = 0
+	ComputedKeyInfosVersion     = 1
+)
