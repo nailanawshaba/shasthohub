@@ -4,13 +4,28 @@
 package libkb
 
 import (
-	"fmt"
-	"strings"
-
 	keybase1 "github.com/keybase/client/go/protocol"
+	"strings"
 )
 
 type AlgoType int
+
+const (
+	PGPFingerprintLen = 20
+)
+
+const (
+	KIDPGPBase    AlgoType = 0x00
+	KIDPGPRsa              = 0x1
+	KIDPGPElgamal          = 0x10
+	KIDPGPDsa              = 0x11
+	KIDPGPEcdh             = 0x12
+	KIDPGPEcdsa            = 0x13
+	KIDNaclEddsa           = 0x20
+	KIDNaclDH              = 0x21
+)
+
+type PGPFingerprint [PGPFingerprintLen]byte
 
 type GenericKey interface {
 	GetKID() keybase1.KID
@@ -24,7 +39,7 @@ type GenericKey interface {
 
 	// Verify that the given signature is valid and extracts the
 	// embedded message from it. Also returns the signature ID.
-	VerifyStringAndExtract(sig string) (msg []byte, id keybase1.SigID, err error)
+	VerifyStringAndExtract(sig string, debugLogger func(s string)) (msg []byte, id keybase1.SigID, err error)
 
 	// Verify that the given signature is valid and that its
 	// embedded message matches the given one. Also returns the
@@ -39,8 +54,6 @@ type GenericKey interface {
 	// the KID of the key that sent the message (if applicable).
 	DecryptFromString(ciphertext string) (msg []byte, sender keybase1.KID, err error)
 
-	ToServerSKB(gc *GlobalContext, tsec Triplesec, gen PassphraseGeneration) (*SKB, error)
-	ToLksSKB(lks *LKSec) (*SKB, error)
 	VerboseDescription() string
 	CheckSecretKey() error
 	CanSign() bool
@@ -48,49 +61,11 @@ type GenericKey interface {
 	CanDecrypt() bool
 	HasSecretKey() bool
 	Encode() (string, error) // encode public key to string
-}
 
-func CanEncrypt(key GenericKey) bool {
-	switch key.(type) {
-	case NaclDHKeyPair:
-		return true
-	case *PGPKeyBundle:
-		return true
-	default:
-		return false
-	}
-}
-
-func WriteLksSKBToKeyring(g *GlobalContext, k GenericKey, lks *LKSec, lctx LoginContext) (*SKB, error) {
-	skb, err := k.ToLksSKB(lks)
-	if err != nil {
-		return nil, fmt.Errorf("k.ToLksSKB() error: %s", err)
-	}
-	if err := skbPushAndSave(g, skb, lctx); err != nil {
-		return nil, err
-	}
-	return skb, nil
-}
-
-func skbPushAndSave(g *GlobalContext, skb *SKB, lctx LoginContext) error {
-	if lctx != nil {
-		kr, err := lctx.Keyring()
-		if err != nil {
-			return err
-		}
-		return kr.PushAndSave(skb)
-	}
-	var err error
-	kerr := g.LoginState().Keyring(func(ring *SKBKeyringFile) {
-		err = ring.PushAndSave(skb)
-	}, "PushAndSave")
-	if kerr != nil {
-		return kerr
-	}
-	if err != nil {
-		return err
-	}
-	return nil
+	// ExportPublicAndPrivate halves of this key. Pass the public bytes through, but encrypt
+	// the private bytes via the given encryptor. That encryptor, will, via closures, capture
+	// the
+	ExportPublicAndPrivate(encryptor func(private []byte) (error, []byte)) (public []byte, err error)
 }
 
 // Any valid key matches the empty string.
@@ -101,25 +76,20 @@ func KeyMatchesQuery(key GenericKey, q string, exact bool) bool {
 	return key.GetFingerprintP().Match(q, exact)
 }
 
-func IsPGP(key GenericKey) bool {
-	_, ok := key.(*PGPKeyBundle)
-	return ok
-}
-
-func ParseGenericKey(bundle string) (GenericKey, *Warnings, error) {
-	if isPGPBundle(bundle) {
-		// PGP key
-		return ReadOneKeyFromString(bundle)
-	}
-	// NaCl key
-	key, err := ImportKeypairFromKID(keybase1.KIDFromString(bundle))
-	return key, &Warnings{}, err
-}
-
-func isPGPBundle(armored string) bool {
-	return strings.HasPrefix(armored, "-----BEGIN PGP")
-}
-
 func GenericKeyEqual(k1, k2 GenericKey) bool {
 	return k1.GetKID().Equal(k2.GetKID())
+}
+
+func (p *PGPFingerprint) Match(q string, exact bool) bool {
+	if p == nil {
+		return false
+	}
+	if exact {
+		return strings.ToLower(p.String()) == strings.ToLower(q)
+	}
+	return strings.HasSuffix(strings.ToLower(p.String()), strings.ToLower(q))
+}
+
+func (p PGPFingerprint) Eq(p2 PGPFingerprint) bool {
+	return FastByteArrayEq(p[:], p2[:])
 }

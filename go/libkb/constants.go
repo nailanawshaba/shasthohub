@@ -317,17 +317,6 @@ const (
 	TagEncryption   = 515
 )
 
-const (
-	KIDPGPBase    AlgoType = 0x00
-	KIDPGPRsa              = 0x1
-	KIDPGPElgamal          = 0x10
-	KIDPGPDsa              = 0x11
-	KIDPGPEcdh             = 0x12
-	KIDPGPEcdsa            = 0x13
-	KIDNaclEddsa           = 0x20
-	KIDNaclDH              = 0x21
-)
-
 // OpenPGP hash IDs, taken from http://tools.ietf.org/html/rfc4880#section-9.4
 const (
 	HashPGPMd5       = 1

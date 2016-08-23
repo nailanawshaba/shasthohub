@@ -89,11 +89,7 @@ func (g *GPGKey) DecryptFromString(ciphertext string) (msg []byte, sender keybas
 	return msg, sender, errors.New("DecryptFromString not implemented")
 }
 
-func (g *GPGKey) ToServerSKB(gc *GlobalContext, ts Triplesec, gen PassphraseGeneration) (*SKB, error) {
-	return nil, errors.New("ToServerSKB not implemented")
-}
-
-func (g *GPGKey) ToLksSKB(lks *LKSec) (*SKB, error) {
+func (g *GPGKey) ExportPublicAndPrivate(encryptor func(private []byte) error) (public []byte, err error) {
 	return nil, errors.New("ToLksSKB not implemented")
 }
 

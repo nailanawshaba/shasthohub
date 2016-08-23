@@ -367,7 +367,7 @@ func (k NaclSigningKeyPair) SignToString(msg []byte) (sig string, id keybase1.Si
 	return
 }
 
-func (k NaclSigningKeyPair) VerifyStringAndExtract(sig string) (msg []byte, id keybase1.SigID, err error) {
+func (k NaclSigningKeyPair) VerifyStringAndExtract(sig string, debugLogger func(s string)) (msg []byte, id keybase1.SigID, err error) {
 	var keyInSignature GenericKey
 	var fullSigBody []byte
 	keyInSignature, msg, fullSigBody, err = NaclVerifyAndExtract(sig)
@@ -436,7 +436,7 @@ func (k NaclDHKeyPair) SignToString(msg []byte) (sig string, id keybase1.SigID, 
 	return
 }
 
-func (k NaclDHKeyPair) VerifyStringAndExtract(sig string) (msg []byte, id keybase1.SigID, err error) {
+func (k NaclDHKeyPair) VerifyStringAndExtract(sig string, debugLogger func(s string)) (msg []byte, id keybase1.SigID, err error) {
 	err = KeyCannotVerifyError{}
 	return
 }
@@ -496,40 +496,18 @@ func (s *NaclSigInfo) ArmoredEncode() (ret string, err error) {
 	return PacketArmoredEncode(s)
 }
 
-// NaCl keys are never wrapped for the server.
-func (k NaclSigningKeyPair) ToServerSKB(gc *GlobalContext, t Triplesec, gen PassphraseGeneration) (*SKB, error) {
-	return nil, fmt.Errorf("NaCl keys should never be encrypted for the server.")
-}
-func (k NaclDHKeyPair) ToServerSKB(gc *GlobalContext, t Triplesec, gen PassphraseGeneration) (*SKB, error) {
-	return nil, fmt.Errorf("NaCl keys should never be encrypted for the server.")
-}
-
-func (k NaclSigningKeyPair) ToLksSKB(lks *LKSec) (*SKB, error) {
-	data, err := lks.Encrypt(k.Private[:])
-	if err != nil {
+func (k NaclSigningKeyPair) ExportPublicAndPrivate(encryptor func(private []byte) error) (public []byte, err error) {
+	if err = encryptor(k.Private[:]); err != nil {
 		return nil, err
 	}
-	ret := NewSKB(lks.G())
-	ret.Pub = k.GetKID().ToBytes()
-	ret.Type = KIDNaclEddsa
-	ret.Priv.Encryption = LKSecVersion
-	ret.Priv.Data = data
-	ret.Priv.PassphraseGeneration = int(lks.Generation())
-	return ret, nil
+	return k.GetKID().ToBytes(), nil
 }
 
-func (k NaclDHKeyPair) ToLksSKB(lks *LKSec) (*SKB, error) {
-	data, err := lks.Encrypt(k.Private[:])
-	if err != nil {
+func (k NaclDHKeyPair) ExportPublicAndPrivate(encryptor func(private []byte) error) (public []byte, err error) {
+	if err = encryptor(k.Private[:]); err != nil {
 		return nil, err
 	}
-	ret := NewSKB(lks.G())
-	ret.Pub = k.GetKID().ToBytes()
-	ret.Type = KIDNaclDH
-	ret.Priv.Encryption = LKSecVersion
-	ret.Priv.Data = data
-	ret.Priv.PassphraseGeneration = int(lks.Generation())
-	return ret, nil
+	return k.GetKID().ToBytes(), nil
 }
 
 func makeNaclSigningKeyPair(reader io.Reader) (NaclSigningKeyPair, error) {

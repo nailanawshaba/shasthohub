@@ -69,6 +69,13 @@ type SKBPriv struct {
 	PassphraseGeneration int    `codec:"passphrase_generation,omitempty"`
 }
 
+func ToServerSKB(g *GlobalContext, key GenericKey, tsec Triplesec, gen PassphraseGeneration) (*SKB, error) {
+	if pgpKey, ok := key.(*PGPKeyBundle); ok {
+		return pgpKey.ToServerSKB(g, tsec, gen)
+	}
+	return nil, fmt.Errorf("Non PGP-keys should never be encrypted for the server.")
+}
+
 func (key *PGPKeyBundle) ToServerSKB(gc *GlobalContext, tsec Triplesec, gen PassphraseGeneration) (ret *SKB, err error) {
 
 	ret = NewSKB(gc)
@@ -103,12 +110,9 @@ func (key *PGPKeyBundle) ToServerSKB(gc *GlobalContext, tsec Triplesec, gen Pass
 	return
 }
 
-func (key *PGPKeyBundle) ToLksSKB(lks *LKSec) (ret *SKB, err error) {
-	if lks == nil {
-		return nil, fmt.Errorf("nil lks")
-	}
+func (key *PGPKeyBundle) ExportPublicAndPrivate(encryptor func(private []byte) error) (public []byte, err error) {
+
 	var pk, sk bytes.Buffer
-	ret = NewSKB(lks.G())
 
 	serializePublic := func() error { return key.Entity.Serialize(&pk) }
 	serializePrivate := func() error { return key.SerializePrivate(&sk) }
@@ -121,7 +125,6 @@ func (key *PGPKeyBundle) ToLksSKB(lks *LKSec) (ret *SKB, err error) {
 	// Urg, there's still more.  For generated keys, it's the opposite.
 	// We have to sign the key components first (via SerializePrivate)
 	// so we can export them publicly.
-
 	if key.Generated {
 		err = serializePrivate()
 		if err == nil {
@@ -139,17 +142,12 @@ func (key *PGPKeyBundle) ToLksSKB(lks *LKSec) (ret *SKB, err error) {
 		return nil, err
 	}
 
-	ret.Priv.Data, err = lks.Encrypt(sk.Bytes())
+	err = encryptor(sk.Bytes())
 	if err != nil {
 		return nil, err
 	}
-	ret.Priv.Encryption = LKSecVersion
-	ret.Priv.PassphraseGeneration = int(lks.Generation())
-	ret.Pub = pk.Bytes()
 
-	ret.Type = key.GetAlgoType()
-
-	return ret, nil
+	return pk.Bytes(), nil
 }
 
 func (s *SKB) Dump() {
@@ -849,5 +847,37 @@ func (k *SKBKeyringFile) RemoveAllPGPBlocks() error {
 	k.Index()
 	k.dirty = true
 
+	return nil
+}
+
+func WriteLksSKBToKeyring(g *GlobalContext, k GenericKey, lks *LKSec, lctx LoginContext) (*SKB, error) {
+	skb, err := lks.ToSKB(k)
+	if err != nil {
+		return nil, fmt.Errorf("k.ToLksSKB() error: %s", err)
+	}
+	if err := skbPushAndSave(g, skb, lctx); err != nil {
+		return nil, err
+	}
+	return skb, nil
+}
+
+func skbPushAndSave(g *GlobalContext, skb *SKB, lctx LoginContext) error {
+	if lctx != nil {
+		kr, err := lctx.Keyring()
+		if err != nil {
+			return err
+		}
+		return kr.PushAndSave(skb)
+	}
+	var err error
+	kerr := g.LoginState().Keyring(func(ring *SKBKeyringFile) {
+		err = ring.PushAndSave(skb)
+	}, "PushAndSave")
+	if kerr != nil {
+		return kerr
+	}
+	if err != nil {
+		return err
+	}
 	return nil
 }

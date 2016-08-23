@@ -260,3 +260,24 @@ func NewLKSecForEncrypt(ui SecretUI, uid keybase1.UID, gc *GlobalContext) (ret *
 func (s *LKSec) EncryptClientHalfRecovery(key GenericKey) (string, error) {
 	return key.EncryptToString(s.clientHalf, nil)
 }
+
+func (s *LKSec) ToSKB(key GenericKey) (ret *SKB, err error) {
+	if s == nil {
+		return nil, fmt.Errorf("nil lks")
+	}
+	ret = NewSKB(s.G())
+
+	encryptor := func(private []byte) (err error) {
+		ret.Priv.Data, err = s.Encrypt(private)
+		return err
+	}
+	ret.Pub, err = key.EncryptPublicAndPrivate(encryptor)
+	if err != nil {
+		return nil, err
+	}
+	ret.Priv.Encryption = LKSecVersion
+	ret.Priv.PassphraseGeneration = int(s.Generation())
+	ret.Type = key.GetAlgoType()
+
+	return ret, nil
+}

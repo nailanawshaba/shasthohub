@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"strings"
 
+	crypto "github.com/keybase/client/go/crypto"
 	keybase1 "github.com/keybase/client/go/protocol"
 	"github.com/keybase/go-crypto/openpgp"
 	"github.com/keybase/go-crypto/openpgp/armor"
@@ -21,13 +22,13 @@ import (
 	jsonw "github.com/keybase/go-jsonw"
 )
 
-var _ GenericKey = (*PGPKeyBundle)(nil)
+var _ crypto.GenericKey = (*PGPKeyBundle)(nil)
 
 type PGPKeyBundle struct {
 	*openpgp.Entity
 
 	// GPGFallbackKey to be used as a fallback if given dummy a PrivateKey.
-	GPGFallbackKey GenericKey
+	GPGFallbackKey crypto.GenericKey
 
 	// We make the (fairly dangerous) assumption that the key will never be
 	// modified. This avoids the issue that encoding an openpgp.Entity is
@@ -51,12 +52,6 @@ func NewPGPKeyBundle(g *GlobalContext, entity *openpgp.Entity) *PGPKeyBundle {
 func NewGeneratedPGPKeyBundle(g *GlobalContext, entity *openpgp.Entity) *PGPKeyBundle {
 	return &PGPKeyBundle{Entity: entity, Generated: true, Contextified: NewContextified(g)}
 }
-
-const (
-	PGPFingerprintLen = 20
-)
-
-type PGPFingerprint [PGPFingerprintLen]byte
 
 func PGPFingerprintFromHex(s string) (*PGPFingerprint, error) {
 	var fp PGPFingerprint
@@ -122,16 +117,6 @@ func (p PGPFingerprint) ToDisplayString(verbose bool) string {
 	return p.ToKeyID()
 }
 
-func (p *PGPFingerprint) Match(q string, exact bool) bool {
-	if p == nil {
-		return false
-	}
-	if exact {
-		return strings.ToLower(p.String()) == strings.ToLower(q)
-	}
-	return strings.HasSuffix(strings.ToLower(p.String()), strings.ToLower(q))
-}
-
 func (k *PGPKeyBundle) InitGPGKey() {
 	k.GPGFallbackKey = &GPGKey{
 		fp:  k.GetFingerprintP(),
@@ -175,10 +160,6 @@ func (k *PGPKeyBundle) StoreToLocalDb(g *GlobalContext) error {
 	val := jsonw.NewString(s)
 	g.Log.Debug("| Storing Key (kid=%s) to Local DB", k.GetKID())
 	return g.LocalDb.Put(DbKey{Typ: DBPGPKey, Key: k.GetKID().String()}, []DbKey{}, val)
-}
-
-func (p PGPFingerprint) Eq(p2 PGPFingerprint) bool {
-	return FastByteArrayEq(p[:], p2[:])
 }
 
 func GetPGPFingerprint(w *jsonw.Wrapper) (*PGPFingerprint, error) {
@@ -641,13 +622,13 @@ func (k *PGPKeyBundle) SignToString(msg []byte) (sig string, id keybase1.SigID, 
 	return
 }
 
-func (k PGPKeyBundle) VerifyStringAndExtract(sig string) (msg []byte, id keybase1.SigID, err error) {
+func (k PGPKeyBundle) VerifyStringAndExtract(sig string, debugLogger func(s string)) (msg []byte, id keybase1.SigID, err error) {
 	var ps *ParsedSig
 	if ps, err = PGPOpenSig(sig); err != nil {
 		return
 	} else if err = ps.Verify(k); err != nil {
-		k.G().Log.Debug("Failing key----------\n%s", k.ArmoredPublicKey)
-		k.G().Log.Debug("Failing sig----------\n%s", sig)
+		debugLogger(fmt.Sprintf("Failing key----------\n%s", k.ArmoredPublicKey))
+		debugLogger(fmt.Sprintf("Failing sig----------\n%s", sig))
 		return
 	}
 	msg = ps.LiteralData
@@ -763,6 +744,17 @@ func (p PGPFingerprint) LastWriterWins() bool {
 
 func (p PGPFingerprint) GetProofType() keybase1.ProofType {
 	return keybase1.ProofType_PGP
+}
+
+//===================================================
+
+func IsPGP(key GenericKey) bool {
+	_, ok := key.(*PGPKeyBundle)
+	return ok
+}
+
+func IsPGPBundle(armored string) bool {
+	return strings.HasPrefix(armored, "-----BEGIN PGP")
 }
 
 //===================================================
