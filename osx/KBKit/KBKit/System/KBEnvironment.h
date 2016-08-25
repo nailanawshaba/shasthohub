@@ -27,6 +27,7 @@ typedef NS_OPTIONS (NSUInteger, KBInstallOptions) {
 
 @interface KBEnvironment : NSObject
 
+@property (readonly) KBHelperTool *helperTool;
 @property (readonly) KBEnvConfig *config;
 @property (readonly) KBService *service;
 @property (readonly) KBFSService *kbfs;

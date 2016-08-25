@@ -18,7 +18,7 @@
 + (void)uninstall:(NSArray *)installables completion:(KBCompletion)completion {
   KBRunOver *rover = [[KBRunOver alloc] init];
   rover.enumerator = [installables objectEnumerator];
-  rover.runBlock = ^(KBInstallable *installable, KBRunCompletion runCompletion) {
+  rover.runBlock = ^(id<KBInstallable> installable, KBRunCompletion runCompletion) {
     [installable uninstall:^(NSError *error) {
       installable.error = error;
       runCompletion(installable, NO);

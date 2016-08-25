@@ -67,6 +67,14 @@ func ctlBrewStop(g *libkb.GlobalContext) error {
 	return err
 }
 
+func removeKBFS(g *libkb.GlobalContext) error {
+	mountDir, err := g.Env.GetMountDir()
+	if err != nil {
+		return err
+	}
+	return install.UninstallKBFS(g.Env.GetRunMode(), mountDir, false, g.Log)
+}
+
 func ctlStop(g *libkb.GlobalContext, components map[string]bool, wait time.Duration) error {
 	if libkb.IsBrewBuild {
 		return ctlBrewStop(g)
@@ -85,7 +93,7 @@ func ctlStop(g *libkb.GlobalContext, components map[string]bool, wait time.Durat
 		}
 	}
 	if ok := components[install.ComponentNameKBFS.String()]; ok {
-		if _, err := launchd.Stop(install.DefaultKBFSLabel(runMode), wait, g.Log); err != nil {
+		if err := removeKBFS(g); err != nil {
 			errs = append(errs, err)
 		}
 	}

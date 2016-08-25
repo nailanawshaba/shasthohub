@@ -117,7 +117,7 @@ func KeybaseFuseStatusForAppBundle(appPath string, log Log) (keybase1.FuseStatus
 }
 
 func fuseBundleVersion(appPath string) (string, error) {
-	plistPath := filepath.Join(appPath, "Contents/Resources/KeybaseInstaller.app/Contents/Info.plist")
+	plistPath := filepath.Join(installerAppBundlePath(appPath), "Contents/Info.plist")
 
 	if _, err := os.Stat(plistPath); os.IsNotExist(err) {
 		return "", nil

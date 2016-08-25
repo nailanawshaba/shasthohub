@@ -11,6 +11,7 @@
 #import "KBKeybaseLaunchd.h"
 #import "KBSemVersion.h"
 #import "KBTask.h"
+#import "KBMountDir.h"
 
 @interface KBFSService ()
 @property NSString *label;
@@ -63,47 +64,15 @@
   return [NSString gh_isBlank:self.serviceStatus.pid] ? KBInstallRuntimeStatusStopped : KBInstallRuntimeStatusStarted;
 }
 
-- (BOOL)checkMountDir {
-  NSString *directory = self.config.mountDir;
-  BOOL exists = [NSFileManager.defaultManager fileExistsAtPath:directory isDirectory:nil];
-  if (exists) {
-    NSError *error = nil;
-    NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:directory error:&error];
-    if (attributes) {
-      DDLogDebug(@"Mount directory=%@, attributes=%@", directory, attributes);
-    } else {
-      DDLogDebug(@"Mount directory error: %@", error);
-    }
-  } else {
-    DDLogDebug(@"Mount directory doesn't exist: %@", directory);
-  }
-  return exists;
-}
-
-- (void)createMountDir:(KBCompletion)completion {
-  uid_t uid = getuid();
-  gid_t gid = getgid();
-  // Make the dir 0600 so we can't go into it while unmounted.
-  NSNumber *permissions = [NSNumber numberWithShort:0600];
-  NSDictionary *params = @{@"directory": self.config.mountDir, @"uid": @(uid), @"gid": @(gid), @"permissions": permissions, @"excludeFromBackup": @(YES)};
-  DDLogDebug(@"Creating mount directory: %@", params);
-  [self.helperTool.helper sendRequest:@"createDirectory" params:@[params] completion:^(NSError *error, id value) {
-    completion(error);
-  }];
-}
-
 - (void)install:(KBCompletion)completion {
-  if (![self checkMountDir]) {
-    [self createMountDir:^(NSError *error) {
-      if (error) {
-        completion(error);
-        return;
-      }
-      [self _install:completion];
-    }];
-  } else {
+  KBMountDir *mountDir = [[KBMountDir alloc] initWithConfig:self.config helperTool:self.helperTool];
+  [mountDir install:^(NSError *error) {
+    if (error) {
+      completion(error);
+      return;
+    }
     [self _install:completion];
-  }
+  }];
 }
 
 - (void)_install:(KBCompletion)completion {

@@ -31,6 +31,10 @@ const NSTimeInterval KBDefaultInstallableTimeout = 11.0;
   [self componentDidUpdate];
 }
 
+- (NSError *)statusError {
+  return _componentStatus.error;
+}
+
 - (void)componentDidUpdate { }
 
 - (KBInstallRuntimeStatus)runtimeStatus {
@@ -108,9 +112,9 @@ const NSTimeInterval KBDefaultInstallableTimeout = 11.0;
 
 + (NSError *)combineErrors:(NSArray *)installables ignoreWarnings:(BOOL)ignoreWarnings {
   NSMutableArray *errors = [NSMutableArray array];
-  for (KBInstallable *installable in installables) {
+  for (id<KBInstallable> installable in installables) {
     NSError *error = installable.error;
-    if (!error) error = installable.componentStatus.error;
+    if (!error) error = installable.statusError;
     if (!error) continue;
 
     // Ignore warnings

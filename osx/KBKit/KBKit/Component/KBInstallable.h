@@ -23,7 +23,14 @@ extern const NSTimeInterval KBDefaultInstallableTimeout;
 
 typedef void (^KBOnComponentStatus)(KBComponentStatus *installStatus);
 
-@interface KBInstallable : KBComponent
+@protocol KBInstallable <NSObject>
+@property NSError *error;
+- (void)install:(KBCompletion)completion;
+- (void)uninstall:(KBCompletion)completion;
+- (NSError *)statusError;
+@end
+
+@interface KBInstallable : KBComponent <KBInstallable>
 
 @property (readonly) KBEnvConfig *config;
 
