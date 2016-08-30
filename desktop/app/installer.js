@@ -1,4 +1,4 @@
-import {appInstallerPath, appBundlePath} from './paths'
+import {appInstallerPath, appBundlePath, keybaseBinPath} from './paths'
 import exec from './exec'
 import {quit} from './ctl'
 
@@ -24,6 +24,16 @@ export default callback => {
       quit()
       return
     }
-    callback(err)
+
+    const kbBinPath = keybaseBinPath()
+    if (!kbBinPath) {
+      callback(new Error('No keybase bin path'))
+      return
+    }
+    const kbBinArgs = ['-d', 'install']
+    exec(kbBinPath, kbBinArgs, 'darwin', 'prod', true, function (err) {
+      callback(err)
+      return
+    })
   })
 }
