@@ -404,6 +404,7 @@ func (h *chatLocalHandler) getConversationInfo(ctx context.Context, conversation
 		if unboxed.ServerHeader.MessageID.String() == conversationRemote.ReaderInfo.MaxMsgid.String() {
 			conversationInfo.TlfName = unboxed.MessagePlaintext.ClientHeader.TlfName
 		}
+
 	}
 
 	if len(conversationInfo.TlfName) == 0 {
