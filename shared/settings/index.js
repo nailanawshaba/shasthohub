@@ -46,7 +46,7 @@ class Settings extends Component {
 }
 
 export default connect(
-  state => ({}),
+  (state: {}) => ({}),
   dispatch => {
     return {
       onAccount: () => dispatch(routeAppend(['account'])),

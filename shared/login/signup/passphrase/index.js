@@ -1,21 +1,30 @@
 // @flow
 import React, {Component} from 'react'
 import Render from './index.render'
-import type {Props} from './index.render'
 import {bindActionCreators} from 'redux'
 import {checkPassphrase, restartSignup} from '../../../actions/signup'
 import {connect} from 'react-redux'
+import HiddenString from '../../../util/hidden-string'
+
+import type {Props as RenderProps} from './index.render'
+import type {TypedState} from '../../../constants/reducer'
 
 type State = {
   pass1: string,
   pass2: string
 }
 
-class PassphraseForm extends Component {
+type Props = {
+  passphraseError: ?HiddenString,
+  checkPassphrase: (pass1: string, pass2: string) => void,
+  restartSignup: () => void,
+}
+
+class PassphraseForm extends Component<void, Props, State> {
   state: State;
 
-  constructor (props: Props) {
-    super(props)
+  constructor () {
+    super()
 
     this.state = {
       pass1: '',
@@ -38,9 +47,16 @@ class PassphraseForm extends Component {
   }
 }
 
-export default connect(
-  state => ({
-    passphraseError: state.signup.passphraseError,
-  }),
-  dispatch => bindActionCreators({checkPassphrase, restartSignup}, dispatch)
+const F: Class<Component<void, {}, State>> = connect(
+  (state: TypedState, ownProps: {}): {passphraseError: ?HiddenString} => {
+    return {
+      passphraseError: null,
+      checkPassphrase: (pass1, pass2) => {},
+    }
+  },
+  (dispatch: () => void, ownProps: {}): {} => ({
+    restartSignup: () => {},
+  })
 )(PassphraseForm)
+
+export default F

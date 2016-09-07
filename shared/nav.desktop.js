@@ -18,11 +18,13 @@ import Login from './login'
 import flags from './util/feature-flags'
 import {mapValues} from 'lodash'
 import {searchActive} from './local-debug'
-import type {Tabs} from './constants/tabs'
 
 import {profileTab, folderTab, chatTab, peopleTab, devicesTab, settingsTab, loginTab} from './constants/tabs'
 import {navigateBack, navigateUp, switchTab} from './actions/router'
 import TabBar from './tab-bar/index.render'
+
+import type {Tabs} from './constants/tabs'
+import type {TypedState} from './constants/reducer'
 
 const tabs = {
   [settingsTab]: {module: Settings, name: 'Settings'},
@@ -191,8 +193,8 @@ export default connect(
   ({
     router,
     config: {extendedConfig, username},
-    favorite: {publicBadge = 0, privateBadge = 0},
-    notifications: {menuBadge}}) => ({
+    favorite: {folderState: {publicBadge = 0, privateBadge = 0}},
+    notifications: {menuBadge}}: TypedState) => ({
       router,
       provisioned: extendedConfig && !!extendedConfig.defaultDeviceID,
       username,

@@ -4,30 +4,11 @@ import * as Constants from '../constants/signup'
 import * as CommonConstants from '../constants/common'
 
 import HiddenString from '../util/hidden-string'
-
-import type {SignupActions} from '../constants/signup'
-
 import {isMobile} from '../constants/platform'
 
-export type SignupState = {
-  inviteCode: ?string,
-  username: ?string,
-  email: ?string,
-  inviteCodeError: ?string,
-  usernameError: ?string,
-  emailError: ?string,
-  nameError: ?string,
-  passphraseError: ?HiddenString,
-  passphrase: ?HiddenString,
-  deviceNameError: ?string,
-  deviceName: ?string,
-  paperkey: ?HiddenString,
-  signupError: ?HiddenString,
-  waiting: boolean,
-  phase: 'inviteCode' | 'usernameAndEmail' | 'passphraseSignup' | 'deviceName' | 'signupLoading' | 'paperkey' | 'success' | 'signupError' | 'requestInvite' | 'requestInviteSuccess'
-}
+import type {SignupActions, State} from '../constants/signup'
 
-const initialState: SignupState = {
+const initialState: State = {
   inviteCode: null,
   username: null,
   email: null,
@@ -46,7 +27,7 @@ const initialState: SignupState = {
 }
 
 /* eslint-disable no-fallthrough */
-export default function (state: SignupState = initialState, action: SignupActions): SignupState {
+export default function (state: State = initialState, action: SignupActions): State {
   switch (action.type) {
     case CommonConstants.resetStore:
     case Constants.resetSignup:

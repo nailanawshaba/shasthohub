@@ -38,7 +38,7 @@ class RequestInvite extends Component {
 }
 
 export default connect(
-  state => ({
+  (state: Object) => ({
     emailErrorText: state.signup.emailError,
     nameErrorText: state.signup.nameError,
     waiting: state.signup.waiting,

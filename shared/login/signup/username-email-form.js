@@ -2,9 +2,11 @@
 import * as signupActions from '../../actions/signup'
 import React, {Component} from 'react'
 import Render from './username-email-form.render'
-import type {Props} from './username-email-form.render'
 import {bindActionCreators} from 'redux'
 import {connect} from 'react-redux'
+
+import type {Props} from './username-email-form.render'
+import type {TypedState} from '../../constants/reducer'
 
 type State = {
   username: string,
@@ -40,7 +42,7 @@ class UsernameEmailForm extends Component {
 }
 
 export default connect(
-  state => ({
+  (state: TypedState) => ({
     usernameErrorText: state.signup.usernameError,
     emailErrorText: state.signup.emailError,
     username: state.signup.username,

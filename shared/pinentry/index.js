@@ -13,6 +13,10 @@ class Pinentry extends Component {
   }
 }
 
+type OwnProps = {
+  sessionID: number
+}
+
 export default connect(
-  (state, ownProps) => state.pinentry.pinentryStates[ownProps.sessionID]
+  (state, ownProps: OwnProps) => state.pinentry.pinentryStates[ownProps.sessionID]
 )(Pinentry)

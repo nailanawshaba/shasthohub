@@ -15,6 +15,7 @@ import {defaultKBFSPath} from '../constants/config'
 import {exec} from 'child_process'
 
 import type {Props as FolderProps} from '../folders/render'
+import type {TypedState} from '../constants/reducer'
 
 export type Props = $Shape<{
   username: ?string,
@@ -182,7 +183,7 @@ class Menubar extends Component<void, Props, void> {
 }
 
 export default connect(
-  state => ({
+  (state: TypedState) => ({
     username: state.config && state.config.username,
     loggedIn: state.config && state.config.loggedIn,
     folderProps: state.favorite && state.favorite.folderState,

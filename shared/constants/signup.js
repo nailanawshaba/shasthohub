@@ -2,6 +2,24 @@
 import HiddenString from '../util/hidden-string'
 import type {TypedAction} from '../constants/types/flux'
 
+export type State = {
+  inviteCode: ?string,
+  username: ?string,
+  email: ?string,
+  inviteCodeError: ?string,
+  usernameError: ?string,
+  emailError: ?string,
+  nameError: ?string,
+  passphraseError: ?HiddenString,
+  passphrase: ?HiddenString,
+  deviceNameError: ?string,
+  deviceName: ?string,
+  paperkey: ?HiddenString,
+  signupError: ?HiddenString,
+  waiting: boolean,
+  phase: 'inviteCode' | 'usernameAndEmail' | 'passphraseSignup' | 'deviceName' | 'signupLoading' | 'paperkey' | 'success' | 'signupError' | 'requestInvite' | 'requestInviteSuccess'
+}
+
 export const checkInviteCode = 'signup:checkInviteCode'
 export type CheckInviteCode = TypedAction<'signup:checkInviteCode', {inviteCode: string}, {errorText: string}>
 

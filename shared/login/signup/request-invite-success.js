@@ -16,6 +16,6 @@ class RequestInviteSuccess extends Component {
 }
 
 export default connect(
-  state => ({}),
+  (state: {}) => ({}),
   dispatch => bindActionCreators(signupActions, dispatch)
 )(RequestInviteSuccess)

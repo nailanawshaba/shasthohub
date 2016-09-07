@@ -4,6 +4,8 @@ import Render from './index.render'
 import {connect} from 'react-redux'
 import {sawPaperKey} from '../../../actions/signup'
 
+import type {TypedState} from '../../../constants/reducer'
+
 class Success extends Component {
   render () {
     return (
@@ -19,7 +21,7 @@ class Success extends Component {
 }
 
 export default connect(
-  state => ({
+  (state: TypedState) => ({
     paperkey: state.signup.paperkey,
     waiting: state.signup.waiting,
   }),

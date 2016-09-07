@@ -11,6 +11,7 @@ import {isLoading} from '../constants/tracker'
 import type {RenderPropsUnshaped} from './render'
 import type {UserInfo} from '../common-adapters/user-bio'
 import type {Proof, SimpleProofState} from '../constants/tracker'
+import type {TypedState} from '../constants/reducer'
 
 export type TrackerProps = {
   actionBarReady: boolean,
@@ -75,20 +76,24 @@ class Tracker extends Component<void, TrackerProps, void> {
   }
 }
 
+type OwnProps = {
+  username: string
+}
+
 export default connect(
-  (state, ownProps) => {
+  (state: TypedState, ownProps: OwnProps) => {
     const trackerState = state.tracker.trackers[ownProps.username]
     return {
       ...state.tracker,
       nonUser: trackerState && trackerState.type === 'nonUser',
       loggedIn: state.config && state.config.loggedIn,
       loading: isLoading(trackerState),
-      actionBarReady: !trackerState.serverActive && !state.error,
+      actionBarReady: !trackerState.serverActive && !trackerState.error,
       ...trackerState,
       ...ownProps,
     }
   },
-  (dispatch, ownProps) => {
+  (dispatch, ownProps: OwnProps) => {
     const actions = bindActionCreators(trackerActions, dispatch)
     return {
       ...actions,

@@ -131,7 +131,21 @@ export type TrackerState = {
   tlfs: Array<Folder>,
 }
 
-export function isLoading (state: ?TrackerState): boolean {
+export type NonUserState = {
+  type: 'nonUser',
+  error: ?string,
+  closed: boolean,
+  hidden: boolean,
+  name: string,
+  reason: string,
+  isPrivate: boolean,
+  inviteLink: ?string
+}
+
+export type TrackerOrNonUserState = TrackerState | NonUserState
+
+
+export function isLoading (state: ?TrackerOrNonUserState): boolean {
   // TODO (mm) ideally userInfo should be null until we get a response from the server
   // Same with proofs (instead of empty array). So we know the difference between
   // not having data and having empty data.

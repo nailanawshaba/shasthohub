@@ -5,8 +5,10 @@ import {editProfile} from '../../actions/profile'
 import {maxProfileBioChars} from '../../constants/profile'
 
 import Render from './render'
-import type {Props} from './render'
 import {navigateUp} from '../../actions/router'
+
+import type {Props} from './render'
+import type {TypedState} from '../../constants/reducer'
 
 type State = {
   bio: string,
@@ -61,8 +63,17 @@ class EditProfile extends Component<void, Props, State> {
 }
 
 export default connect(
-  (state, ownProps) => {
-    const userInfo = state.tracker.trackers[state.config.username].userInfo
+  (state: TypedState) => {
+    const trackerState = state.config.username && state.tracker.trackers[state.config.username]
+    const userInfo = trackerState && trackerState.type === 'tracker' ? trackerState.userInfo : null
+    // TODO(mm) better error case
+    if (!userInfo) {
+      return {
+        bio: '',
+        fullname: 'User not loaded yet',
+        location: '',
+      }
+    }
     return ({
       bio: userInfo.bio,
       fullname: userInfo.fullname,
