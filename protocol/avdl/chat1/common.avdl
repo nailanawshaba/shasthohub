@@ -40,7 +40,6 @@ protocol common {
   }
 
   enum TLFVisibility {
-    ANY_0,
     PUBLIC_1,
     PRIVATE_2
   }

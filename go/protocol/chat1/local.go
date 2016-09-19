@@ -397,11 +397,11 @@ type GetMessagesLocalArg struct {
 }
 
 type GetInboxSummaryLocalArg struct {
-	TopicType  TopicType     `codec:"topicType" json:"topicType"`
-	After      string        `codec:"after" json:"after"`
-	Before     string        `codec:"before" json:"before"`
-	Limit      int           `codec:"limit" json:"limit"`
-	Visibility TLFVisibility `codec:"visibility" json:"visibility"`
+	TopicType  TopicType      `codec:"topicType" json:"topicType"`
+	After      string         `codec:"after" json:"after"`
+	Before     string         `codec:"before" json:"before"`
+	Limit      int            `codec:"limit" json:"limit"`
+	Visibility *TLFVisibility `codec:"visibility,omitempty" json:"visibility,omitempty"`
 }
 
 type LocalInterface interface {

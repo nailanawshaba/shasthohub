@@ -47,7 +47,6 @@ export const CommonMessageType = {
 }
 
 export const CommonTLFVisibility = {
-  any: 0,
   public: 1,
   private: 2,
 }
@@ -464,8 +463,7 @@ export type SignatureInfo = {
 export type TLFID = bytes
 
 export type TLFVisibility = 
-    0 // ANY_0
-  | 1 // PUBLIC_1
+    1 // PUBLIC_1
   | 2 // PRIVATE_2
 
 export type ThreadID = bytes
@@ -497,7 +495,7 @@ export type localGetInboxSummaryLocalRpcParam = Exact<{
   after: string,
   before: string,
   limit: int,
-  visibility: TLFVisibility
+  visibility?: ?TLFVisibility
 }>
 
 export type localGetMessagesLocalRpcParam = Exact<{

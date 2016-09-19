@@ -153,5 +153,5 @@ protocol local {
   }
 
   // if since is given, limit is ignored
-  GetInboxSummaryLocalRes getInboxSummaryLocal(TopicType topicType, string after, string before, int limit, TLFVisibility visibility);
+  GetInboxSummaryLocalRes getInboxSummaryLocal(TopicType topicType, string after, string before, int limit, union{null, TLFVisibility} visibility);
 }

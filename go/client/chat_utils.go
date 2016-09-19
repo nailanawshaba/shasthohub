@@ -101,8 +101,6 @@ func parseConversationResolver(ctx *cli.Context, tlfName string) (resolver conve
 		resolver.Visibility = chat1.TLFVisibility_PRIVATE
 	} else if ctx.Bool("public") {
 		resolver.Visibility = chat1.TLFVisibility_PUBLIC
-	} else {
-		resolver.Visibility = chat1.TLFVisibility_ANY
 	}
 	return resolver, nil
 }
@@ -188,8 +186,6 @@ func makeInboxFetcherFromCli(ctx *cli.Context) (fetcher inboxFetcher, err error)
 		fetcher.visibility = chat1.TLFVisibility_PRIVATE
 	} else if ctx.Bool("public") {
 		fetcher.visibility = chat1.TLFVisibility_PUBLIC
-	} else {
-		fetcher.visibility = chat1.TLFVisibility_ANY
 	}
 
 	return fetcher, err
