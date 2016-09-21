@@ -109,6 +109,13 @@ func (v *CmdInstall) runInstall() keybase1.InstallResult {
 }
 
 func (v *CmdInstall) Run() error {
+	osver, osbuild, err := install.OSVersionAndBuild()
+	if err != nil {
+		v.G().Log.Errorf("Unable to determine OS version: %s", err)
+	} else {
+		v.G().Log.Debug("OS: %s (%s)", osver, osbuild)
+	}
+
 	result := v.runInstall()
 	if v.format == "json" {
 		out, err := json.MarshalIndent(result, "", "  ")

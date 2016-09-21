@@ -6,7 +6,6 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -336,14 +335,7 @@ func (c *CmdStatus) sessionStatus(s *keybase1.SessionStatus) string {
 	return fmt.Sprintf("%s [loaded: %s, cleared: %s, expired: %s]", s.SessionFor, BoolString(s.Loaded, "yes", "no"), BoolString(s.Cleared, "yes", "no"), BoolString(s.Expired, "yes", "no"))
 }
 
-// execToString returns the space-trimmed output of a command or an error.
-func (c *CmdStatus) execToString(bin string, args []string) (string, error) {
-	result, err := exec.Command(bin, args...).Output()
-	if err != nil {
-		return "", err
-	}
-	if result == nil {
-		return "", fmt.Errorf("Nil result")
-	}
-	return strings.TrimSpace(string(result)), nil
+// osVersionAndBuild returns OS version, and build too on some platforms
+func (c *CmdStatus) osVersionAndBuild() (string, string, error) {
+	return install.OSVersionAndBuild()
 }

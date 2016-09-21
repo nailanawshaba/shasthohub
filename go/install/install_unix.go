@@ -96,3 +96,18 @@ func RunApp(context Context, log Log) error {
 	// TODO: Start app, see run_keybase: /opt/keybase/Keybase &>> "$logdir/Keybase.app.log"
 	return nil
 }
+
+// OSVersionAndBuild returns OS version, and build too on some platforms
+func OSVersionAndBuild() (string, string, error) {
+	productVersion, err := execToString("uname", []string{"-mrs"})
+	if err != nil {
+		return "", "", err
+	}
+
+	buildVersion, err := execToString("lsb_release", []string{"-sd"})
+	if err != nil {
+		return productVersion, "", err
+	}
+
+	return productVersion, buildVersion, nil
+}

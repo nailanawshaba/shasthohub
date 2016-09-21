@@ -33,18 +33,3 @@ func (c *CmdStatus) osSpecific(status *fstatus) error {
 
 	return nil
 }
-
-// osVersionAndBuild returns OS version, and build too on some platforms
-func (c *CmdStatus) osVersionAndBuild() (string, string, error) {
-	productVersion, err := c.execToString("/usr/bin/sw_vers", []string{"-productVersion"})
-	if err != nil {
-		return "", "", err
-	}
-
-	buildVersion, err := c.execToString("/usr/bin/sw_vers", []string{"-buildVersion"})
-	if err != nil {
-		return productVersion, "", err
-	}
-
-	return productVersion, buildVersion, nil
-}

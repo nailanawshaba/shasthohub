@@ -1029,3 +1029,17 @@ func RunApp(context Context, log Log) error {
 	}
 	return nil
 }
+
+func OSVersionAndBuild() (string, string, error) {
+	productVersion, err := execToString("/usr/bin/sw_vers", []string{"-productVersion"})
+	if err != nil {
+		return "", "", err
+	}
+
+	buildVersion, err := execToString("/usr/bin/sw_vers", []string{"-buildVersion"})
+	if err != nil {
+		return productVersion, "", err
+	}
+
+	return productVersion, buildVersion, nil
+}
