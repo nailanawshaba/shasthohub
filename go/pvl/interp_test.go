@@ -352,6 +352,48 @@ var interpUnitTests = []interpUnitTest{
 		reshtml:    html1,
 		shouldwork: true,
 	}, {
+		// Capturing into multiple variables
+		// also more capture groups than 'into' variables
+		name:      "RegexCapture-ok-multi-capture",
+		proofinfo: info1,
+		prepvl: map[keybase1.ProofType]string{
+			keybase1.ProofType_GENERIC_WEB_SITE: `[[
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
+{"regex_capture": {
+  "pattern": "^(\\w) (\\w) (\\w) (\\w) (\\w).*$",
+  "from": "tmp1",
+  "into": ["a", "b", "c"] } },
+{"assert_regex_match": {
+  "pattern": "^%{a} %{b} %{c} d e f$",
+  "from": "tmp1" } }
+]]`},
+		service:    keybase1.ProofType_GENERIC_WEB_SITE,
+		restype:    libkb.XAPIResText,
+		restext:    "a b c d e f",
+		shouldwork: true,
+	}, {
+		// Less capture groups than `into` variables
+		name:      "RegexCapture-ok-multi-capture",
+		proofinfo: info1,
+		prepvl: map[keybase1.ProofType]string{
+			keybase1.ProofType_GENERIC_WEB_SITE: `[[
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
+{"regex_capture": {
+  "pattern": "^(\\w) (\\w) .*$",
+  "from": "tmp1",
+  "into": ["a", "b", "c"] } }
+]]`},
+		service:    keybase1.ProofType_GENERIC_WEB_SITE,
+		restype:    libkb.XAPIResText,
+		restext:    "a b c d e f",
+		shouldwork: false,
+	}, {
 		name:      "RegexCapture-fail-nomatch",
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{

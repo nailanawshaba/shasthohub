@@ -673,12 +673,11 @@ func stepRegexCapture(g proofContextExt, ins regexCaptureT, state scriptState) (
 	// Assert that the match matched and has at least one capture group.
 	// -1 for the ignored first element of match
 	if len(match)-1 < len(ins.Into) {
-		debugWithState(g, state, "Regex capture did not match enough:\n  %v\n  %v\n  %v\n  %v",
+		debugWithState(g, state, "Regex capture did not match enough groups:\n  %v\n  %v\n  %v\n  %v",
 			rdesc.Template, re, from, match)
 		return state, libkb.NewProofError(keybase1.ProofStatus_CONTENT_FAILURE,
-			"Regex capture did not match (%v)", rdesc.Template)
+			"Regex capture did not match enough groups (%v)", rdesc.Template)
 	}
-	// TODO write a test for not enough matches
 	for i := 0; i < len(ins.Into); i++ {
 		err := state.Regs.Set(ins.Into[i], match[i+1])
 		if err != nil {
@@ -689,8 +688,6 @@ func stepRegexCapture(g proofContextExt, ins regexCaptureT, state scriptState) (
 }
 
 func stepParseURL(g proofContextExt, ins parseURLT, state scriptState) (scriptState, libkb.ProofError) {
-	// TODO support more stuff
-
 	s, err := state.Regs.Get(ins.From)
 	if err != nil {
 		return state, err
