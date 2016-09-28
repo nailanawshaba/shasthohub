@@ -14,9 +14,6 @@ import (
 	jsonw "github.com/keybase/go-jsonw"
 )
 
-// TODO make sure the invalid_pvl are failing in the expected ways
-// TODO add tests for new instructions
-
 type interpUnitTest struct {
 	name      string
 	proofinfo ProofInfo
@@ -81,7 +78,7 @@ var interpUnitTests = []interpUnitTest{
 	// # Tests for individual valid instructions.
 	// Test match and fail of each instruction.
 
-	// ## AssertRegexMatch,
+	// ## AssertRegexMatch
 	{
 		name:      "AssertRegexMatch-url-ok",
 		proofinfo: info1,
@@ -181,7 +178,7 @@ var interpUnitTests = []interpUnitTest{
 		shouldwork: false,
 	},
 
-	// ## AssertFindBase64,
+	// ## AssertFindBase64
 	{
 		name:      "AssertFindBase64-ok",
 		proofinfo: info1,
@@ -219,9 +216,9 @@ var interpUnitTests = []interpUnitTest{
 		shouldwork: false,
 	},
 
-	// ## WhitespaceNormalize,
+	// ## AssertCompare
 	{
-		name:      "WhitespaceNormalize-ok",
+		name:      "AssertCompare-cicmp-ok",
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GENERIC_WEB_SITE: `[[
@@ -229,24 +226,73 @@ var interpUnitTests = []interpUnitTest{
   "kind": "string",
   "from": "hint_url",
   "into": "tmp1" } },
-{"assert_regex_match": {
-  "pattern": "^[\\s\\S]*\\t[\\s\\S]*$",
-  "from": "tmp1" } },
-{"whitespace_normalize": {
-  "from": "tmp1",
-  "into": "tmp2" } },
-{"assert_regex_match": {
-  "pattern": "^A b c de f$",
-  "case_insensitive": true,
-  "from": "tmp2" } }
+{"assert_compare": {
+  "cmp": "cicmp",
+  "a": "username_keybase",
+  "b": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GENERIC_WEB_SITE,
 		restype:    libkb.XAPIResText,
-		restext:    "a b   \tc\tde  \n\tf",
+		restext:    "krONK",
+		shouldwork: true,
+	}, {
+		name:      "AssertCompare-cicmp-fail",
+		proofinfo: info1,
+		prepvl: map[keybase1.ProofType]string{
+			keybase1.ProofType_GENERIC_WEB_SITE: `[[
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
+{"assert_compare": {
+  "cmp": "cicmp",
+  "a": "username_keybase",
+  "b": "tmp1" } }
+]]`},
+		service:    keybase1.ProofType_GENERIC_WEB_SITE,
+		restype:    libkb.XAPIResText,
+		restext:    "kr0nk",
+		shouldwork: false,
+	}, {
+		name:      "AssertCompare-stripdots-then-cicmp-ok",
+		proofinfo: info1,
+		prepvl: map[keybase1.ProofType]string{
+			keybase1.ProofType_GENERIC_WEB_SITE: `[[
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
+{"assert_compare": {
+  "cmp": "stripdots-then-cicmp",
+  "a": "username_keybase",
+  "b": "tmp1" } }
+]]`},
+		service:    keybase1.ProofType_GENERIC_WEB_SITE,
+		restype:    libkb.XAPIResText,
+		restext:    "kr.O..NK",
 		shouldwork: true,
 	},
+	{
+		name:      "AssertCompare-stripdots-then-cicmp-fail",
+		proofinfo: info1,
+		prepvl: map[keybase1.ProofType]string{
+			keybase1.ProofType_GENERIC_WEB_SITE: `[[
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
+{"assert_compare": {
+  "cmp": "stripdots-then-cicmp",
+  "a": "username_keybase",
+  "b": "tmp1" } }
+]]`},
+		service:    keybase1.ProofType_GENERIC_WEB_SITE,
+		restype:    libkb.XAPIResText,
+		restext:    "kr0nk",
+		shouldwork: false,
+	},
 
-	// ## RegexCapture,
+	// ## RegexCapture and WhitespaceNormalize tested together
 	{
 		name:      "RegexCapture-ok-ignoregroup",
 		proofinfo: info1,
@@ -355,7 +401,48 @@ var interpUnitTests = []interpUnitTest{
 		shouldwork: false,
 	},
 
-	// ## Fetch,
+	// ## ParseURL
+	// TODO
+	{
+		name:      "ParseURL-ok",
+		proofinfo: info1,
+		prepvl: map[keybase1.ProofType]string{
+			keybase1.ProofType_GITHUB: `[[
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
+{"parse_url": {
+  "from": "tmp1",
+  "path": "path" } },
+{"assert_regex_match": {
+  "pattern": "^/noodle$",
+  "from": "path" } }
+]]`},
+		service:    keybase1.ProofType_GITHUB,
+		restype:    libkb.XAPIResText,
+		restext:    "http://example.com/noodle",
+		shouldwork: true,
+	}, {
+		name:      "ParseURL-fail",
+		proofinfo: info1,
+		prepvl: map[keybase1.ProofType]string{
+			keybase1.ProofType_GITHUB: `[[
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
+{"parse_url": {
+  "from": "tmp1",
+  "path": "path" } }
+]]`},
+		service:    keybase1.ProofType_GITHUB,
+		restype:    libkb.XAPIResText,
+		restext:    "htj0*#)%*J)*H^dle",
+		shouldwork: false,
+	},
+
+	// ## Fetch
 	{
 		name:      "Fetch-string",
 		proofinfo: info1,
@@ -413,7 +500,7 @@ var interpUnitTests = []interpUnitTest{
 		shouldwork: true,
 	},
 
-	// ## SelectorJSON,
+	// ## SelectorJSON
 	{
 		name:      "SelectorJSON-simple",
 		proofinfo: info1,
@@ -525,7 +612,7 @@ var interpUnitTests = []interpUnitTest{
 		shouldwork: true,
 	},
 
-	// ## SelectorCSS,
+	// ## SelectorCSS
 	{
 		name:      "SelectorCSS-ok",
 		proofinfo: info1,
@@ -649,6 +736,29 @@ var interpUnitTests = []interpUnitTest{
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResHTML,
 		reshtml:    html1,
+		shouldwork: true,
+	},
+
+	// ## Fill
+	{
+		name:      "Fill-ok",
+		proofinfo: info1,
+		prepvl: map[keybase1.ProofType]string{
+			keybase1.ProofType_GITHUB: `[[
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
+{"fill": {
+  "with": "%{tmp1}-%{username_keybase}",
+  "into": "tmp2" } },
+{"assert_regex_match": {
+  "pattern": "^foozle-kronk$",
+  "from": "tmp2" } }
+]]`},
+		service:    keybase1.ProofType_GITHUB,
+		restype:    libkb.XAPIResText,
+		restext:    "foozle",
 		shouldwork: true,
 	},
 
@@ -899,6 +1009,47 @@ var interpUnitTests = []interpUnitTest{
 		errstatus:  keybase1.ProofStatus_INVALID_PVL,
 	},
 
+	// ## (Invalid) AssertCompare
+	{
+		name:      "AssertCompare-invalid-strategy",
+		proofinfo: info1,
+		prepvl: map[keybase1.ProofType]string{
+			keybase1.ProofType_GENERIC_WEB_SITE: `[[
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
+{"assert_compare": {
+  "cmp": "",
+  "a": "username_keybase",
+  "b": "tmp1" } }
+]]`},
+		service:    keybase1.ProofType_GENERIC_WEB_SITE,
+		restype:    libkb.XAPIResText,
+		restext:    "krONK",
+		shouldwork: false,
+		errstatus:  keybase1.ProofStatus_INVALID_PVL,
+	}, {
+		name:      "AssertCompare-invalid-noa",
+		proofinfo: info1,
+		prepvl: map[keybase1.ProofType]string{
+			keybase1.ProofType_GENERIC_WEB_SITE: `[[
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
+{"assert_compare": {
+  "cmp": "",
+  "a": "",
+  "b": "tmp1" } }
+]]`},
+		service:    keybase1.ProofType_GENERIC_WEB_SITE,
+		restype:    libkb.XAPIResText,
+		restext:    "krONK",
+		shouldwork: false,
+		errstatus:  keybase1.ProofStatus_INVALID_PVL,
+	},
+
 	// ## (Invalid) WhitespaceNormalize
 	// No tests
 
@@ -981,6 +1132,9 @@ var interpUnitTests = []interpUnitTest{
 		shouldwork: false,
 		errstatus:  keybase1.ProofStatus_INVALID_PVL,
 	},
+
+	// ## (Invalid) ParseURL
+	// TODO
 
 	// ## (Invalid) Fetch
 	{
@@ -1174,8 +1328,44 @@ var interpUnitTests = []interpUnitTest{
 		errstatus:  keybase1.ProofStatus_INVALID_PVL,
 	},
 
-	// ## (Invalid) TransformURL
-	// No tests
+	// ## (Invalid) Fill
+	{
+		name:      "Fill-invalid-badreg",
+		proofinfo: info1,
+		prepvl: map[keybase1.ProofType]string{
+			keybase1.ProofType_GITHUB: `[[
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
+{"fill": {
+  "with": "%{hostname}",
+  "into": "tmp2" } }
+]]`},
+		service:    keybase1.ProofType_GITHUB,
+		restype:    libkb.XAPIResText,
+		restext:    "foozle",
+		shouldwork: false,
+		errstatus:  keybase1.ProofStatus_INVALID_PVL,
+	}, {
+		name:      "Fill-invalid-overwrite",
+		proofinfo: info1,
+		prepvl: map[keybase1.ProofType]string{
+			keybase1.ProofType_GITHUB: `[[
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
+{"fill": {
+  "with": "yeck",
+  "into": "tmp1" } }
+]]`},
+		service:    keybase1.ProofType_GITHUB,
+		restype:    libkb.XAPIResText,
+		restext:    "foozle",
+		shouldwork: false,
+		errstatus:  keybase1.ProofStatus_INVALID_PVL,
+	},
 
 	// # Multiple Scripts
 	{
