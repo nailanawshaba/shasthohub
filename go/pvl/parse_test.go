@@ -43,7 +43,7 @@ func TestParse2(t *testing.T) {
 	if len(cbs.Instructions) < 1 {
 		t.Fatalf("empty script")
 	}
-	if cbs.Instructions[0].RegexCapture == nil {
-		t.Fatalf("first instruction is not a RegexCapture")
+	if cbs.Instructions[0].Fill == nil {
+		t.Fatalf("first instruction is not a fill")
 	}
 }

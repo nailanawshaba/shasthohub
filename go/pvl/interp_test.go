@@ -14,6 +14,9 @@ import (
 	jsonw "github.com/keybase/go-jsonw"
 )
 
+// TODO make sure the invalid_pvl are failing in the expected ways
+// TODO add tests for new instructions
+
 type interpUnitTest struct {
 	name      string
 	proofinfo ProofInfo
@@ -54,14 +57,20 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_TWITTER: `[[
 {"assert_regex_match": {
-  "pattern": "^https://rooter\\.example\\.com/proofs/%{username_service}/[\\d]+\\.htjsxt$" } },
+  "pattern": "^https://rooter\\.example\\.com/proofs/%{username_service}/[\\d]+\\.htjsxt$",
+  "from": "hint_url" } },
 {"fetch": {
-  "kind": "html" } },
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
-  "selectors": [".twit", 0] } },
-{"whitespace_normalize": {} },
+  "selectors": [".twit", 0],
+  "into": "tmp1" } },
+{"whitespace_normalize": {
+  "from": "tmp1",
+  "into": "tmp2" } },
 {"assert_regex_match": {
-  "pattern": "^.*goodproof.*$" }}
+  "pattern": "^.*goodproof.*$",
+  "from": "tmp2" } }
 ]]`},
 		service:    keybase1.ProofType_TWITTER,
 		restype:    libkb.XAPIResHTML,
@@ -79,9 +88,12 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_COINBASE: `[[
 {"assert_regex_match": {
-  "pattern": "^https://rooter\\.example\\.com/proofs/%{username_service}/[\\d]+\\.htjsxt$" } },
+  "pattern": "^https://rooter\\.example\\.com/proofs/%{username_service}/[\\d]+\\.htjsxt$",
+  "from": "hint_url" } },
 {"fetch": {
-  "kind": "string" } }
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_COINBASE,
 		restype:    libkb.XAPIResText,
@@ -93,9 +105,12 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_HACKERNEWS: `[[
 {"assert_regex_match": {
-  "pattern": "^https://rooter\\.example\\.com/proofs/%{username_service}/+\\.htjsxt$" } },
+  "pattern": "^https://rooter\\.example\\.com/proofs/%{username_service}/+\\.htjsxt$",
+  "from": "hint_url" } },
 {"fetch": {
-  "kind": "string"} }
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_HACKERNEWS,
 		restype:    libkb.XAPIResText,
@@ -107,12 +122,17 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_REDDIT: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
-  "selectors": [".twit", -1] } },
-{"whitespace_normalize": {}},
+  "selectors": [".twit", -1],
+  "into": "tmp1" } },
+{"whitespace_normalize": {
+  "from": "tmp1",
+  "into": "tmp2" }},
 {"assert_regex_match": {
-  "pattern": "^short %{sig_id_short}$" } }
+  "pattern": "^short %{sig_id_short}$",
+  "from": "tmp2" } }
 ]]`},
 		service:    keybase1.ProofType_REDDIT,
 		restype:    libkb.XAPIResHTML,
@@ -124,12 +144,17 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_TWITTER: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
-  "selectors": [".twit", -1] } },
-{"whitespace_normalize": {}},
+  "selectors": [".twit", -1],
+  "into": "tmp1" } },
+{"whitespace_normalize": {
+  "from": "tmp1",
+  "into": "tmp2" } },
 {"assert_regex_match": {
-  "pattern": "^wrong %{sig_id_short}$" } }
+  "pattern": "^wrong %{sig_id_short}$",
+  "from": "tmp2" } }
 ]]`},
 		service:    keybase1.ProofType_TWITTER,
 		restype:    libkb.XAPIResHTML,
@@ -141,11 +166,14 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_TWITTER: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
-  "selectors": [".twit", -1] } },
+  "selectors": [".twit", -1],
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^.*SHORT.*$" } }
+  "pattern": "^.*SHORT.*$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_TWITTER,
 		restype:    libkb.XAPIResHTML,
@@ -160,8 +188,12 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GENERIC_WEB_SITE: `[[
 {"fetch": {
-  "kind": "string" } },
-{"assert_find_base64": {"var": "sig"}}
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
+{"assert_find_base64": {
+  "needle": "sig",
+  "haystack": "tmp1" } }
 ]]`},
 		service: keybase1.ProofType_GENERIC_WEB_SITE,
 		restype: libkb.XAPIResText,
@@ -174,8 +206,12 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GENERIC_WEB_SITE: `[[
 {"fetch": {
-  "kind": "string" } },
-{"assert_find_base64": {"var": "sig"}}
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
+{"assert_find_base64": {
+  "needle": "sig",
+  "haystack": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GENERIC_WEB_SITE,
 		restype:    libkb.XAPIResText,
@@ -190,13 +226,19 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GENERIC_WEB_SITE: `[[
 {"fetch": {
-  "kind": "string" } },
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^[\\s\\S]*\\t[\\s\\S]*$" } },
-{"whitespace_normalize": {}},
+  "pattern": "^[\\s\\S]*\\t[\\s\\S]*$",
+  "from": "tmp1" } },
+{"whitespace_normalize": {
+  "from": "tmp1",
+  "into": "tmp2" } },
 {"assert_regex_match": {
   "pattern": "^A b c de f$",
-  "case_insensitive": true } }
+  "case_insensitive": true,
+  "from": "tmp2" } }
 ]]`},
 		service:    keybase1.ProofType_GENERIC_WEB_SITE,
 		restype:    libkb.XAPIResText,
@@ -211,15 +253,22 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GENERIC_WEB_SITE: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
-  "selectors": ["div.twit", -1] } },
-{"whitespace_normalize": {}},
+  "selectors": ["div.twit", -1],
+  "into": "tmp1" } },
+{"whitespace_normalize": {
+  "from": "tmp1",
+  "into": "tmp2" } },
 {"regex_capture": {
   "pattern": "^(?:sHoRt) ([A-Za-z0-9+/=]+)$",
-  "case_insensitive": true } },
+  "case_insensitive": true,
+  "from": "tmp2",
+  "into": ["tmp3"] } },
 {"assert_regex_match": {
-  "pattern": "^%{sig_id_short}$" } }
+  "pattern": "^%{sig_id_short}$",
+  "from": "tmp3" } }
 ]]`},
 		service:    keybase1.ProofType_GENERIC_WEB_SITE,
 		restype:    libkb.XAPIResHTML,
@@ -232,16 +281,25 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GENERIC_WEB_SITE: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
-  "selectors": ["div.twit", -1] } },
-{"whitespace_normalize": {}},
+  "selectors": ["div.twit", -1],
+  "into": "tmp1" } },
+{"whitespace_normalize": {
+  "from": "tmp1",
+  "into": "tmp2" } },
 {"regex_capture": {
-  "pattern": "^(short).*$" } },
+  "pattern": "^(short).*$",
+  "from": "tmp2",
+  "into": ["tmp3"] } },
 {"regex_capture": {
-  "pattern": "^(\\w)+$" } },
+  "pattern": "^(\\w)+$",
+  "from": "tmp3",
+  "into": ["tmp4"] } },
 {"assert_regex_match": {
-  "pattern": "^t$" } }
+  "pattern": "^t$",
+  "from": "tmp4" } }
 ]]`},
 		service:    keybase1.ProofType_GENERIC_WEB_SITE,
 		restype:    libkb.XAPIResHTML,
@@ -253,12 +311,16 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GENERIC_WEB_SITE: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
-  "selectors": ["div.twit", -1] } },
+  "selectors": ["div.twit", -1],
+  "into": "tmp1" } },
 {"regex_capture": {
   "pattern": "^(nowhere)$",
-  "case_insensitive": true } }
+  "case_insensitive": true,
+  "from": "tmp1",
+  "into": ["tmp2"] } }
 ]]`},
 		service:    keybase1.ProofType_GENERIC_WEB_SITE,
 		restype:    libkb.XAPIResHTML,
@@ -270,15 +332,22 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GENERIC_WEB_SITE: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
-  "selectors": ["div.twit", -1] } },
-{"whitespace_normalize": {}},
+  "selectors": ["div.twit", -1],
+  "into": "tmp1" } },
+{"whitespace_normalize": {
+  "from": "tmp1",
+  "into": "tmp2" } },
 {"regex_capture": {
   "pattern": "^sHoRt.*$",
-  "case_insensitive": true } },
+  "case_insensitive": true,
+  "from": "tmp2",
+  "into": ["tmp3"] } },
 {"assert_regex_match": {
-  "pattern": "^%{sig_id_short}$/s" } }
+  "pattern": "^%{sig_id_short}$/s",
+  "from": "tmp3" } }
 ]]`},
 		service:    keybase1.ProofType_GENERIC_WEB_SITE,
 		restype:    libkb.XAPIResHTML,
@@ -293,9 +362,12 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "string" } },
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^str9\n$" } }
+  "pattern": "^str9\n$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResText,
@@ -307,11 +379,14 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
-  "selectors": ["head title"] } },
+  "selectors": ["head title"],
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^proofer$" } }
+  "pattern": "^proofer$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResHTML,
@@ -323,11 +398,14 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "json" } },
+  "kind": "json",
+  "from": "hint_url" } },
 {"selector_json": {
-  "selectors": ["data", 2, "type"] } },
+  "selectors": ["data", 2, "type"],
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^useful$" } }
+  "pattern": "^useful$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResJSON,
@@ -342,11 +420,14 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "json" } },
+  "kind": "json",
+  "from": "hint_url" } },
 {"selector_json": {
-  "selectors": ["data", 2, "type"] } },
+  "selectors": ["data", 2, "type"],
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^useful$" } }
+  "pattern": "^useful$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResJSON,
@@ -358,9 +439,11 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "json" } },
+  "kind": "json",
+  "from": "hint_url" } },
 {"selector_json": {
-  "selectors": ["data", 500] } }
+  "selectors": ["data", 500],
+  "into": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResJSON,
@@ -372,9 +455,11 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "json" } },
+  "kind": "json",
+  "from": "hint_url" } },
 {"selector_json": {
-  "selectors": ["data", "a500"] } }
+  "selectors": ["data", "a500"],
+  "into": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResJSON,
@@ -386,11 +471,14 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "json" } },
+  "kind": "json",
+  "from": "hint_url" } },
 {"selector_json": {
-  "selectors": ["data", -1, "poster"] } },
+  "selectors": ["data", -1, "poster"],
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^eve$" } }
+  "pattern": "^eve$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResJSON,
@@ -402,11 +490,14 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "json" } },
+  "kind": "json",
+  "from": "hint_url" } },
 {"selector_json": {
-  "selectors": ["data", {"all": true }, "poster"] } },
+  "selectors": ["data", {"all": true }, "poster"],
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^kronk eve$" } }
+  "pattern": "^kronk eve$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResJSON,
@@ -419,11 +510,14 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "json" } },
+  "kind": "json",
+  "from": "hint_url" } },
 {"selector_json": {
-  "selectors": ["data", {"all": true }, "extra", 0, 0] } },
+  "selectors": ["data", {"all": true }, "extra", 0, 0],
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^4$" } }
+  "pattern": "^4$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResJSON,
@@ -438,12 +532,17 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
-  "selectors": ["body .twit", -1] } },
-{"whitespace_normalize": {}},
+  "selectors": ["body .twit", -1],
+  "into": "tmp1" } },
+{"whitespace_normalize": {
+  "from": "tmp1",
+  "into": "tmp2" } },
 {"assert_regex_match": {
-  "pattern": "^short %{sig_id_short}$" } }
+  "pattern": "^short %{sig_id_short}$",
+  "from": "tmp2" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResHTML,
@@ -455,11 +554,14 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
-  "selectors": ["body .twit:eq(0)"] } },
+  "selectors": ["body .twit:eq(0)"],
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^$" } }
+  "pattern": "^$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResHTML,
@@ -471,12 +573,15 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
   "selectors": ["body .twit"],
-  "multi": true } },
+  "multi": true,
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^[\\s\\S]*goodproof[\\s\\S]*evil\\.com[\\s\\S]*short[\\s\\S]*$" } }
+  "pattern": "^[\\s\\S]*goodproof[\\s\\S]*evil\\.com[\\s\\S]*short[\\s\\S]*$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResHTML,
@@ -488,12 +593,17 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
-  "selectors": ["body .twit"] } },
-{"whitespace_normalize": {}},
+  "selectors": ["body .twit"],
+  "into": "tmp1" } },
+{"whitespace_normalize": {
+  "from": "tmp1",
+  "into": "tmp2" } },
 {"assert_regex_match": {
-  "pattern": "^short %{sig_id_short}$" } }
+  "pattern": "^short %{sig_id_short}$",
+  "from": "tmp2" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResHTML,
@@ -505,12 +615,15 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
   "selectors": ["body .twit[data-x]"],
-  "attr": "data-x" } },
+  "attr": "data-x",
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^y$" } }
+  "pattern": "^y$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResHTML,
@@ -522,89 +635,21 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
   "selectors": ["body .twit"],
   "multi": true,
-  "attr": "dne" } },
+  "attr": "dne",
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^$" } }
+  "pattern": "^$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResHTML,
 		reshtml:    html1,
 		shouldwork: true,
-	},
-
-	// ## TransformURL,
-	{
-		name:      "SelectorTransformURL-ok",
-		proofinfo: info1,
-		// Swap some parts of the paths. Also use an ignored capture group.
-		prepvl: map[keybase1.ProofType]string{
-			keybase1.ProofType_GITHUB: `[[
-{"transform_url": {
-  "pattern": "^https://rooter.example.com/(\\w+)/(?:%{username_service})/([^/])+\\.(htjsxt)$",
-  "to_pattern": "https://rooter.example.com/%{username_keybase}/keybase/%{1}/%{2}.%{3}" } },
-{"assert_regex_match": {
-  "pattern": "^https://rooter.example.com/kronk/keybase/proofs/5\\.htjsxt$" } },
-{"fetch": {
-  "kind": "string" } },
-{"assert_regex_match": {
-  "pattern": "^ok$" } }
-]]`},
-		service:     keybase1.ProofType_GITHUB,
-		restype:     libkb.XAPIResText,
-		restext:     "ok",
-		urloverride: "https://rooter.example.com/kronk/keybase/proofs/5.htjsxt",
-		shouldwork:  true,
-	}, {
-		name:      "SelectorTransformURL-fail-afterfetch",
-		proofinfo: info1,
-		// Swap some parts of the paths. Also use an ignored capture group.
-		prepvl: map[keybase1.ProofType]string{
-			keybase1.ProofType_GITHUB: `[[
-{"fetch": {
-  "kind": "string" } },
-{"transform_url": "^$", "to": "^$"}
-]]`},
-		service:    keybase1.ProofType_GITHUB,
-		restype:    libkb.XAPIResText,
-		restext:    "ok",
-		shouldwork: false,
-		errstatus:  keybase1.ProofStatus_INVALID_PVL,
-	}, {
-		name:      "SelectorTransformURL-fail-nomatch",
-		proofinfo: info1,
-		// Swap some parts of the paths. Also use an ignored capture group.
-		prepvl: map[keybase1.ProofType]string{
-			keybase1.ProofType_GITHUB: `[[
-{"transform_url": {
-  "pattern": "^$",
-  "to_pattern": "^$" } },
-{"fetch": {
-  "kind": "string" } }
-]]`},
-		service:    keybase1.ProofType_GITHUB,
-		restype:    libkb.XAPIResText,
-		restext:    "ok",
-		shouldwork: false,
-	}, {
-		name:      "SelectorTransformURL-fail-badsub",
-		proofinfo: info1,
-		// Swap some parts of the paths. Also use an ignored capture group.
-		prepvl: map[keybase1.ProofType]string{
-			keybase1.ProofType_GITHUB: `[[
-{"transform_url": {
-  "pattern": "^(.*)$",
-  "to_pattern": "%{2}" } },
-{"fetch": {
-  "kind": "string" } }
-]]`},
-		service:    keybase1.ProofType_GITHUB,
-		restype:    libkb.XAPIResText,
-		restext:    "ok",
-		shouldwork: false,
 	},
 
 	// # Tests for invalid PVL at the top level
@@ -613,8 +658,13 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		// Empty service entries should fail.
 		prepvl: map[keybase1.ProofType]string{
-			keybase1.ProofType_TWITTER: `[[ {"fetch": { "kind": "string" } } ]]`,
+			keybase1.ProofType_TWITTER: `[[
+{"fetch": {
+  "kind": "html",
+  "from": "hint_url" } }
+]]`,
 		},
+		// GITHUB here isn't TWITTER
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResHTML,
 		reshtml:    html1,
@@ -692,11 +742,13 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GENERIC_WEB_SITE: `[[
 {"fetch": {
-  "kind": "string" } }
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GENERIC_WEB_SITE,
-		restype:    libkb.XAPIResHTML,
-		reshtml:    html1,
+		restype:    libkb.XAPIResText,
+		restext:    "fuzztroo",
 		shouldwork: false,
 		errstatus:  keybase1.ProofStatus_BAD_SIGNATURE,
 	},
@@ -706,7 +758,8 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_DNS: `[[
 {"assert_regex_match": {
-  "pattern": "^foo$" } }
+  "pattern": "^foo$",
+  "from": "hint_url" } }
 ]]`},
 		service: keybase1.ProofType_DNS,
 		resdns: map[string][]string{
@@ -721,11 +774,13 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GENERIC_WEB_SITE: `[[
 {"fetch": {
-  "kind": "string" } }
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GENERIC_WEB_SITE,
-		restype:    libkb.XAPIResHTML,
-		reshtml:    html1,
+		restype:    libkb.XAPIResText,
+		restext:    "fuzztroo",
 		shouldwork: false,
 		errstatus:  keybase1.ProofStatus_BAD_SIGNATURE,
 	},
@@ -737,13 +792,16 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "foobar$" } }
+  "pattern": "foobar$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
-		restype:    libkb.XAPIResHTML,
-		reshtml:    html1,
+		restype:    libkb.XAPIResText,
+		restext:    "fuzztroo",
 		shouldwork: false,
 		errstatus:  keybase1.ProofStatus_INVALID_PVL,
 	}, {
@@ -752,13 +810,16 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^foobar" } }
+  "pattern": "^foobar",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
-		restype:    libkb.XAPIResHTML,
-		reshtml:    html1,
+		restype:    libkb.XAPIResText,
+		restext:    "fuzztroo",
 		shouldwork: false,
 		errstatus:  keybase1.ProofStatus_INVALID_PVL,
 	}, {
@@ -767,13 +828,16 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^%{hostname}$" } }
+  "pattern": "^%{hostname}$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
-		restype:    libkb.XAPIResHTML,
-		reshtml:    html1,
+		restype:    libkb.XAPIResText,
+		restext:    "fuzztroo",
 		shouldwork: false,
 		errstatus:  keybase1.ProofStatus_INVALID_PVL,
 	}, {
@@ -782,13 +846,16 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": ["^foobar$"] } }
+  "pattern": ["^foobar$"],
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
-		restype:    libkb.XAPIResHTML,
-		reshtml:    html1,
+		restype:    libkb.XAPIResText,
+		restext:    "fuzztroo",
 		shouldwork: false,
 		errstatus:  keybase1.ProofStatus_INVALID_PVL,
 	}, {
@@ -797,13 +864,16 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^foo)(bar$" } }
+  "pattern": "^foo)(bar$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
-		restype:    libkb.XAPIResHTML,
-		reshtml:    html1,
+		restype:    libkb.XAPIResText,
+		restext:    "fuzztroo",
 		shouldwork: false,
 		errstatus:  keybase1.ProofStatus_INVALID_PVL,
 	},
@@ -815,9 +885,12 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "string" } },
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_find_base64": {
-  "var": "username_keybase" } }
+  "needle": "username_keybase",
+  "haystack": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResText,
@@ -837,13 +910,17 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"regex_capture": {
-  "pattern": "(f)oobar$" } }
+  "pattern": "(f)oobar$",
+  "from": "tmp1",
+  "into": ["tmp2"] } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
-		restype:    libkb.XAPIResHTML,
-		reshtml:    html1,
+		restype:    libkb.XAPIResText,
+		restext:    "fuzztroo",
 		shouldwork: false,
 		errstatus:  keybase1.ProofStatus_INVALID_PVL,
 	}, {
@@ -852,13 +929,17 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"regex_capture": {
-  "pattern": "^(f)oobar" } }
+  "pattern": "^(f)oobar",
+  "from": "tmp1",
+  "into": ["tmp2"] } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
-		restype:    libkb.XAPIResHTML,
-		reshtml:    html1,
+		restype:    libkb.XAPIResText,
+		restext:    "fuzztroo",
 		shouldwork: false,
 		errstatus:  keybase1.ProofStatus_INVALID_PVL,
 	}, {
@@ -867,13 +948,17 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"regex_capture": {
-  "pattern": "^(%{hostname})$" } }
+  "pattern": "^(%{hostname})$",
+  "from": "tmp1",
+  "into": ["tmp2"] } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
-		restype:    libkb.XAPIResHTML,
-		reshtml:    html1,
+		restype:    libkb.XAPIResText,
+		restext:    "fuzztroo",
 		shouldwork: false,
 		errstatus:  keybase1.ProofStatus_INVALID_PVL,
 	}, {
@@ -882,13 +967,17 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
 {"fetch": {
-  "kind": "html" } },
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"regex_capture": {
-  "pattern": ["^(f)oobar$"] } }
+  "pattern": ["^(f)oobar$"],
+  "from": "tmp1",
+  "into": ["tmp2"] } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
-		restype:    libkb.XAPIResHTML,
-		reshtml:    html1,
+		restype:    libkb.XAPIResText,
+		restext:    "fuzztroo",
 		shouldwork: false,
 		errstatus:  keybase1.ProofStatus_INVALID_PVL,
 	},
@@ -899,7 +988,9 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{"fetch": { "kind": "whatsthis" } }
+{"fetch": {
+  "kind": "whatsthis",
+  "from": "hint_url" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResText,
@@ -911,7 +1002,9 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_DNS: `[[
-{"fetch": { "kind": "text" } }
+{"fetch": {
+  "kind": "whatsthis",
+  "from": "hint_url" } }
 ]]`},
 		service:    keybase1.ProofType_DNS,
 		restype:    libkb.XAPIResText,
@@ -924,8 +1017,14 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{"fetch": { "kind": "string" } },
-{"fetch": { "kind": "string" } }
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp2" } },
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp2" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResText,
@@ -940,9 +1039,13 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{"fetch": { "kind": "string" } },
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"selector_json": {
-  "selectors": [0] } }
+  "selectors": [0],
+  "into": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResText,
@@ -954,7 +1057,9 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{"fetch": { "kind": "json" } },
+{"fetch": {
+  "kind": "json",
+  "from": "hint_url" } },
 {"selector_json": {
   "selectors": 0 } }
 ]]`},
@@ -968,9 +1073,12 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{"fetch": { "kind": "json" } },
+{"fetch": {
+  "kind": "json",
+  "from": "hint_url" } },
 {"selector_json": {
-  "selectors": [] } }
+  "selectors": [],
+  "into": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResJSON,
@@ -982,9 +1090,12 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{"fetch": { "kind": "json" } },
+{"fetch": {
+  "kind": "json",
+  "from": "hint_url" } },
 {"selector_json": {
-  "selectors": [{"foo": "bar" }] } }
+  "selectors": [{"foo": "bar" }],
+  "into": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResJSON,
@@ -999,9 +1110,12 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{"fetch": { "kind": "json" } },
+{"fetch": {
+  "kind": "json",
+  "from": "hint_url" } },
 {"selector_css": {
-  "selectors": [0] } }
+  "selectors": [0],
+  "into": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResJSON,
@@ -1013,9 +1127,12 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{"fetch": { "kind": "html" } },
+{"fetch": {
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
-  "selectors": 0 } }
+  "selectors": 0 },
+  "into": "tmp1" }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResHTML,
@@ -1027,9 +1144,12 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{"fetch": { "kind": "html" } },
+{"fetch": {
+  "kind": "html",
+  "from": "hint_url" } },
 {"selector_css": {
-  "selectors": [] } }
+  "selectors": [],
+  "into": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResHTML,
@@ -1041,9 +1161,11 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{"fetch": { "kind": "html" } },
+{"fetch": {
+  "kind": "html" } },
 {"selector_css": {
-  "selectors": [{"foo": "bar" }] } }
+  "selectors": [{"foo": "bar" }],
+  "into": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResHTML,
@@ -1061,13 +1183,21 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_FACEBOOK: `[[
-{"fetch": { "kind": "string" } },
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^ok$" } }
+  "pattern": "^ok$",
+  "from": "tmp1" } }
 ], [
-{"fetch": { "kind": "string" } },
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^NO$" } }
+  "pattern": "^NO$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_FACEBOOK,
 		restype:    libkb.XAPIResText,
@@ -1078,13 +1208,21 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_FACEBOOK: `[[
-{"fetch": { "kind": "string" } },
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^NO$" } }
+  "pattern": "^NO$",
+  "from": "tmp1" } }
 ], [
-{"fetch": { "kind": "string" } },
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^ok$" } }
+  "pattern": "^ok$",
+  "from": "tmp1" } }
 ]]`},
 		service:          keybase1.ProofType_FACEBOOK,
 		restype:          libkb.XAPIResText,
@@ -1096,13 +1234,21 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_FACEBOOK: `[[
-{"fetch": { "kind": "string" } },
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^ok$" } }
+  "pattern": "^ok$",
+  "from": "tmp1" } }
 ], [
-{"fetch": { "kind": "string" } },
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_regex_match": {
-  "pattern": "^ok" } }
+  "pattern": "^ok",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_FACEBOOK,
 		restype:    libkb.XAPIResText,
@@ -1113,15 +1259,23 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_FACEBOOK: `[[
-{"fetch": { "kind": "string" } },
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_regex_match": {
   "pattern": "^NO$",
-  "error": ["HOST_UNREACHABLE", "x"] } }
+  "error": ["HOST_UNREACHABLE", "x"],
+  "from": "tmp1" } }
 ], [
-{"fetch": { "kind": "string" } },
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 {"assert_regex_match": {
   "pattern": "^NO$",
-  "error": ["HOST_UNREACHABLE", "x"] } }
+  "error": ["HOST_UNREACHABLE", "x"],
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_FACEBOOK,
 		restype:    libkb.XAPIResText,
@@ -1140,7 +1294,8 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_DNS: `[[
 {"assert_regex_match": {
-  "pattern": "^ok$" } }
+  "pattern": "^ok$",
+  "from": "txt" } }
 ]]`},
 		service: keybase1.ProofType_DNS,
 		resdns: map[string][]string{
@@ -1153,7 +1308,8 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_DNS: `[[
 {"assert_regex_match": {
-  "pattern": "^ok$" } }
+  "pattern": "^ok$",
+  "from": "txt" } }
 ]]`},
 		service: keybase1.ProofType_DNS,
 		resdns: map[string][]string{
@@ -1167,7 +1323,8 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_DNS: `[[
 {"assert_regex_match": {
-  "pattern": "^ok$" } }
+  "pattern": "^ok$",
+  "from": "txt" } }
 ]]`},
 		service: keybase1.ProofType_DNS,
 		resdns: map[string][]string{
@@ -1181,7 +1338,8 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_DNS: `[[
 {"assert_regex_match": {
-  "pattern": "^ok$" } }
+  "pattern": "^ok$",
+  "from": "txt" } }
 ]]`},
 		service: keybase1.ProofType_DNS,
 		resdns: map[string][]string{
@@ -1195,7 +1353,8 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_DNS: `[[
 {"assert_regex_match": {
-  "pattern": "^ok$" } }
+  "pattern": "^ok$",
+  "from": "txt" } }
 ]]`},
 		service: keybase1.ProofType_DNS,
 		resdns: map[string][]string{
@@ -1209,10 +1368,12 @@ var interpUnitTests = []interpUnitTest{
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_DNS: `[[
 {"assert_regex_match": {
-  "pattern": "^ok1$" } }
+  "pattern": "^ok1$",
+  "from": "txt" } }
 ], [
 {"assert_regex_match": {
-  "pattern": "^ok2$" } }
+  "pattern": "^ok2$",
+  "from": "txt" } }
 ]]`},
 		service: keybase1.ProofType_DNS,
 		resdns: map[string][]string{
@@ -1227,10 +1388,14 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{ "fetch": { "kind": "string"  } },
+{ "fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1"  } },
 { "assert_regex_match": {
   "pattern": "^foo$",
-  "error": ["PERMISSION_DENIED", "whoops!"] } }
+  "error": ["PERMISSION_DENIED", "whoops!"],
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResText,
@@ -1243,10 +1408,14 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{ "fetch": { "kind": "string"  } },
+{ "fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1"  } },
 { "assert_regex_match": {
   "pattern": "^foo$",
-  "error": ["PERMISSION_DENIED"] } }
+  "error": ["PERMISSION_DENIED"],
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResText,
@@ -1258,10 +1427,14 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{ "fetch": { "kind": "string"  } },
+{ "fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1"  } },
 { "assert_regex_match": {
   "pattern": "^foo$",
-  "error": 108 } }
+  "error": 108,
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResText,
@@ -1273,10 +1446,14 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{ "fetch": { "kind": "string"  } },
+{ "fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1"  } },
 { "assert_regex_match": {
   "pattern": "^foo$",
-  "error": ["TIMEOUT", []] } }
+  "error": ["TIMEOUT", []],
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResText,
@@ -1290,10 +1467,14 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{ "fetch": { "kind": "string"  } },
+{ "fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1"  } },
 { "assert_regex_match": {
   "pattern": "^%{invalid}$",
-  "error": ["PERMISSION_DENIED", "whoops"] } }
+  "error": ["PERMISSION_DENIED", "whoops"],
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResText,
@@ -1306,9 +1487,13 @@ var interpUnitTests = []interpUnitTest{
 		proofinfo: info1,
 		prepvl: map[keybase1.ProofType]string{
 			keybase1.ProofType_GITHUB: `[[
-{ "fetch": { "kind": "string" } },
+{ "fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
 { "assert_regex_match": {
-  "pattern": "^foo$" } }
+  "pattern": "^foo$",
+  "from": "tmp1" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResText,
@@ -1332,6 +1517,8 @@ func TestUnits(t *testing.T) {
 		t.Fatalf("soloed a test that passed\n\n\n*\n*\n*\n*\n*\n*\n*")
 	}
 }
+
+type failer func(string, ...interface{})
 
 func runPvlTest(t *testing.T, unit *interpUnitTest) {
 	fail := func(f string, arg ...interface{}) {
@@ -1370,11 +1557,11 @@ func runPvlTest(t *testing.T, unit *interpUnitTest) {
 	} else {
 		switch unit.restype {
 		case libkb.XAPIResJSON:
-			xapi.Set(url, newExternalJSONRes(t, unit.resjson))
+			xapi.Set(url, newExternalJSONRes(unit.resjson, fail))
 		case libkb.XAPIResHTML:
-			xapi.SetHTML(url, newExternalHTMLRes(t, unit.reshtml))
+			xapi.SetHTML(url, newExternalHTMLRes(unit.reshtml, fail))
 		case libkb.XAPIResText:
-			xapi.SetText(url, newExternalTextRes(t, unit.restext))
+			xapi.SetText(url, newExternalTextRes(unit.restext, fail))
 		default:
 			fail("unsupported restype: %v", unit.restype)
 		}
@@ -1457,32 +1644,32 @@ func makeTestPvl(rules map[keybase1.ProofType]string) (string, error) {
 	return pvl, nil
 }
 
-func newExternalJSONRes(t *testing.T, json string) *libkb.ExternalAPIRes {
+func newExternalJSONRes(json string, fail failer) *libkb.ExternalAPIRes {
 	if json == "" {
-		t.Fatalf("empty json string")
+		fail("empty json string")
 	}
 	w, err := jsonw.Unmarshal([]byte(json))
 	if err != nil {
-		t.Fatalf("invalid json: %v", err)
+		fail("invalid json: %v", err)
 	}
 	return &libkb.ExternalAPIRes{HTTPStatus: 200, Body: w}
 }
 
-func newExternalHTMLRes(t *testing.T, html string) *libkb.ExternalHTMLRes {
+func newExternalHTMLRes(html string, fail failer) *libkb.ExternalHTMLRes {
 	if html == "" {
-		t.Fatalf("empty html string")
+		fail("empty html string")
 	}
 	reader := strings.NewReader(html)
 	doc, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
-		t.Fatalf("invalid html: %v", err)
+		fail("invalid html: %v", err)
 	}
 	return &libkb.ExternalHTMLRes{HTTPStatus: 200, GoQuery: doc}
 }
 
-func newExternalTextRes(t *testing.T, text string) *libkb.ExternalTextRes {
+func newExternalTextRes(text string, fail failer) *libkb.ExternalTextRes {
 	if text == "" {
-		t.Fatalf("empty text response")
+		fail("empty text response")
 	}
 	return &libkb.ExternalTextRes{HTTPStatus: 200, Body: text}
 }
