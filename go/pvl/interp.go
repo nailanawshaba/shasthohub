@@ -18,7 +18,7 @@ import (
 
 // UsePvl says whether to use PVL for verifying proofs.
 // TODO do not accept this PR!
-const UsePvl = true
+const UsePvl = false
 
 // SupportedVersion is which version of PVL is supported by this client.
 const SupportedVersion int = 1
