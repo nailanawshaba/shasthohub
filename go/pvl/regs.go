@@ -64,6 +64,10 @@ func (r *namedRegsStore) Ban(key string) libkb.ProofError {
 	if err != nil {
 		return err
 	}
+	_, banned := r.banned[key]
+	if banned {
+		return libkb.NewProofError(keybase1.ProofStatus_INVALID_PVL, "cannot ban already banned register '%v'", key)
+	}
 	_, set := r.m[key]
 	if set {
 		return libkb.NewProofError(keybase1.ProofStatus_INVALID_PVL, "cannot ban already set register '%v'", key)

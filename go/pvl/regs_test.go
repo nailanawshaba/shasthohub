@@ -3,7 +3,10 @@
 
 package pvl
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestNamedRegsStore(t *testing.T) {
 	tests := []struct {
@@ -38,26 +41,46 @@ func TestNamedRegsStore(t *testing.T) {
 
 		// can use valid keys
 		{true, "Set", "tmp1_2", "fuzzle", ""},
-		{true, "Get", "tmp1_2", "fuzzle", ""},
+		{true, "Get", "tmp1_2", "", "fuzzle"},
 
 		// empty string is an ok value
 		{true, "Set", "empty", "", ""},
 		{true, "Get", "empty", "", ""},
 	}
+
 	regs := *newNamedRegsStore()
-	// TODO READ TEST DATJKLDJFKDJ
 
-	shouldBOk(regs.Ban("banned"))
-	shouldErr(regs.Ban("banned"))
-	shouldErr(regs.Set("banned", "foo"))
+	for i, unit := range tests {
+		var err error
+		var res string
+		useRes := false
 
-	shouldBOk(regs.Set("x", "foo"))
-	shouldBOk2(regs.Get("banned"), "foo")
-	shouldErr(regs.Set("banned"))
+		fail := func(f string, args ...interface{}) {
+			prefix := fmt.Sprintf("[%v] ", i)
+			t.Fatalf(prefix+f, args...)
+		}
 
-	shouldErr(regs.Get("banned"))
+		switch unit.op {
+		case "Get":
+			res, err = regs.Get(unit.arg1)
+			useRes = true
+		case "Set":
+			err = regs.Set(unit.arg1, unit.arg2)
+		case "Ban":
+			err = regs.Ban(unit.arg1)
+		}
 
-	regs.Get
-	regs.Set
-	// TODO test that the "" key never works
+		if err == nil {
+			if !unit.shouldwork {
+				fail("should have failed")
+			}
+			if useRes && (res != unit.expected) {
+				fail("got '%v'; expected '%v'", res, unit.expected)
+			}
+		} else {
+			if unit.shouldwork {
+				fail("should have worked; got %v", err)
+			}
+		}
+	}
 }
