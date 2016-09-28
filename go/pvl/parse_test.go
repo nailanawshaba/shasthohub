@@ -11,7 +11,7 @@ import (
 
 // TestParse parses the hardcoded string
 func TestParse(t *testing.T) {
-	p, err := parse(hardcodedPVLString)
+	p, err := parse(GetHardcodedPvlString())
 	if err != nil {
 		t.Fatalf("parse failed: %v", err)
 	}
@@ -22,7 +22,7 @@ func TestParse(t *testing.T) {
 
 // TestParse2 checks a few of the parse output's details.
 func TestParse2(t *testing.T) {
-	p, err := parse(hardcodedPVLString)
+	p, err := parse(GetHardcodedPvlString())
 	if err != nil {
 		t.Fatalf("parse failed: %v", err)
 	}

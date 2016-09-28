@@ -709,6 +709,20 @@ func stepParseURL(g proofContextExt, ins parseURLT, state scriptState) (scriptSt
 		}
 	}
 
+	if ins.Host != "" {
+		err := state.Regs.Set(ins.Host, u.Host)
+		if err != nil {
+			return state, err
+		}
+	}
+
+	if ins.Scheme != "" {
+		err := state.Regs.Set(ins.Scheme, u.Scheme)
+		if err != nil {
+			return state, err
+		}
+	}
+
 	return state, nil
 }
 

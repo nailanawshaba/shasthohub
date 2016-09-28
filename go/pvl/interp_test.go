@@ -402,7 +402,6 @@ var interpUnitTests = []interpUnitTest{
 	},
 
 	// ## ParseURL
-	// TODO
 	{
 		name:      "ParseURL-ok",
 		proofinfo: info1,
@@ -414,14 +413,22 @@ var interpUnitTests = []interpUnitTest{
   "into": "tmp1" } },
 {"parse_url": {
   "from": "tmp1",
-  "path": "path" } },
+  "path": "path",
+  "host": "host",
+  "scheme": "scheme" } },
 {"assert_regex_match": {
   "pattern": "^/noodle$",
-  "from": "path" } }
+  "from": "path" } },
+{"assert_regex_match": {
+  "pattern": "^digg.example.com$",
+  "from": "host" } },
+{"assert_regex_match": {
+  "pattern": "^http$",
+  "from": "scheme" } }
 ]]`},
 		service:    keybase1.ProofType_GITHUB,
 		restype:    libkb.XAPIResText,
-		restext:    "http://example.com/noodle",
+		restext:    "http://digg.example.com/noodle",
 		shouldwork: true,
 	}, {
 		name:      "ParseURL-fail",
@@ -1134,7 +1141,24 @@ var interpUnitTests = []interpUnitTest{
 	},
 
 	// ## (Invalid) ParseURL
-	// TODO
+	{
+		name:      "ParseURL-invalid-missing-from",
+		proofinfo: info1,
+		prepvl: map[keybase1.ProofType]string{
+			keybase1.ProofType_GITHUB: `[[
+{"fetch": {
+  "kind": "string",
+  "from": "hint_url",
+  "into": "tmp1" } },
+{"parse_url": {
+  "path": "path" } }
+]]`},
+		service:    keybase1.ProofType_GITHUB,
+		restype:    libkb.XAPIResText,
+		restext:    "http://example.com/",
+		shouldwork: false,
+		errstatus:  keybase1.ProofStatus_INVALID_PVL,
+	},
 
 	// ## (Invalid) Fetch
 	{

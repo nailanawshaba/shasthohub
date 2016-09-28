@@ -84,3 +84,21 @@ func TestNamedRegsStore(t *testing.T) {
 		}
 	}
 }
+
+func TestNamedRegsStoreCopy(t *testing.T) {
+	// Copying a store aliases its state.
+	// This should not be depended on but it's good to know.
+	regs1 := *newNamedRegsStore()
+	var regs2 namedRegsStore
+	regs2 = regs1
+
+	err := regs1.Set("foo", "1")
+	if err != nil {
+		t.Fatal()
+	}
+
+	err = regs2.Set("foo", "1")
+	if err == nil {
+		t.Fatal()
+	}
+}

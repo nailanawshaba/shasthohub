@@ -204,9 +204,11 @@ type regexCaptureT struct {
 }
 
 type parseURLT struct {
-	From  string  `json:"from"`
-	Path  string  `json:"path"`
-	Error *errorT `json:"error"`
+	From   string  `json:"from"`
+	Path   string  `json:"path"`
+	Host   string  `json:"host"`
+	Scheme string  `json:"scheme"`
+	Error  *errorT `json:"error"`
 }
 
 type fetchT struct {
