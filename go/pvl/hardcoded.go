@@ -362,7 +362,6 @@ var hardcodedPVLString = `
         { "whitespace_normalize": { "from": "tweet_contents", "into": "tweet_contents_nw" } },
         {
           "regex_capture": {
-            "case_insensitive": true,
             "error": [
               "DELETED",
               "Could not find 'Verifying myself: I am %{username_keybase} on Keybase.io. %{sig_id_short}'"
