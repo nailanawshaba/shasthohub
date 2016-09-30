@@ -54,13 +54,61 @@ func (h *chatLocalHandler) aggRateLimits(rlimits []*chat1.RateLimit) (res []chat
 	return res
 }
 
+func (h *chatLocalHandler) tlfNameToTlfID(ctx context.Context, tlfName string) (tlfID chat1.TLFID, err error) {
+	resp, err := h.boxer.tlf.CryptKeys(ctx, tlfName)
+	if err != nil {
+		return nil, err
+	}
+	tlfIDb := resp.TlfID.ToBytes()
+	if tlfIDb == nil {
+		return nil, errors.New("invalid TLF ID acquired")
+	}
+	tlfID = chat1.TLFID(tlfIDb)
+	return tlfID, nil
+}
+
+func (h *chatLocalHandler) canonicalizeTlfName(ctx context.Context, tlfName string) (cName string, err error) {
+	resp, err := h.boxer.tlf.CryptKeys(ctx, tlfName)
+	if err != nil {
+		return "", err
+	}
+	return string(resp.CanonicalName), nil
+}
+
+func (h *chatLocalHandler) getInboxQueryLocalToRemote(ctx context.Context, lquery *chat1.GetInboxLocalQuery) (rquery *chat1.GetInboxQuery, err error) {
+	if lquery == nil {
+		return nil, nil
+	}
+	rquery = &chat1.GetInboxQuery{}
+	if lquery.TlfName != nil {
+		tlfID, err := h.tlfNameToTlfID(ctx, *lquery.TlfName)
+		if err != nil {
+			return nil, err
+		}
+		rquery.TlfID = &tlfID
+	}
+	rquery.After = lquery.After
+	rquery.Before = lquery.Before
+	rquery.TlfVisibility = lquery.TlfVisibility
+	rquery.TopicType = lquery.TopicType
+	rquery.UnreadOnly = lquery.UnreadOnly
+	rquery.ReadOnly = lquery.ReadOnly
+
+	return rquery, nil
+}
+
 // GetInboxLocal implements keybase.chatLocal.getInboxLocal protocol.
 func (h *chatLocalHandler) GetInboxLocal(ctx context.Context, arg chat1.GetInboxLocalArg) (inbox chat1.GetInboxLocalRes, err error) {
 	if err := h.assertLoggedIn(ctx); err != nil {
 		return chat1.GetInboxLocalRes{}, err
 	}
+
+	rquery, err := h.getInboxQueryLocalToRemote(ctx, arg.Query)
+	if err != nil {
+		return chat1.GetInboxLocalRes{}, err
+	}
 	ib, err := h.remoteClient().GetInboxRemote(ctx, chat1.GetInboxRemoteArg{
-		Query:      arg.Query,
+		Query:      rquery,
 		Pagination: arg.Pagination,
 	})
 	if err != nil {
@@ -72,9 +120,27 @@ func (h *chatLocalHandler) GetInboxLocal(ctx context.Context, arg chat1.GetInbox
 	}
 
 	for _, convRemote := range ib.Inbox.Conversations {
-		if convLocal, err = h.localizeConversation(ctx, convRemote); err != nil {
-			return chat1.getInboxLocalRes{}, err
+		convLocal, err := h.localizeConversation(ctx, convRemote)
+		if err != nil {
+			return chat1.GetInboxLocalRes{}, err
 		}
+
+		if rquery.TlfID != nil {
+			// verify using signed TlfName to make sure server returned genuine conversation
+			signedTlfID, err := h.tlfNameToTlfID(ctx, convLocal.Info.TlfName)
+			if err != nil {
+				return chat1.GetInboxLocalRes{}, err
+			}
+			if !signedTlfID.Eq(*rquery.TlfID) {
+				return chat1.GetInboxLocalRes{}, errors.New("server returned conversations for different TLF than query")
+			}
+		}
+
+		// server can't query on topic name, so we'd have to do it ourselves in the loop
+		if arg.Query.TopicName != nil && *arg.Query.TopicName != convLocal.Info.TopicName {
+			continue
+		}
+
 		inbox.Conversations = append(inbox.Conversations, convLocal)
 	}
 
@@ -125,7 +191,7 @@ func (h *chatLocalHandler) NewConversationLocal(ctx context.Context, info chat1.
 
 	info.Triple = chat1.ConversationIDTriple{
 		Tlfid:     tlfID,
-		TopicType: info.TopicType,
+		TopicType: info.Triple.TopicType,
 		TopicID:   make(chat1.TopicID, 16),
 	}
 	info.TlfName = string(res.CanonicalName)
@@ -236,33 +302,6 @@ func makeUnboxedMessageToUpdateTopicName(ctx context.Context, conversationInfo c
 	return chat1.NewMessagePlaintextWithV1(v1)
 }
 
-// GetOrCreateTextConversationLocal implements
-// keybase.chatLocal.GetOrCreateTextConversationLocal protocol.
-func (h *chatLocalHandler) ResolveConversationLocal(ctx context.Context, arg chat1.ConversationInfoLocal) (chat1.ResolveConversationLocalRes, error) {
-	var rlimits []*chat1.RateLimit
-	if err := h.assertLoggedIn(ctx); err != nil {
-		return chat1.ResolveConversationLocalRes{}, err
-	}
-	if arg.Id != 0 {
-		info, _, err := h.getConversationInfoByID(ctx, arg.Id, &rlimits)
-		if err != nil {
-			return chat1.ResolveConversationLocalRes{}, err
-		}
-		return chat1.ResolveConversationLocalRes{
-			Convs:      []chat1.ConversationInfoLocal{info},
-			RateLimits: h.aggRateLimits(rlimits),
-		}, nil
-	}
-	rcres, err := h.resolveConversations(ctx, arg, &rlimits)
-	if err != nil {
-		return chat1.ResolveConversationLocalRes{}, err
-	}
-	return chat1.ResolveConversationLocalRes{
-		Convs:      rcres,
-		RateLimits: h.aggRateLimits(rlimits),
-	}, nil
-}
-
 func (h *chatLocalHandler) GetInboxSummaryLocal(ctx context.Context, arg chat1.GetInboxSummaryLocalQuery) (res chat1.GetInboxSummaryLocalRes, err error) {
 	if err = h.assertLoggedIn(ctx); err != nil {
 		return chat1.GetInboxSummaryLocalRes{}, err
@@ -365,77 +404,6 @@ func (h *chatLocalHandler) GetInboxSummaryLocal(ctx context.Context, arg chat1.G
 	return res, nil
 }
 
-// resolveConversations gets conversations from inbox using tlfName, topicName,
-// and topicType fields in criteria, and returns all matching conversations.
-// Conversation IDs are populated in returned conversations.
-func (h *chatLocalHandler) resolveConversations(ctx context.Context,
-	criteria chat1.ConversationInfoLocal,
-	rlimits *[]*chat1.RateLimit) (conversations []chat1.ConversationInfoLocal, err error) {
-
-	appendMaybe := func(info chat1.ConversationInfoLocal) {
-		if len(criteria.TopicName) > 0 && criteria.TopicName != info.TopicName {
-			h.G().Log.Debug("+ resolveConversations: FAILED TOPIC NAME, %s != %s", criteria.TopicName, info.TopicName)
-			return
-		}
-		if criteria.TopicType != chat1.TopicType_NONE && criteria.TopicType != info.TopicType {
-			h.G().Log.Debug("+ resolveConversations: FAILED TOPIC TYPE, %d != %d", criteria.TopicType, info.TopicType)
-			return
-		}
-		conversations = append(conversations, info)
-	}
-
-	query := &chat1.GetInboxQuery{}
-
-	if len(criteria.TlfName) != 0 {
-		// TODO: do some caching in boxer so we don't end up calling this RPC
-		// unnecessarily too often
-		resp, err := h.boxer.tlf.CryptKeys(ctx, criteria.TlfName)
-		if err != nil {
-			return nil, err
-		}
-		tlfIDb := resp.TlfID.ToBytes()
-		if tlfIDb == nil {
-			return nil, errors.New("invalid TLF ID acquired")
-		}
-		criteria.TlfName = string(resp.CanonicalName)
-
-		tlfID := chat1.TLFID(tlfIDb)
-		query.TlfID = &tlfID
-	}
-
-	if criteria.Visibility != chat1.TLFVisibility_ANY {
-		query.TlfVisibility = &criteria.Visibility
-	}
-
-	conversationsRemote, err := h.remoteClient().GetInboxRemote(ctx, chat1.GetInboxRemoteArg{
-		Query:      query,
-		Pagination: nil,
-	})
-	*rlimits = append(*rlimits, conversationsRemote.RateLimit)
-	if err != nil {
-		return nil, err
-	}
-	for _, cr := range conversationsRemote.Inbox.Conversations {
-		info, _, err := h.getConversationInfo(ctx, cr)
-		if err != nil {
-			return nil, err
-		}
-		if len(criteria.TlfName) > 0 && info.TlfName != criteria.TlfName {
-			// check again using signed information to make sure it's the correct
-			// conversation
-			return nil, libkb.UnexpectedChatDataFromServer{Msg: fmt.Sprintf("Unexpected data is returned from server. We asked for %v, but got conversation for %v. TODO: handle tlfName changes properly for SBS case", criteria.TlfName, info.TlfName)}
-		}
-		appendMaybe(info)
-	}
-
-	h.G().Log.Debug("- resolveConversations: returning: %d messages", len(conversations))
-	return conversations, nil
-}
-
-// getConversationInfo locates the conversation by using id, and returns with
-// all fields filled in conversationInfo, along with a ConversationIDTriple
-//
-// TODO: cache
 func (h *chatLocalHandler) localizeConversation(
 	ctx context.Context, conversationRemote chat1.Conversation) (
 	conversationLocal chat1.ConversationLocal, err error) {
@@ -486,6 +454,10 @@ func (h *chatLocalHandler) localizeConversation(
 
 	if len(conversationInfo.TlfName) == 0 {
 		return chat1.ConversationLocal{}, errors.New("no valid message in the conversation")
+	}
+
+	if conversationInfo.TlfName, err = h.canonicalizeTlfName(ctx, conversationInfo.TlfName); err != nil {
+		return chat1.ConversationLocal{}, err
 	}
 
 	// verify Conv matches ConversationIDTriple in MessageClientHeader

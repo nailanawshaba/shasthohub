@@ -397,6 +397,19 @@ type GetInboxSummaryLocalRes struct {
 	RateLimits    []RateLimit         `codec:"rateLimits" json:"rateLimits"`
 }
 
+type GetInboxLocalQuery struct {
+	TlfName           *string         `codec:"tlfName,omitempty" json:"tlfName,omitempty"`
+	TopicName         *string         `codec:"topicName,omitempty" json:"topicName,omitempty"`
+	ConvID            *ConversationID `codec:"convID,omitempty" json:"convID,omitempty"`
+	TopicType         *TopicType      `codec:"topicType,omitempty" json:"topicType,omitempty"`
+	TlfVisibility     *TLFVisibility  `codec:"tlfVisibility,omitempty" json:"tlfVisibility,omitempty"`
+	Before            *gregor1.Time   `codec:"before,omitempty" json:"before,omitempty"`
+	After             *gregor1.Time   `codec:"after,omitempty" json:"after,omitempty"`
+	OneChatTypePerTLF *bool           `codec:"oneChatTypePerTLF,omitempty" json:"oneChatTypePerTLF,omitempty"`
+	UnreadOnly        bool            `codec:"unreadOnly" json:"unreadOnly"`
+	ReadOnly          bool            `codec:"readOnly" json:"readOnly"`
+}
+
 type GetConversationForCLILocalQuery struct {
 	MarkAsRead     bool                `codec:"markAsRead" json:"markAsRead"`
 	MessageTypes   []MessageType       `codec:"MessageTypes" json:"MessageTypes"`
@@ -416,8 +429,8 @@ type GetInboxSummaryLocalQuery struct {
 }
 
 type GetInboxLocalArg struct {
-	Query      *GetInboxQuery `codec:"query,omitempty" json:"query,omitempty"`
-	Pagination *Pagination    `codec:"pagination,omitempty" json:"pagination,omitempty"`
+	Query      *GetInboxLocalQuery `codec:"query,omitempty" json:"query,omitempty"`
+	Pagination *Pagination         `codec:"pagination,omitempty" json:"pagination,omitempty"`
 }
 
 type GetThreadLocalArg struct {
@@ -429,10 +442,6 @@ type GetThreadLocalArg struct {
 type PostLocalArg struct {
 	ConversationID   ConversationID   `codec:"conversationID" json:"conversationID"`
 	MessagePlaintext MessagePlaintext `codec:"messagePlaintext" json:"messagePlaintext"`
-}
-
-type ResolveConversationLocalArg struct {
-	Conversation ConversationInfoLocal `codec:"conversation" json:"conversation"`
 }
 
 type NewConversationLocalArg struct {
@@ -456,7 +465,6 @@ type LocalInterface interface {
 	GetInboxLocal(context.Context, GetInboxLocalArg) (GetInboxLocalRes, error)
 	GetThreadLocal(context.Context, GetThreadLocalArg) (GetThreadLocalRes, error)
 	PostLocal(context.Context, PostLocalArg) (PostLocalRes, error)
-	ResolveConversationLocal(context.Context, ConversationInfoLocal) (ResolveConversationLocalRes, error)
 	NewConversationLocal(context.Context, ConversationInfoLocal) (NewConversationLocalRes, error)
 	UpdateTopicNameLocal(context.Context, UpdateTopicNameLocalArg) (UpdateTopicNameLocalRes, error)
 	GetConversationForCLILocal(context.Context, GetConversationForCLILocalQuery) (GetConversationForCLILocalRes, error)
@@ -511,22 +519,6 @@ func LocalProtocol(i LocalInterface) rpc.Protocol {
 						return
 					}
 					ret, err = i.PostLocal(ctx, (*typedArgs)[0])
-					return
-				},
-				MethodType: rpc.MethodCall,
-			},
-			"resolveConversationLocal": {
-				MakeArg: func() interface{} {
-					ret := make([]ResolveConversationLocalArg, 1)
-					return &ret
-				},
-				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
-					typedArgs, ok := args.(*[]ResolveConversationLocalArg)
-					if !ok {
-						err = rpc.NewTypeError((*[]ResolveConversationLocalArg)(nil), args)
-						return
-					}
-					ret, err = i.ResolveConversationLocal(ctx, (*typedArgs)[0].Conversation)
 					return
 				},
 				MethodType: rpc.MethodCall,
@@ -615,12 +607,6 @@ func (c LocalClient) GetThreadLocal(ctx context.Context, __arg GetThreadLocalArg
 
 func (c LocalClient) PostLocal(ctx context.Context, __arg PostLocalArg) (res PostLocalRes, err error) {
 	err = c.Cli.Call(ctx, "chat.1.local.postLocal", []interface{}{__arg}, &res)
-	return
-}
-
-func (c LocalClient) ResolveConversationLocal(ctx context.Context, conversation ConversationInfoLocal) (res ResolveConversationLocalRes, err error) {
-	__arg := ResolveConversationLocalArg{Conversation: conversation}
-	err = c.Cli.Call(ctx, "chat.1.local.resolveConversationLocal", []interface{}{__arg}, &res)
 	return
 }
 

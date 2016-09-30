@@ -546,6 +546,76 @@
     },
     {
       "type": "record",
+      "name": "GetInboxLocalQuery",
+      "fields": [
+        {
+          "type": [
+            null,
+            "string"
+          ],
+          "name": "tlfName"
+        },
+        {
+          "type": [
+            null,
+            "string"
+          ],
+          "name": "topicName"
+        },
+        {
+          "type": [
+            null,
+            "ConversationID"
+          ],
+          "name": "convID"
+        },
+        {
+          "type": [
+            null,
+            "TopicType"
+          ],
+          "name": "topicType"
+        },
+        {
+          "type": [
+            null,
+            "TLFVisibility"
+          ],
+          "name": "tlfVisibility"
+        },
+        {
+          "type": [
+            null,
+            "gregor1.Time"
+          ],
+          "name": "before"
+        },
+        {
+          "type": [
+            null,
+            "gregor1.Time"
+          ],
+          "name": "after"
+        },
+        {
+          "type": [
+            null,
+            "boolean"
+          ],
+          "name": "oneChatTypePerTLF"
+        },
+        {
+          "type": "boolean",
+          "name": "unreadOnly"
+        },
+        {
+          "type": "boolean",
+          "name": "readOnly"
+        }
+      ]
+    },
+    {
+      "type": "record",
       "name": "GetConversationForCLILocalQuery",
       "fields": [
         {
@@ -618,7 +688,7 @@
           "name": "query",
           "type": [
             null,
-            "GetInboxQuery"
+            "GetInboxLocalQuery"
           ]
         },
         {
@@ -666,15 +736,6 @@
         }
       ],
       "response": "PostLocalRes"
-    },
-    "resolveConversationLocal": {
-      "request": [
-        {
-          "name": "conversation",
-          "type": "ConversationInfoLocal"
-        }
-      ],
-      "response": "ResolveConversationLocalRes"
     },
     "newConversationLocal": {
       "request": [
