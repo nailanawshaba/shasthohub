@@ -124,37 +124,25 @@ protocol local {
     int AtMost;
   }
 
-  record MessageSelector {
-    array<MessageType> MessageTypes;
-
-    union { null, string } Since;
-    boolean onlyNew;
-
-    UnreadFirstNumLimit limit;
-
-    array<ConversationID> conversations;
-
-    boolean markAsRead;
-  }
-
   record ConversationInfoLocal {
     ConversationID id;
     ConversationIDTriple triple;
 
     string tlfName;
     string topicName;
-    TopicType topicType;
     TLFVisibility visibility;
   }
 
   record ConversationLocal {
-    union { null, ConversationInfoLocal } info;
-    array<MessageFromServerOrError> messages;
-    MessageID readUpTo;
+    ConversationInfoLocal info;
+    ConversationReaderInfo readerInfo;
+    array<MessageFromServerOrError> maxMessages;
   }
 
   record GetInboxLocalRes {
-    InboxView inbox;
+    // InboxView inbox;
+    array<ConversationLocal> conversations;
+    union { null, Pagination } pagination;
     array<RateLimit> rateLimits;
   }
 
@@ -181,8 +169,9 @@ protocol local {
     array<RateLimit> rateLimits;
   }
 
-  record GetMessagesLocalRes {
-    array<ConversationLocal> msgs;
+  record GetConversationForCLILocalRes {
+    ConversationLocal conversation;
+    array<MessageFromServerOrError> messages;
     array<RateLimit> rateLimits;
   }
 
@@ -193,7 +182,21 @@ protocol local {
     array<RateLimit> rateLimits;
   }
 
-  GetInboxLocalRes getInboxLocal(union { null, GetInboxQuery} query, union { null, Pagination } pagination);
+  record GetInboxLocalQuery {
+    union { null, string } tlfName;
+    union { null, string } topicName;
+
+    union { null, ConversationID } convID;
+    union { null, TopicType } topicType;
+    union { null, TLFVisibility } tlfVisibility;
+    union { null, gregor1.Time } before;
+    union { null, gregor1.Time } after;
+    union { null, boolean } oneChatTypePerTLF;
+    boolean unreadOnly;
+    boolean readOnly;
+  }
+
+  GetInboxLocalRes getInboxLocal(union { null, GetInboxLocalQuery} query, union { null, Pagination } pagination);
   GetThreadLocalRes getThreadLocal(ConversationID conversationID, union { null, GetThreadQuery} query, union { null, Pagination } pagination);
   PostLocalRes postLocal(ConversationID conversationID, MessagePlaintext messagePlaintext);
 
@@ -214,19 +217,29 @@ protocol local {
 
   UpdateTopicNameLocalRes updateTopicNameLocal(ConversationID conversationID, string newTopicName);
 
-  // selector.conversations is required
-  GetMessagesLocalRes getMessagesLocal(MessageSelector selector);
+  record GetConversationForCLILocalQuery {
+    boolean markAsRead;
+    array<MessageType> MessageTypes;
+
+    union { null, string } Since;
+
+    UnreadFirstNumLimit limit;
+
+    ConversationID conversationId;
+  }
+
+  // query.conversationId is required
+  GetConversationForCLILocalRes getConversationForCLILocal(GetConversationForCLILocalQuery query);
 
   record GetInboxSummaryLocalQuery {
     TopicType topicType;
     string after;
     string before;
+    TLFVisibility visibility;
 
     boolean unreadFirst;
     UnreadFirstNumLimit unreadFirstLimit;
     int activitySortedLimit;
-
-    TLFVisibility visibility;
   }
 
   // if since is given, limit is ignored
