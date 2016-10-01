@@ -464,7 +464,7 @@
       "name": "NewConversationLocalRes",
       "fields": [
         {
-          "type": "ConversationInfoLocal",
+          "type": "ConversationLocal",
           "name": "conv"
         },
         {
@@ -740,24 +740,26 @@
     "newConversationLocal": {
       "request": [
         {
-          "name": "conversation",
-          "type": "ConversationInfoLocal"
+          "name": "tlfName",
+          "type": "string"
+        },
+        {
+          "name": "topicType",
+          "type": "TopicType"
+        },
+        {
+          "name": "tlfVisibility",
+          "type": "TLFVisibility"
+        },
+        {
+          "name": "topicName",
+          "type": [
+            null,
+            "string"
+          ]
         }
       ],
       "response": "NewConversationLocalRes"
-    },
-    "updateTopicNameLocal": {
-      "request": [
-        {
-          "name": "conversationID",
-          "type": "ConversationID"
-        },
-        {
-          "name": "newTopicName",
-          "type": "string"
-        }
-      ],
-      "response": "UpdateTopicNameLocalRes"
     },
     "getConversationForCLILocal": {
       "request": [

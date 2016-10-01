@@ -376,8 +376,8 @@ type ResolveConversationLocalRes struct {
 }
 
 type NewConversationLocalRes struct {
-	Conv       ConversationInfoLocal `codec:"conv" json:"conv"`
-	RateLimits []RateLimit           `codec:"rateLimits" json:"rateLimits"`
+	Conv       ConversationLocal `codec:"conv" json:"conv"`
+	RateLimits []RateLimit       `codec:"rateLimits" json:"rateLimits"`
 }
 
 type UpdateTopicNameLocalRes struct {
@@ -445,12 +445,10 @@ type PostLocalArg struct {
 }
 
 type NewConversationLocalArg struct {
-	Conversation ConversationInfoLocal `codec:"conversation" json:"conversation"`
-}
-
-type UpdateTopicNameLocalArg struct {
-	ConversationID ConversationID `codec:"conversationID" json:"conversationID"`
-	NewTopicName   string         `codec:"newTopicName" json:"newTopicName"`
+	TlfName       string        `codec:"tlfName" json:"tlfName"`
+	TopicType     TopicType     `codec:"topicType" json:"topicType"`
+	TlfVisibility TLFVisibility `codec:"tlfVisibility" json:"tlfVisibility"`
+	TopicName     *string       `codec:"topicName,omitempty" json:"topicName,omitempty"`
 }
 
 type GetConversationForCLILocalArg struct {
@@ -465,8 +463,7 @@ type LocalInterface interface {
 	GetInboxLocal(context.Context, GetInboxLocalArg) (GetInboxLocalRes, error)
 	GetThreadLocal(context.Context, GetThreadLocalArg) (GetThreadLocalRes, error)
 	PostLocal(context.Context, PostLocalArg) (PostLocalRes, error)
-	NewConversationLocal(context.Context, ConversationInfoLocal) (NewConversationLocalRes, error)
-	UpdateTopicNameLocal(context.Context, UpdateTopicNameLocalArg) (UpdateTopicNameLocalRes, error)
+	NewConversationLocal(context.Context, NewConversationLocalArg) (NewConversationLocalRes, error)
 	GetConversationForCLILocal(context.Context, GetConversationForCLILocalQuery) (GetConversationForCLILocalRes, error)
 	GetInboxSummaryLocal(context.Context, GetInboxSummaryLocalQuery) (GetInboxSummaryLocalRes, error)
 }
@@ -534,23 +531,7 @@ func LocalProtocol(i LocalInterface) rpc.Protocol {
 						err = rpc.NewTypeError((*[]NewConversationLocalArg)(nil), args)
 						return
 					}
-					ret, err = i.NewConversationLocal(ctx, (*typedArgs)[0].Conversation)
-					return
-				},
-				MethodType: rpc.MethodCall,
-			},
-			"updateTopicNameLocal": {
-				MakeArg: func() interface{} {
-					ret := make([]UpdateTopicNameLocalArg, 1)
-					return &ret
-				},
-				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
-					typedArgs, ok := args.(*[]UpdateTopicNameLocalArg)
-					if !ok {
-						err = rpc.NewTypeError((*[]UpdateTopicNameLocalArg)(nil), args)
-						return
-					}
-					ret, err = i.UpdateTopicNameLocal(ctx, (*typedArgs)[0])
+					ret, err = i.NewConversationLocal(ctx, (*typedArgs)[0])
 					return
 				},
 				MethodType: rpc.MethodCall,
@@ -610,14 +591,8 @@ func (c LocalClient) PostLocal(ctx context.Context, __arg PostLocalArg) (res Pos
 	return
 }
 
-func (c LocalClient) NewConversationLocal(ctx context.Context, conversation ConversationInfoLocal) (res NewConversationLocalRes, err error) {
-	__arg := NewConversationLocalArg{Conversation: conversation}
+func (c LocalClient) NewConversationLocal(ctx context.Context, __arg NewConversationLocalArg) (res NewConversationLocalRes, err error) {
 	err = c.Cli.Call(ctx, "chat.1.local.newConversationLocal", []interface{}{__arg}, &res)
-	return
-}
-
-func (c LocalClient) UpdateTopicNameLocal(ctx context.Context, __arg UpdateTopicNameLocalArg) (res UpdateTopicNameLocalRes, err error) {
-	err = c.Cli.Call(ctx, "chat.1.local.updateTopicNameLocal", []interface{}{__arg}, &res)
 	return
 }
 

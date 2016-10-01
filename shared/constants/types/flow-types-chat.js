@@ -118,14 +118,6 @@ export function localPostLocalRpcPromise (request: $Exact<requestCommon & {callb
   return new Promise((resolve, reject) => { localPostLocalRpc({...request, param: request.param, callback: (error, result) => { if (error) { reject(error) } else { resolve(result) } }}) })
 }
 
-export function localUpdateTopicNameLocalRpc (request: Exact<requestCommon & {callback?: ?(err: ?any, response: localUpdateTopicNameLocalResult) => void} & {param: localUpdateTopicNameLocalRpcParam}>) {
-  engineRpcOutgoing({...request, method: 'local.updateTopicNameLocal'})
-}
-
-export function localUpdateTopicNameLocalRpcPromise (request: $Exact<requestCommon & {callback?: ?(err: ?any, response: localUpdateTopicNameLocalResult) => void} & {param: localUpdateTopicNameLocalRpcParam}>): Promise<localUpdateTopicNameLocalResult> {
-  return new Promise((resolve, reject) => { localUpdateTopicNameLocalRpc({...request, param: request.param, callback: (error, result) => { if (error) { reject(error) } else { resolve(result) } }}) })
-}
-
 export function remoteGetInboxRemoteRpc (request: Exact<requestCommon & {callback?: ?(err: ?any, response: remoteGetInboxRemoteResult) => void} & {param: remoteGetInboxRemoteRpcParam}>) {
   engineRpcOutgoing({...request, method: 'remote.getInboxRemote'})
 }
@@ -478,7 +470,7 @@ export type MessageType =
   | 6 // TLFNAME_6
 
 export type NewConversationLocalRes = {
-  conv: ConversationInfoLocal,
+  conv: ConversationLocal,
   rateLimits?: ?Array<RateLimit>,
 }
 
@@ -583,17 +575,15 @@ export type localGetThreadLocalRpcParam = Exact<{
 }>
 
 export type localNewConversationLocalRpcParam = Exact<{
-  conversation: ConversationInfoLocal
+  tlfName: string,
+  topicType: TopicType,
+  tlfVisibility: TLFVisibility,
+  topicName?: ?string
 }>
 
 export type localPostLocalRpcParam = Exact<{
   conversationID: ConversationID,
   messagePlaintext: MessagePlaintext
-}>
-
-export type localUpdateTopicNameLocalRpcParam = Exact<{
-  conversationID: ConversationID,
-  newTopicName: string
 }>
 
 export type remoteGetInboxRemoteRpcParam = Exact<{
@@ -647,8 +637,6 @@ type localNewConversationLocalResult = NewConversationLocalRes
 
 type localPostLocalResult = PostLocalRes
 
-type localUpdateTopicNameLocalResult = UpdateTopicNameLocalRes
-
 type remoteGetInboxRemoteResult = GetInboxRemoteRes
 
 type remoteGetMessagesRemoteResult = GetMessagesRemoteRes
@@ -670,7 +658,6 @@ export type rpc =
   | localGetThreadLocalRpc
   | localNewConversationLocalRpc
   | localPostLocalRpc
-  | localUpdateTopicNameLocalRpc
   | remoteGetInboxRemoteRpc
   | remoteGetMessagesRemoteRpc
   | remoteGetThreadRemoteRpc

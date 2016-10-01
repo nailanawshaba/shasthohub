@@ -161,7 +161,7 @@ protocol local {
   }
 
   record NewConversationLocalRes {
-    ConversationInfoLocal conv;
+    ConversationLocal conv;
     array<RateLimit> rateLimits;
   }
 
@@ -203,12 +203,7 @@ protocol local {
   // newConversationLocal creates a new conversation. conversation.id field is
   // ignored. tlfName and topicType fields are required. topicName, if not
   // empty, causes a follow-up call to set the topic name for the conversation.
-  // Calling newConversationLocal with a topic name is same to calling with an
-  // empty topic name and following-up with an updateTopicName call. The
-  // returned ConversationInfoLocal has all fields populated.
-  NewConversationLocalRes newConversationLocal(ConversationInfoLocal conversation);
-
-  UpdateTopicNameLocalRes updateTopicNameLocal(ConversationID conversationID, string newTopicName);
+  NewConversationLocalRes newConversationLocal(string tlfName, TopicType topicType, TLFVisibility tlfVisibility, union { null, string } topicName);
 
   record GetConversationForCLILocalQuery {
     boolean markAsRead;
