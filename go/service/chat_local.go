@@ -96,6 +96,7 @@ func (h *chatLocalHandler) getInboxQueryLocalToRemote(ctx context.Context, lquer
 	rquery.TopicType = lquery.TopicType
 	rquery.UnreadOnly = lquery.UnreadOnly
 	rquery.ReadOnly = lquery.ReadOnly
+	rquery.ConvID = lquery.ConvID
 
 	return rquery, nil
 }
@@ -218,6 +219,7 @@ func (h *chatLocalHandler) NewConversationLocal(ctx context.Context, arg chat1.N
 		if ncrres.RateLimit != nil {
 			res.RateLimits = append(res.RateLimits, *ncrres.RateLimit)
 		}
+		convID := ncrres.ConvID
 		if reserr != nil {
 			if cerr, ok := reserr.(libkb.ChatConvExistsError); ok {
 				if triple.TopicType != chat1.TopicType_CHAT {
@@ -226,6 +228,7 @@ func (h *chatLocalHandler) NewConversationLocal(ctx context.Context, arg chat1.N
 					continue
 				}
 				// A chat conversation already exists; just reuse it.
+				convID = cerr.ConvID
 			}
 		}
 
@@ -233,7 +236,7 @@ func (h *chatLocalHandler) NewConversationLocal(ctx context.Context, arg chat1.N
 
 		gilres, err := h.GetInboxLocal(ctx, chat1.GetInboxLocalArg{
 			Query: &chat1.GetInboxLocalQuery{
-				ConvID: &ncrres.ConvID,
+				ConvID: &convID,
 			},
 		})
 		if err != nil {
