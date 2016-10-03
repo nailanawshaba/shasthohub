@@ -571,7 +571,7 @@ func (h *chatLocalHandler) GetConversationForCLILocal(ctx context.Context, arg c
 	}
 
 	return chat1.GetConversationForCLILocalRes{
-		Conversation: ibres.Conversations[0],
+		Conversation: convLocal,
 		Messages:     messages,
 		RateLimits:   h.aggRateLimits(rlimits),
 	}, nil

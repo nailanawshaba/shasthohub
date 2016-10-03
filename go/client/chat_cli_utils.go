@@ -30,17 +30,23 @@ func (r *chatConversationResolver) Resolve(ctx context.Context, g *libkb.GlobalC
 		r.TlfName = string(cname)
 	}
 
-	rcres, err := chatClient.ResolveConversationLocal(ctx, chat1.ConversationInfoLocal{
-		TlfName:    r.TlfName,
-		TopicName:  r.TopicName,
-		TopicType:  r.TopicType,
-		Visibility: r.Visibility,
+	gilres, err := chatClient.GetInboxLocal(ctx, chat1.GetInboxLocalArg{
+		Query: &chat1.GetInboxLocalQuery{
+			TlfName:       &r.TlfName,
+			TopicName:     &r.TopicName,
+			TopicType:     &r.TopicType,
+			TlfVisibility: &r.Visibility,
+		},
 	})
 	if err != nil {
 		return nil, false, err
 	}
 
-	conversations := rcres.Convs
+	var conversations []chat1.ConversationInfoLocal
+	for _, conv := range gilres.Conversations {
+		conversations = append(conversations, conv.Info)
+	}
+
 	switch len(conversations) {
 	case 0:
 		return nil, false, nil
@@ -67,42 +73,42 @@ func (r *chatConversationResolver) Resolve(ctx context.Context, g *libkb.GlobalC
 }
 
 type chatConversationFetcher struct {
-	selector chat1.MessageSelector
+	query    chat1.GetConversationForCLILocalQuery
 	resolver chatConversationResolver
 
 	chatClient chat1.LocalInterface // for testing only
 }
 
-func (f chatConversationFetcher) fetch(ctx context.Context, g *libkb.GlobalContext) (conversations []chat1.ConversationLocal, err error) {
+func (f chatConversationFetcher) fetch(ctx context.Context, g *libkb.GlobalContext) (conversations chat1.ConversationLocal, messages []chat1.MessageFromServerOrError, err error) {
 	chatClient := f.chatClient // should be nil unless in test
 	if chatClient == nil {
 		chatClient, err = GetChatLocalClient(g)
 		if err != nil {
-			return nil, fmt.Errorf("Getting chat service client error: %s", err)
+			return chat1.ConversationLocal{}, nil, fmt.Errorf("Getting chat service client error: %s", err)
 		}
 	}
 
 	tlfClient, err := GetTlfClient(g)
 	if err != nil {
-		return nil, err
+		return chat1.ConversationLocal{}, nil, err
 	}
 
 	conversationInfo, _, err := f.resolver.Resolve(ctx, g, chatClient, tlfClient)
 	if err != nil {
-		return nil, fmt.Errorf("resolving conversation error: %v\n", err)
+		return chat1.ConversationLocal{}, nil, fmt.Errorf("resolving conversation error: %v\n", err)
 	}
 	if conversationInfo == nil {
-		return nil, nil
+		return chat1.ConversationLocal{}, nil, nil
 	}
 	g.UI.GetTerminalUI().Printf("fetching conversation %s ...\n", conversationInfo.TlfName)
-	f.selector.Conversations = append(f.selector.Conversations, conversationInfo.Id)
+	f.query.ConversationId = conversationInfo.Id
 
-	gmres, err := chatClient.GetMessagesLocal(ctx, f.selector)
+	gcfclres, err := chatClient.GetConversationForCLILocal(ctx, f.query)
 	if err != nil {
-		return nil, fmt.Errorf("GetMessagesLocal error: %s", err)
+		return chat1.ConversationLocal{}, nil, fmt.Errorf("GetConversationForCLILocal error: %s", err)
 	}
 
-	return gmres.Msgs, nil
+	return gcfclres.Conversation, gcfclres.Messages, nil
 }
 
 type chatInboxFetcher struct {
