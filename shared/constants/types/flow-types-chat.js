@@ -217,6 +217,7 @@ export type ConversationInfoLocal = {
 }
 
 export type ConversationLocal = {
+  error?: ?string,
   info: ConversationInfoLocal,
   readerInfo: ConversationReaderInfo,
   maxMessages?: ?Array<MessageFromServerOrError>,

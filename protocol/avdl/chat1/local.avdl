@@ -134,6 +134,7 @@ protocol local {
   }
 
   record ConversationLocal {
+    union { null, string } error;
     ConversationInfoLocal info;
     ConversationReaderInfo readerInfo;
     array<MessageFromServerOrError> maxMessages;

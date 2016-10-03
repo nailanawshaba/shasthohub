@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/keybase/client/go/engine"
 	"github.com/keybase/client/go/libkb"
 	"github.com/keybase/client/go/protocol/chat1"
@@ -22,8 +23,9 @@ import (
 type chatLocalHandler struct {
 	*BaseHandler
 	libkb.Contextified
-	gh    *gregorHandler
-	boxer *chatBoxer
+	gh      *gregorHandler
+	boxer   *chatBoxer
+	udCache *lru.Cache
 
 	// for test only
 	rc chat1.RemoteInterface
@@ -31,12 +33,44 @@ type chatLocalHandler struct {
 
 // newChatLocalHandler creates a chatLocalHandler.
 func newChatLocalHandler(xp rpc.Transporter, g *libkb.GlobalContext, gh *gregorHandler) *chatLocalHandler {
+	udc, _ := lru.New(10000)
 	return &chatLocalHandler{
 		BaseHandler:  NewBaseHandler(xp),
 		Contextified: libkb.NewContextified(g),
 		gh:           gh,
 		boxer:        newChatBoxer(g),
+		udCache:      udc,
 	}
+}
+
+type udCacheKey struct {
+	UID      keybase1.UID
+	DeviceID keybase1.DeviceID
+}
+
+type udCacheValue struct {
+	Username   string
+	DeviceName string
+}
+
+func (h *chatLocalHandler) getUsernameAndDeviceName(uid keybase1.UID, deviceID keybase1.DeviceID,
+	uimap *userInfoMapper) (string, string, error) {
+
+	if val, ok := h.udCache.Get(udCacheKey{UID: uid, DeviceID: deviceID}); ok {
+		if udval, ok := val.(udCacheValue); ok {
+			h.G().Log.Debug("getUsernameAndDeviceName: lru hit: u: %s d: %s", udval.Username,
+				udval.DeviceName)
+			return udval.Username, udval.DeviceName, nil
+		}
+	}
+
+	username, deviceName, err := uimap.lookup(uid, deviceID)
+	if err != nil {
+		return username, deviceName, err
+	}
+	h.udCache.Add(udCacheKey{UID: uid, DeviceID: deviceID},
+		udCacheValue{Username: username, DeviceName: deviceName})
+	return username, deviceName, err
 }
 
 // aggregateRateLimits takes a list of rate limit responses and dedups them to the last one received
@@ -294,14 +328,14 @@ func (h *chatLocalHandler) GetInboxSummaryLocal(ctx context.Context, arg chat1.G
 
 	var after time.Time
 	if len(arg.After) > 0 {
-		after, err = parseTimeFromRFC3339OrDurationFromPast(arg.After)
+		after, err = parseTimeFromRFC3339OrDurationFromPast(h.G(), arg.After)
 		if err != nil {
 			return chat1.GetInboxSummaryLocalRes{}, fmt.Errorf("parsing time or duration (%s) error: %s", arg.After, err)
 		}
 	}
 	var before time.Time
 	if len(arg.Before) > 0 {
-		before, err = parseTimeFromRFC3339OrDurationFromPast(arg.Before)
+		before, err = parseTimeFromRFC3339OrDurationFromPast(h.G(), arg.Before)
 		if err != nil {
 			return chat1.GetInboxSummaryLocalRes{}, fmt.Errorf("parsing time or duration (%s) error: %s", arg.Before, err)
 		}
@@ -386,16 +420,17 @@ func (h *chatLocalHandler) localizeConversation(
 	}
 
 	if len(conversationRemote.MaxMsgs) == 0 {
-		return chat1.ConversationLocal{},
-			libkb.UnexpectedChatDataFromServer{Msg: "conversation has an empty MaxMsgs field"}
+		errMsg := "conversation has an empty MaxMsgs field"
+		return chat1.ConversationLocal{Error: &errMsg}, nil
 	}
 	if conversationLocal.MaxMessages, err = h.unboxMessages(ctx, conversationRemote.MaxMsgs); err != nil {
-		return chat1.ConversationLocal{}, err
+		errMsg := err.Error()
+		return chat1.ConversationLocal{Error: &errMsg}, nil
 	}
 
 	if conversationRemote.ReaderInfo == nil {
-		return chat1.ConversationLocal{},
-			libkb.UnexpectedChatDataFromServer{Msg: "empty ReaderInfo from server?"}
+		errMsg := "empty ReaderInfo from server?"
+		return chat1.ConversationLocal{Error: &errMsg}, nil
 	}
 	conversationLocal.ReaderInfo = *conversationRemote.ReaderInfo
 
@@ -423,13 +458,15 @@ func (h *chatLocalHandler) localizeConversation(
 				}
 				conversationLocal.Info.Triple = messagePlaintext.V1().ClientHeader.Conv
 			default:
-				return chat1.ConversationLocal{}, libkb.NewChatMessageVersionError(version)
+				errMsg := libkb.NewChatMessageVersionError(version).Error()
+				return chat1.ConversationLocal{Error: &errMsg}, nil
 			}
 		}
 	}
 
 	if len(conversationLocal.Info.TlfName) == 0 {
-		return chat1.ConversationLocal{}, errors.New("no valid message in the conversation")
+		errMsg := "no valid message in the conversation"
+		return chat1.ConversationLocal{Error: &errMsg}, nil
 	}
 
 	if _, conversationLocal.Info.TlfName, err = h.cryptKeysWrapper(ctx, conversationLocal.Info.TlfName); err != nil {
@@ -454,7 +491,7 @@ func (h *chatLocalHandler) getSenderInfoLocal(uimap *userInfoMapper, messagePlai
 		v1 := messagePlaintext.V1()
 		uid := keybase1.UID(v1.ClientHeader.Sender.String())
 		did := keybase1.DeviceID(v1.ClientHeader.SenderDevice.String())
-		username, deviceName, err := uimap.lookup(uid, did)
+		username, deviceName, err := h.getUsernameAndDeviceName(uid, did, uimap)
 		if err != nil {
 			return "", "", err
 		}
@@ -494,7 +531,7 @@ func (h *chatLocalHandler) GetConversationForCLILocal(ctx context.Context, arg c
 
 	var since time.Time
 	if arg.Since != nil {
-		since, err = parseTimeFromRFC3339OrDurationFromPast(*arg.Since)
+		since, err = parseTimeFromRFC3339OrDurationFromPast(h.G(), *arg.Since)
 		if err != nil {
 			return chat1.GetConversationForCLILocalRes{}, fmt.Errorf("parsing time or duration (%s) error: %s", *arg.Since, since)
 		}
@@ -682,6 +719,7 @@ func (h *chatLocalHandler) unboxMessages(ctx context.Context, boxed []chat1.Mess
 		messagePlaintext, err := h.boxer.unboxMessage(ctx, finder, msg)
 		if err != nil {
 			errMsg := err.Error()
+			h.G().Log.Warning("failed to unbox message: msgID: %d err: %s", msg.ServerHeader.MessageID, errMsg)
 			unboxed = append(unboxed, chat1.MessageFromServerOrError{
 				UnboxingError: &errMsg,
 			})

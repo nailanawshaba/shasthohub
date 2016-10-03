@@ -106,14 +106,14 @@ func parseConversationTopicType(ctx *cli.Context) (topicType chat1.TopicType, er
 	return topicType, err
 }
 
-func parseConversationResolver(ctx *cli.Context, tlfName string) (resolver chatConversationResolver, err error) {
+func parseConversationResolver(ctx *cli.Context, tlfName string) (resolver conversationResolver, err error) {
 	resolver.TopicName = ctx.String("topic-name")
 	resolver.TlfName = tlfName
 	if resolver.TopicType, err = parseConversationTopicType(ctx); err != nil {
-		return chatConversationResolver{}, err
+		return conversationResolver{}, err
 	}
 	if resolver.TopicType == chat1.TopicType_CHAT && len(resolver.TopicName) != 0 {
-		return chatConversationResolver{}, errors.New("multiple topics are not yet supported")
+		return conversationResolver{}, errors.New("multiple topics are not yet supported")
 	}
 	if ctx.Bool("private") {
 		resolver.Visibility = chat1.TLFVisibility_PRIVATE
@@ -125,7 +125,7 @@ func parseConversationResolver(ctx *cli.Context, tlfName string) (resolver chatC
 	return resolver, nil
 }
 
-func makeMessageFetcherFromCliCtx(ctx *cli.Context, tlfName string, markAsRead bool) (fetcher chatConversationFetcher, err error) {
+func makeMessageFetcherFromCliCtx(ctx *cli.Context, tlfName string, markAsRead bool) (fetcher messageFetcher, err error) {
 	fetcher.selector.MessageTypes = []chat1.MessageType{chat1.MessageType_TEXT, chat1.MessageType_ATTACHMENT}
 	fetcher.selector.Limit = chat1.UnreadFirstNumLimit{
 		NumRead: 2,
@@ -140,15 +140,15 @@ func makeMessageFetcherFromCliCtx(ctx *cli.Context, tlfName string, markAsRead b
 	fetcher.selector.MarkAsRead = markAsRead
 
 	if fetcher.resolver, err = parseConversationResolver(ctx, tlfName); err != nil {
-		return chatConversationFetcher{}, err
+		return messageFetcher{}, err
 	}
 
 	return fetcher, nil
 }
 
-func makeInboxFetcherActivitySortedFromCli(ctx *cli.Context) (fetcher chatInboxFetcher, err error) {
+func makeInboxFetcherActivitySortedFromCli(ctx *cli.Context) (fetcher inboxFetcher, err error) {
 	if fetcher.query.TopicType, err = parseConversationTopicType(ctx); err != nil {
-		return chatInboxFetcher{}, err
+		return inboxFetcher{}, err
 	}
 
 	fetcher.query.UnreadFirst = false
@@ -166,7 +166,7 @@ func makeInboxFetcherActivitySortedFromCli(ctx *cli.Context) (fetcher chatInboxF
 	return fetcher, err
 }
 
-func makeInboxFetcherUnreadFirstFromCli(ctx *cli.Context) (fetcher chatInboxFetcher, err error) {
+func makeInboxFetcherUnreadFirstFromCli(ctx *cli.Context) (fetcher inboxFetcher, err error) {
 	if fetcher.query.TopicType, err = parseConversationTopicType(ctx); err != nil {
 		return fetcher, err
 	}

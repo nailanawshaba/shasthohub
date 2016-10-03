@@ -366,6 +366,13 @@
       "name": "ConversationLocal",
       "fields": [
         {
+          "type": [
+            null,
+            "string"
+          ],
+          "name": "error"
+        },
+        {
           "type": "ConversationInfoLocal",
           "name": "info"
         },
