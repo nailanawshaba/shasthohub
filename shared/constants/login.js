@@ -1,5 +1,9 @@
 // @flow
-// constants
+
+import type {TypedAction, NoErrorTypedAction} from '../../constants/types/flux'
+
+export const startLogin = 'login:startLogin'
+export type StartLogin = NoErrorTypedAction<'login:startLogin', {usernameOrEmail: string}>
 
 export const codePageDeviceRoleExistingPhone = 'codePageDeviceRoleExistingPhone'
 export const codePageDeviceRoleNewPhone = 'codePageDeviceRoleNewPhone'

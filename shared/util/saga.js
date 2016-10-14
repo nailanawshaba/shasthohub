@@ -12,6 +12,9 @@ export function createChannelMap<T> (channelConfig: ChannelConfig<T>): ChannelMa
 
 export function putOnChannelMap<T> (channelMap: ChannelMap<T>, k: string, v: T): void {
   const c = channelMap[k]
+  if (__DEV__) {
+    console.log('CHANNELMAP DEV: putting at key ', k, '\n', v)
+  }
   if (c) {
     c.put(v)
   } else {
@@ -27,6 +30,10 @@ export function effectOnChannelMap<T> (effect: any, channelMap: ChannelMap<T>, k
   } else {
     console.error('Trying to do effect, but no registered channel for', k)
   }
+}
+
+export function getChannel<T> (channelMap: ChannelMap<T>, k: string): any {
+  return effectOnChannelMap(x => x, channelMap, k)
 }
 
 export function takeFromChannelMap<T> (channelMap: ChannelMap<T>, k: string): any {
