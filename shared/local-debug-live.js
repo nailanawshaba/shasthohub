@@ -8,7 +8,7 @@ import {envVarDebugJson, isTesting} from './local-debug'
 
 // Shared settings
 const dumbFilterJson = (envVarDebugJson() || {}).dumbFilter || ''
-const dumbFilterOverride = '' // Changing this will apply during a hot reload session
+const dumbFilterOverride = 'chatdemo' // Changing this will apply during a hot reload session
 
 export const dumbFilter = dumbFilterOverride || dumbFilterJson
 
