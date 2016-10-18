@@ -14,4 +14,4 @@ export const dumbFilter = dumbFilterOverride || dumbFilterJson
 
 // Mobile only settings
 export const dumbIndex = 0
-export const dumbFullscreen = isTesting
+export const dumbFullscreen = true

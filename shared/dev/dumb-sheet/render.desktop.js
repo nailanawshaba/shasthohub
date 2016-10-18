@@ -38,7 +38,7 @@ class Render extends Component<void, Props, any> {
     let numItemsLeftWeCanShow = parseInt(parts[1], 10) || 10
 
     return (
-      <Box style={{...globalStyles.scrollable, padding: 20}}>
+      <Box style={{...globalStyles.scrollable, ...globalStyles.flexBoxColumn, padding: 20, flex: 1}}>
         <BackButton onClick={this.props.onBack} />
         <Box style={{...globalStyles.flexBoxRow}}>
           <Text type='Header'>Filter:</Text>
@@ -86,6 +86,7 @@ class Render extends Component<void, Props, any> {
 
 export const styleBox = {
   ...globalStyles.flexBoxColumn,
+  flex: 1,
   padding: 20,
   marginTop: 10,
   border: 'solid 1px lightgray',
