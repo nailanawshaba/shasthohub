@@ -1,5 +1,7 @@
 // @flow
 
+import type {TypedState} from '../reducer'
+
 export type NodeCB = (err: ?any, result: ?any) => void
 
 export type SagaGenerator<Yield, Actions> = Generator<Yield, void, Actions>
@@ -24,3 +26,6 @@ export type ChannelConfig<T> = {
 export type ChannelMap<T> = {
   [key: string]: Channel<T>,
 }
+
+type _AfterSelect<Out, SelectorFn: (state: TypedState) => Out> = Out
+export type AfterSelect<SelectorFn: (state: TypedState) => *> = _AfterSelect<*, SelectorFn>

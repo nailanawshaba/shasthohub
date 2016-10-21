@@ -2,9 +2,10 @@
 import React, {Component} from 'react'
 import Render from './index.render'
 import {connect} from 'react-redux'
-import {openAccountResetPage, relogin, login} from '../../actions/login'
-import actions from '../../actions/login/creators'
+import {openAccountResetPage, login} from '../../actions/login'
+import * as actions from '../../actions/login/creators'
 import {routeAppend} from '../../actions/router'
+import HiddenString from '../../util/hidden-string.js'
 
 import type {TypedState} from '../../constants/reducer'
 import type {Props} from './index.render'
@@ -46,7 +47,7 @@ class Login extends Component {
     />
   }
 
-  static parseRoute (store, currentPath, nextPath) {
+  static parseRoute (currentPath, nextPath) {
     return {componentAtTop: {}}
   }
 }
@@ -70,8 +71,8 @@ export default connect(
   },
   (dispatch: any) => ({
     onForgotPassphrase: () => dispatch(openAccountResetPage()),
-    onLogin: (user, passphrase) => dispatch(relogin(user, passphrase)),
+    onLogin: (user, passphrase) => dispatch(actions.relogin(user, new HiddenString(passphrase))),
     onSignup: () => dispatch(routeAppend(['signup'])),
-    onSomeoneElse: () => { dispatch(actions.startLogin('t84')) },
+    onSomeoneElse: () => { dispatch(actions.someoneElse()) },
   })
 )(Login)

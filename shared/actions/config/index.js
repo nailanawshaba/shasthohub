@@ -142,7 +142,6 @@ export function bootstrap (): AsyncAction {
             dispatch(getMyFollowing(username))
           }
           dispatch({type: Constants.bootstrapped, payload: null})
-          dispatch(navBasedOnLoginState())
           dispatch((resetSignup(): Action))
           dispatch(_registerListeners())
         }).catch(error => {

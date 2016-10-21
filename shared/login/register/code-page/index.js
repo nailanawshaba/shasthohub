@@ -5,8 +5,11 @@
  */
 import React, {Component} from 'react'
 import Render from './index.render'
-import type {Props} from './index.render'
+import * as actions from '../../../actions/login/creators'
 import {connect} from 'react-redux'
+
+import type {TypedState} from '../../../constants/reducer'
+import type {Props} from './index.render'
 
 type State = {
   enterText: string,
@@ -46,5 +49,25 @@ class CodePage extends Component<void, Props, State> {
 }
 
 export default connect(
-  (state: any, ownProps: any) => ownProps.mapStateToProps(state),
+   ({login: {codePage: {
+     mode, codeCountDown, textCode, qrCode,
+     myDeviceRole, otherDeviceRole, cameraBrokenMode,
+   }}}: TypedState) => ({
+     mode,
+     codeCountDown,
+     textCode: textCode ? textCode.stringValue() : '',
+     qrCode: qrCode ? qrCode.stringValue() : '',
+     myDeviceRole,
+     otherDeviceRole,
+     cameraBrokenMode,
+
+   }),
+   (dispatch: any, ownProps: {}) => ({
+     onBack: () => dispatch(actions.onBack()),
+     setCodePageMode: mode => console.log('todo'),
+     qrScanned: code => console.log('todo'),
+     setCameraBrokenMode: broken => console.log('todo'),
+     textEntered: text => console.log('todo'),
+     doneRegistering: () => console.log('todo'),
+   })
 )(CodePage)
