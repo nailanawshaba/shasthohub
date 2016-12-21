@@ -42,7 +42,7 @@ ldflags_kbfs=""
 if [ "$mode" != "production" ] ; then
   # The non-production build number is everything in the version after the hyphen.
   build_number="$(echo -n "$version" | sed 's/.*-//')"
-  ldflags_client="-X github.com/keybase/client/go/libkb.PrereleaseBuild=$build_number"
+  ldflags_client="-X github.com/keybase/client/go/libkb.Version=$version"
   commit_short_kbfs="$(git -C "$kbfs_repo" rev-parse --short HEAD)"
   build_number_kbfs="$(echo -n "$build_number" | sed 's/+..*/+/')$commit_short_kbfs"
   ldflags_kbfs="-X github.com/keybase/kbfs/libkbfs.PrereleaseBuild=$build_number_kbfs"

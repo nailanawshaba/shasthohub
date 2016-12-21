@@ -9,12 +9,18 @@ build_dir=${BUILD_DIR:-/tmp/keybase}
 
 mkdir -p "$build_dir"
 
-current_date=`date -u +%Y%m%d%H%M%S` # UTC
-commit_short=`git log -1 --pretty=format:%h`
-build="$current_date+$commit_short"
-keybase_build=${KEYBASE_BUILD:-$build}
+version=${VERSION:-$version}
 tags=${TAGS:-"prerelease production"}
-ldflags="-X github.com/keybase/client/go/libkb.PrereleaseBuild=$keybase_build"
+prerelease=${PRERELEASE:-""}
+
+if [ "$prerelease" == "1" ]; then
+  current_date=`date -u +%Y%m%d%H%M%S` # UTC
+  commit_short=`git log -1 --pretty=format:%h`
+  build="$current_date+$commit_short"
+  version="$version-$build"
+fi
+
+ldflags="-X github.com/keybase/client/go/libkb.Version=$version"
 
 if [ "$PLATFORM" = "darwin" ]; then
   # To get codesign to work you have to use -ldflags "-s ...", see https://github.com/golang/go/issues/11887
@@ -22,7 +28,7 @@ if [ "$PLATFORM" = "darwin" ]; then
 fi
 
 echo "Building $build_dir/keybase ($keybase_build)"
-GO15VENDOREXPERIMENT=1 go build -a -tags "$tags" -ldflags "$ldflags" -o "$build_dir/keybase" "github.com/keybase/client/go/keybase"
+go build -a -tags "$tags" -ldflags "$ldflags" -o "$build_dir/keybase" "github.com/keybase/client/go/keybase"
 
 if [ "$PLATFORM" = "darwin" ]; then
   code_sign_identity="Developer ID Application: Keybase, Inc. (99229SGT5K)"

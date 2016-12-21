@@ -27,19 +27,6 @@ import (
 	keybase1 "github.com/keybase/client/go/protocol/keybase1"
 )
 
-// PrereleaseBuild can be set at compile time for prerelease builds.
-// CAUTION: Don't change the name of this variable without grepping for
-// occurrences in shell scripts!
-var PrereleaseBuild string
-
-// VersionString returns semantic version string
-func VersionString() string {
-	if PrereleaseBuild != "" {
-		return fmt.Sprintf("%s-%s", Version, PrereleaseBuild)
-	}
-	return Version
-}
-
 func ErrToOk(err error) string {
 	if err == nil {
 		return "ok"
