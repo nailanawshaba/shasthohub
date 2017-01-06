@@ -738,6 +738,23 @@ type PostLocalNonblockArg struct {
 	IdentifyBehavior keybase1.TLFIdentifyBehavior `codec:"identifyBehavior" json:"identifyBehavior"`
 }
 
+type PostDeleteLocalNonblockArg struct {
+	ConversationID   ConversationID               `codec:"conversationID" json:"conversationID"`
+	Msg              MessagePlaintext             `codec:"msg" json:"msg"`
+	DeleteMsgID      MessageID                    `codec:"deleteMsgID" json:"deleteMsgID"`
+	ClientPrev       MessageID                    `codec:"clientPrev" json:"clientPrev"`
+	IdentifyBehavior keybase1.TLFIdentifyBehavior `codec:"identifyBehavior" json:"identifyBehavior"`
+}
+
+type PostEditLocalNonblockArg struct {
+	ConversationID   ConversationID               `codec:"conversationID" json:"conversationID"`
+	Msg              MessagePlaintext             `codec:"msg" json:"msg"`
+	EditMsgID        MessageID                    `codec:"editMsgID" json:"editMsgID"`
+	Body             string                       `codec:"body" json:"body"`
+	ClientPrev       MessageID                    `codec:"clientPrev" json:"clientPrev"`
+	IdentifyBehavior keybase1.TLFIdentifyBehavior `codec:"identifyBehavior" json:"identifyBehavior"`
+}
+
 type SetConversationStatusLocalArg struct {
 	ConversationID   ConversationID               `codec:"conversationID" json:"conversationID"`
 	Status           ConversationStatus           `codec:"status" json:"status"`
@@ -827,6 +844,8 @@ type LocalInterface interface {
 	GetInboxNonblockLocal(context.Context, GetInboxNonblockLocalArg) (GetInboxNonblockLocalRes, error)
 	PostLocal(context.Context, PostLocalArg) (PostLocalRes, error)
 	PostLocalNonblock(context.Context, PostLocalNonblockArg) (PostLocalNonblockRes, error)
+	PostDeleteLocalNonblock(context.Context, PostDeleteLocalNonblockArg) (PostLocalNonblockRes, error)
+	PostEditLocalNonblock(context.Context, PostEditLocalNonblockArg) (PostLocalNonblockRes, error)
 	SetConversationStatusLocal(context.Context, SetConversationStatusLocalArg) (SetConversationStatusLocalRes, error)
 	NewConversationLocal(context.Context, NewConversationLocalArg) (NewConversationLocalRes, error)
 	GetInboxSummaryForCLILocal(context.Context, GetInboxSummaryForCLILocalQuery) (GetInboxSummaryForCLILocalRes, error)
@@ -937,6 +956,38 @@ func LocalProtocol(i LocalInterface) rpc.Protocol {
 						return
 					}
 					ret, err = i.PostLocalNonblock(ctx, (*typedArgs)[0])
+					return
+				},
+				MethodType: rpc.MethodCall,
+			},
+			"postDeleteLocalNonblock": {
+				MakeArg: func() interface{} {
+					ret := make([]PostDeleteLocalNonblockArg, 1)
+					return &ret
+				},
+				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
+					typedArgs, ok := args.(*[]PostDeleteLocalNonblockArg)
+					if !ok {
+						err = rpc.NewTypeError((*[]PostDeleteLocalNonblockArg)(nil), args)
+						return
+					}
+					ret, err = i.PostDeleteLocalNonblock(ctx, (*typedArgs)[0])
+					return
+				},
+				MethodType: rpc.MethodCall,
+			},
+			"postEditLocalNonblock": {
+				MakeArg: func() interface{} {
+					ret := make([]PostEditLocalNonblockArg, 1)
+					return &ret
+				},
+				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
+					typedArgs, ok := args.(*[]PostEditLocalNonblockArg)
+					if !ok {
+						err = rpc.NewTypeError((*[]PostEditLocalNonblockArg)(nil), args)
+						return
+					}
+					ret, err = i.PostEditLocalNonblock(ctx, (*typedArgs)[0])
 					return
 				},
 				MethodType: rpc.MethodCall,
@@ -1168,6 +1219,16 @@ func (c LocalClient) PostLocal(ctx context.Context, __arg PostLocalArg) (res Pos
 
 func (c LocalClient) PostLocalNonblock(ctx context.Context, __arg PostLocalNonblockArg) (res PostLocalNonblockRes, err error) {
 	err = c.Cli.Call(ctx, "chat.1.local.postLocalNonblock", []interface{}{__arg}, &res)
+	return
+}
+
+func (c LocalClient) PostDeleteLocalNonblock(ctx context.Context, __arg PostDeleteLocalNonblockArg) (res PostLocalNonblockRes, err error) {
+	err = c.Cli.Call(ctx, "chat.1.local.postDeleteLocalNonblock", []interface{}{__arg}, &res)
+	return
+}
+
+func (c LocalClient) PostEditLocalNonblock(ctx context.Context, __arg PostEditLocalNonblockArg) (res PostLocalNonblockRes, err error) {
+	err = c.Cli.Call(ctx, "chat.1.local.postEditLocalNonblock", []interface{}{__arg}, &res)
 	return
 }
 

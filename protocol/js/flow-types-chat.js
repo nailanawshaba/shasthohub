@@ -271,6 +271,30 @@ export function localPostAttachmentLocalRpcPromise (request: $Exact<requestCommo
   return new Promise((resolve, reject) => { localPostAttachmentLocalRpc({...request, callback: (error, result) => { if (error) { reject(error) } else { resolve(result) } }}) })
 }
 
+export function localPostDeleteLocalNonblockRpc (request: Exact<requestCommon & {callback?: ?(err: ?any, response: localPostDeleteLocalNonblockResult) => void} & {param: localPostDeleteLocalNonblockRpcParam}>) {
+  engineRpcOutgoing({...request, method: 'chat.1.local.postDeleteLocalNonblock'})
+}
+
+export function localPostDeleteLocalNonblockRpcChannelMap (channelConfig: ChannelConfig<*>, request: $Exact<requestCommon & {callback?: ?(err: ?any, response: localPostDeleteLocalNonblockResult) => void} & {param: localPostDeleteLocalNonblockRpcParam}>): ChannelMap<*> {
+  return _channelMapRpcHelper(channelConfig, (incomingCallMap, callback) => localPostDeleteLocalNonblockRpc({...request, incomingCallMap, callback}))
+}
+
+export function localPostDeleteLocalNonblockRpcPromise (request: $Exact<requestCommon & {callback?: ?(err: ?any, response: localPostDeleteLocalNonblockResult) => void} & {param: localPostDeleteLocalNonblockRpcParam}>): Promise<localPostDeleteLocalNonblockResult> {
+  return new Promise((resolve, reject) => { localPostDeleteLocalNonblockRpc({...request, callback: (error, result) => { if (error) { reject(error) } else { resolve(result) } }}) })
+}
+
+export function localPostEditLocalNonblockRpc (request: Exact<requestCommon & {callback?: ?(err: ?any, response: localPostEditLocalNonblockResult) => void} & {param: localPostEditLocalNonblockRpcParam}>) {
+  engineRpcOutgoing({...request, method: 'chat.1.local.postEditLocalNonblock'})
+}
+
+export function localPostEditLocalNonblockRpcChannelMap (channelConfig: ChannelConfig<*>, request: $Exact<requestCommon & {callback?: ?(err: ?any, response: localPostEditLocalNonblockResult) => void} & {param: localPostEditLocalNonblockRpcParam}>): ChannelMap<*> {
+  return _channelMapRpcHelper(channelConfig, (incomingCallMap, callback) => localPostEditLocalNonblockRpc({...request, incomingCallMap, callback}))
+}
+
+export function localPostEditLocalNonblockRpcPromise (request: $Exact<requestCommon & {callback?: ?(err: ?any, response: localPostEditLocalNonblockResult) => void} & {param: localPostEditLocalNonblockRpcParam}>): Promise<localPostEditLocalNonblockResult> {
+  return new Promise((resolve, reject) => { localPostEditLocalNonblockRpc({...request, callback: (error, result) => { if (error) { reject(error) } else { resolve(result) } }}) })
+}
+
 export function localPostFileAttachmentLocalRpc (request: Exact<requestCommon & {callback?: ?(err: ?any, response: localPostFileAttachmentLocalResult) => void} & {param: localPostFileAttachmentLocalRpcParam}>) {
   engineRpcOutgoing({...request, method: 'chat.1.local.postFileAttachmentLocal'})
 }
@@ -1217,6 +1241,23 @@ export type localPostAttachmentLocalRpcParam = Exact<{
   identifyBehavior: keybase1.TLFIdentifyBehavior
 }>
 
+export type localPostDeleteLocalNonblockRpcParam = Exact<{
+  conversationID: ConversationID,
+  msg: MessagePlaintext,
+  deleteMsgID: MessageID,
+  clientPrev: MessageID,
+  identifyBehavior: keybase1.TLFIdentifyBehavior
+}>
+
+export type localPostEditLocalNonblockRpcParam = Exact<{
+  conversationID: ConversationID,
+  msg: MessagePlaintext,
+  editMsgID: MessageID,
+  body: string,
+  clientPrev: MessageID,
+  identifyBehavior: keybase1.TLFIdentifyBehavior
+}>
+
 export type localPostFileAttachmentLocalRpcParam = Exact<{
   conversationID: ConversationID,
   clientHeader: MessageClientHeader,
@@ -1335,6 +1376,10 @@ type localNewConversationLocalResult = NewConversationLocalRes
 
 type localPostAttachmentLocalResult = PostLocalRes
 
+type localPostDeleteLocalNonblockResult = PostLocalNonblockRes
+
+type localPostEditLocalNonblockResult = PostLocalNonblockRes
+
 type localPostFileAttachmentLocalResult = PostLocalRes
 
 type localPostLocalNonblockResult = PostLocalNonblockRes
@@ -1379,6 +1424,8 @@ export type rpc =
   | localMarkAsReadLocalRpc
   | localNewConversationLocalRpc
   | localPostAttachmentLocalRpc
+  | localPostDeleteLocalNonblockRpc
+  | localPostEditLocalNonblockRpc
   | localPostFileAttachmentLocalRpc
   | localPostLocalNonblockRpc
   | localPostLocalRpc

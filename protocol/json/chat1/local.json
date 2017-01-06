@@ -1296,6 +1296,60 @@
       ],
       "response": "PostLocalNonblockRes"
     },
+    "postDeleteLocalNonblock": {
+      "request": [
+        {
+          "name": "conversationID",
+          "type": "ConversationID"
+        },
+        {
+          "name": "msg",
+          "type": "MessagePlaintext"
+        },
+        {
+          "name": "deleteMsgID",
+          "type": "MessageID"
+        },
+        {
+          "name": "clientPrev",
+          "type": "MessageID"
+        },
+        {
+          "name": "identifyBehavior",
+          "type": "keybase1.TLFIdentifyBehavior"
+        }
+      ],
+      "response": "PostLocalNonblockRes"
+    },
+    "postEditLocalNonblock": {
+      "request": [
+        {
+          "name": "conversationID",
+          "type": "ConversationID"
+        },
+        {
+          "name": "msg",
+          "type": "MessagePlaintext"
+        },
+        {
+          "name": "editMsgID",
+          "type": "MessageID"
+        },
+        {
+          "name": "body",
+          "type": "string"
+        },
+        {
+          "name": "clientPrev",
+          "type": "MessageID"
+        },
+        {
+          "name": "identifyBehavior",
+          "type": "keybase1.TLFIdentifyBehavior"
+        }
+      ],
+      "response": "PostLocalNonblockRes"
+    },
     "SetConversationStatusLocal": {
       "request": [
         {
