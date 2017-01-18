@@ -39,6 +39,7 @@ class ConversationList extends Component<void, Props, State> {
   _list: any;
   state: State;
   _toRemeasure: Array<number>;
+  _shouldForceUpdateGrid: boolean;
   _lastWidth: ?number;
 
   constructor (props: Props) {
@@ -56,6 +57,7 @@ class ConversationList extends Component<void, Props, State> {
       uniformRowHeight: false,
     })
     this._toRemeasure = []
+    this._shouldForceUpdateGrid = false
   }
 
   _indexToID = index => {
@@ -94,6 +96,11 @@ class ConversationList extends Component<void, Props, State> {
         this._list && this._list.recomputeRowHeights(item)
       })
       this._toRemeasure = []
+    }
+
+    if (this._shouldForceUpdateGrid) {
+      this._shouldForceUpdateGrid = false
+      this._list && this._list.forceUpdateGrid()
     }
   }
 
@@ -140,10 +147,12 @@ class ConversationList extends Component<void, Props, State> {
 
       if (item.type === 'Text' && oldMessage.type === 'Text' && item.messageState !== oldMessage.messageState) {
         this._toRemeasure.push(index + 1)
-      }
-
-      if (item.type === 'Attachment' && oldMessage.type === 'Attachment' && item.previewPath !== oldMessage.previewPath) {
+      } else if (item.type === 'Attachment' && oldMessage.type === 'Attachment' &&
+                 (item.previewPath !== oldMessage.previewPath ||
+                  !shallowEqual(item.previewSize, oldMessage.previewSize))) {
         this._toRemeasure.push(index + 1)
+      } else if (!shallowEqual(item, oldMessage)) {
+        this._shouldForceUpdateGrid = true
       }
     })
   }
@@ -286,6 +295,7 @@ class ConversationList extends Component<void, Props, State> {
       metaDataMap: this.props.metaDataMap,
       onAction: this._onAction,
       onLoadAttachment: this.props.onLoadAttachment,
+      onRetryAttachment: () => { message.type === 'Attachment' && this.props.onRetryAttachment(message) },
       onOpenInFileUI: this.props.onOpenInFileUI,
       onOpenInPopup: this.props.onOpenInPopup,
       onRetry: this.props.onRetryMessage,
@@ -532,7 +542,7 @@ type DefaultCellRangeRendererParams = {
 
 export default ConversationList
 
-if (__DEV__) {
+if (__DEV__ && typeof window !== 'undefined') {
   window.showReactVirtualListMeasurer = () => {
     const holder = window.document.body.lastChild
     holder.style.zIndex = 9999
