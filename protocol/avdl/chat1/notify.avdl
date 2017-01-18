@@ -16,26 +16,32 @@ protocol NotifyChat {
   record IncomingMessage {
     MessageUnboxed message;
     ConversationID convID;
-  }
 
-  record MessageSentInfo {
-    ConversationID convID;
-    RateLimit rateLimit;
-    OutboxID outboxID;
+    // Current known inbox threads in the right order
+    array<ConversationLocal> inbox;
   }
 
   record ReadMessageInfo {
     ConversationID convID;
     MessageID msgID;
+
+    // Current known inbox threads in the right order
+    array<ConversationLocal> inbox;
   }
 
   record NewConversationInfo {
     ConversationLocal conv;
+
+    // Current known inbox threads in the right order
+    array<ConversationLocal> inbox;
   }
 
   record SetStatusInfo {
     ConversationID convID;
     ConversationStatus status;
+
+    // Current known inbox threads in the right order
+    array<ConversationLocal> inbox;
   }
 
   record FailedMessageInfo {
@@ -60,7 +66,8 @@ protocol NotifyChat {
 
   @notify("")
   @lint("ignore")
-  void ChatTLFFinalize(keybase1.UID uid, ConversationID convID, ConversationFinalizeInfo finalizeInfo);
+  void ChatTLFFinalize(keybase1.UID uid, ConversationID convID, ConversationFinalizeInfo finalizeInfo,
+    array<ConversationLocal> inbox);
 
   @notify("")
   @lint("ignore") 

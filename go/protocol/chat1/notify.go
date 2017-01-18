@@ -47,28 +47,26 @@ func (e ChatActivityType) String() string {
 }
 
 type IncomingMessage struct {
-	Message MessageUnboxed `codec:"message" json:"message"`
-	ConvID  ConversationID `codec:"convID" json:"convID"`
-}
-
-type MessageSentInfo struct {
-	ConvID    ConversationID `codec:"convID" json:"convID"`
-	RateLimit RateLimit      `codec:"rateLimit" json:"rateLimit"`
-	OutboxID  OutboxID       `codec:"outboxID" json:"outboxID"`
+	Message MessageUnboxed      `codec:"message" json:"message"`
+	ConvID  ConversationID      `codec:"convID" json:"convID"`
+	Inbox   []ConversationLocal `codec:"inbox" json:"inbox"`
 }
 
 type ReadMessageInfo struct {
-	ConvID ConversationID `codec:"convID" json:"convID"`
-	MsgID  MessageID      `codec:"msgID" json:"msgID"`
+	ConvID ConversationID      `codec:"convID" json:"convID"`
+	MsgID  MessageID           `codec:"msgID" json:"msgID"`
+	Inbox  []ConversationLocal `codec:"inbox" json:"inbox"`
 }
 
 type NewConversationInfo struct {
-	Conv ConversationLocal `codec:"conv" json:"conv"`
+	Conv  ConversationLocal   `codec:"conv" json:"conv"`
+	Inbox []ConversationLocal `codec:"inbox" json:"inbox"`
 }
 
 type SetStatusInfo struct {
-	ConvID ConversationID     `codec:"convID" json:"convID"`
-	Status ConversationStatus `codec:"status" json:"status"`
+	ConvID ConversationID      `codec:"convID" json:"convID"`
+	Status ConversationStatus  `codec:"status" json:"status"`
+	Inbox  []ConversationLocal `codec:"inbox" json:"inbox"`
 }
 
 type FailedMessageInfo struct {
@@ -213,6 +211,7 @@ type ChatTLFFinalizeArg struct {
 	Uid          keybase1.UID             `codec:"uid" json:"uid"`
 	ConvID       ConversationID           `codec:"convID" json:"convID"`
 	FinalizeInfo ConversationFinalizeInfo `codec:"finalizeInfo" json:"finalizeInfo"`
+	Inbox        []ConversationLocal      `codec:"inbox" json:"inbox"`
 }
 
 type ChatInboxStaleArg struct {

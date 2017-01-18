@@ -31,24 +31,13 @@
         {
           "type": "ConversationID",
           "name": "convID"
-        }
-      ]
-    },
-    {
-      "type": "record",
-      "name": "MessageSentInfo",
-      "fields": [
-        {
-          "type": "ConversationID",
-          "name": "convID"
         },
         {
-          "type": "RateLimit",
-          "name": "rateLimit"
-        },
-        {
-          "type": "OutboxID",
-          "name": "outboxID"
+          "type": {
+            "type": "array",
+            "items": "ConversationLocal"
+          },
+          "name": "inbox"
         }
       ]
     },
@@ -63,6 +52,13 @@
         {
           "type": "MessageID",
           "name": "msgID"
+        },
+        {
+          "type": {
+            "type": "array",
+            "items": "ConversationLocal"
+          },
+          "name": "inbox"
         }
       ]
     },
@@ -73,6 +69,13 @@
         {
           "type": "ConversationLocal",
           "name": "conv"
+        },
+        {
+          "type": {
+            "type": "array",
+            "items": "ConversationLocal"
+          },
+          "name": "inbox"
         }
       ]
     },
@@ -87,6 +90,13 @@
         {
           "type": "ConversationStatus",
           "name": "status"
+        },
+        {
+          "type": {
+            "type": "array",
+            "items": "ConversationLocal"
+          },
+          "name": "inbox"
         }
       ]
     },
@@ -189,6 +199,13 @@
         {
           "name": "finalizeInfo",
           "type": "ConversationFinalizeInfo"
+        },
+        {
+          "name": "inbox",
+          "type": {
+            "type": "array",
+            "items": "ConversationLocal"
+          }
         }
       ],
       "response": null,

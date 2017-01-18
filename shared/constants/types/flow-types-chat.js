@@ -866,6 +866,7 @@ export type InboxViewFull = {
 export type IncomingMessage = {
   message: MessageUnboxed,
   convID: ConversationID,
+  inbox?: ?Array<ConversationLocal>,
 }
 
 export type LocalFileSource = {
@@ -953,12 +954,6 @@ export type MessagePreviousPointer = {
   hash: Hash,
 }
 
-export type MessageSentInfo = {
-  convID: ConversationID,
-  rateLimit: RateLimit,
-  outboxID: OutboxID,
-}
-
 export type MessageServerHeader = {
   messageID: MessageID,
   supersededBy: MessageID,
@@ -1009,6 +1004,7 @@ export type MessageUnboxedValid = {
 
 export type NewConversationInfo = {
   conv: ConversationLocal,
+  inbox?: ?Array<ConversationLocal>,
 }
 
 export type NewConversationLocalRes = {
@@ -1048,7 +1044,8 @@ export type NotifyChatChatInboxStaleRpcParam = Exact<{
 export type NotifyChatChatTLFFinalizeRpcParam = Exact<{
   uid: keybase1.UID,
   convID: ConversationID,
-  finalizeInfo: ConversationFinalizeInfo
+  finalizeInfo: ConversationFinalizeInfo,
+  inbox?: ?Array<ConversationLocal>
 }>
 
 export type NotifyChatChatThreadsStaleRpcParam = Exact<{
@@ -1130,6 +1127,7 @@ export type RateLimit = {
 export type ReadMessageInfo = {
   convID: ConversationID,
   msgID: MessageID,
+  inbox?: ?Array<ConversationLocal>,
 }
 
 export type ReadMessagePayload = {
@@ -1162,6 +1160,7 @@ export type SetConversationStatusRes = {
 export type SetStatusInfo = {
   convID: ConversationID,
   status: ConversationStatus,
+  inbox?: ?Array<ConversationLocal>,
 }
 
 export type SetStatusPayload = {
@@ -1666,7 +1665,8 @@ export type incomingCallMapType = Exact<{
     params: Exact<{
       uid: keybase1.UID,
       convID: ConversationID,
-      finalizeInfo: ConversationFinalizeInfo
+      finalizeInfo: ConversationFinalizeInfo,
+      inbox?: ?Array<ConversationLocal>
     }> /* ,
     response: {} // Notify call
     */
