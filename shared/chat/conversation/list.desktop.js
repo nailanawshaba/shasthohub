@@ -329,7 +329,7 @@ class ConversationList extends Component<void, Props, State> {
     this._list = r
   }
 
-  _cellRangeRenderer = options => chatCellRangeRenderer(this.state.messages.count(), this._cellCache, options)
+  _cellRangeRenderer = options => chatCellRangeRenderer(this.state.messages, this._cellCache, options)
 
   render () {
     if (!this.props.validated) {
@@ -416,8 +416,8 @@ const listStyle = {
   paddingBottom: listBottomMargin,
 }
 
-let lastMessageCount
-function chatCellRangeRenderer (messageCount: number, cellSizeCache: any, {
+let lastMessages
+function chatCellRangeRenderer (messages: List<Message>, cellSizeCache: any, {
   cellCache,
   cellRenderer,
   columnSizeAndPositionManager,
@@ -439,8 +439,8 @@ function chatCellRangeRenderer (messageCount: number, cellSizeCache: any, {
   const offsetAdjusted = verticalOffsetAdjustment || horizontalOffsetAdjustment
   const canCacheStyle = !isScrolling || !offsetAdjusted
 
-  if (messageCount !== lastMessageCount) {
-    lastMessageCount = messageCount
+  if (messages !== lastMessages) {
+    lastMessages = messages
     rowSizeAndPositionManager.resetCell(0)
     cellSizeCache.clearAllRowHeights()
   }
@@ -457,7 +457,8 @@ function chatCellRangeRenderer (messageCount: number, cellSizeCache: any, {
         rowIndex <= visibleRowIndices.stop
       )
 
-      let key = `${rowIndex}-${messageCount}`
+      let key = `${rowIndex}-${messages.get(rowIndex, {}).key || ''}`
+      // let key = `${rowIndex}-${messages.count()}`
       let style
 
       // Cache style objects so shallow-compare doesn't re-render unnecessarily.
