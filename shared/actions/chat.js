@@ -3,7 +3,7 @@ import * as Constants from '../constants/chat'
 import HiddenString from '../util/hidden-string'
 import _ from 'lodash'
 import engine from '../engine'
-import {List, Map} from 'immutable'
+import {Set, List, Map} from 'immutable'
 import {NotifyPopup} from '../native/notifications'
 import {apiserverGetRpcPromise, TlfKeysTLFIdentifyBehavior} from '../constants/types/flow-types'
 import {badgeApp} from './notifications'
@@ -39,6 +39,7 @@ import type {
   CreatePendingFailure,
   DeleteMessage,
   EditMessage,
+  FinalizedState,
   InboxState,
   IncomingMessage,
   LoadInbox,
@@ -289,6 +290,31 @@ function _inboxConversationToConversation (convo: ConversationLocal, author: ?st
     unreadCount: convo.readerInfo.maxMsgid - convo.readerInfo.readMsgid,
     validated: true,
   })
+}
+
+function _inboxConversationToSupersedesState (convo: ConversationLocal): ?Constants.SupersedesState {
+  if (!convo || !convo.info || !convo.info.id || !convo.supersedes) {
+    return Map()
+  }
+
+  const conversationIDKey = conversationIDToKey(convo.info.id)
+  return Map([[conversationIDKey, Set((convo.supersedes || []).map(conversationIDToKey))]])
+}
+
+function _inboxConversationToSupersededByState (convo: ConversationLocal): ?Constants.SupersededByState {
+  if (!convo || !convo.info || !convo.info.id || !convo.supersededBy) {
+    return Map()
+  }
+
+  const conversationIDKey = conversationIDToKey(convo.info.id)
+  return Map([[conversationIDKey, Set((convo.supersededBy || []).map(conversationIDToKey))]])
+}
+
+function _inboxToFinalized (inbox: GetInboxLocalRes): FinalizedState {
+  return Map((inbox.conversationsUnverified || []).map(convoUnverified => [
+    conversationIDToKey(convoUnverified.metadata.conversationID),
+    convoUnverified.metadata.finalizeInfo,
+  ]))
 }
 
 function _inboxToConversations (inbox: GetInboxLocalRes, author: ?string, following: {[key: string]: boolean}, metaData: MetaData): List<InboxState> {
@@ -719,7 +745,11 @@ function * _loadInbox (action: ?LoadInbox): SagaGenerator<any, any> {
   const author = yield select(usernameSelector)
   const following = yield select(followingSelector)
   const conversations: List<InboxState> = _inboxToConversations(inbox, author, following || {}, metaData)
-  yield put({type: 'chat:loadedInbox', payload: {inbox: conversations}, logTransformer: loadedInboxActionTransformer})
+  const finalizedState: FinalizedState = _inboxToFinalized(inbox)
+
+  yield put(({type: 'chat:loadedInbox', payload: {inbox: conversations}, logTransformer: loadedInboxActionTransformer}: Constants.LoadedInbox))
+  yield put(({type: 'chat:finalizedStateUpdate', payload: {finalizedState}}: Constants.UpdateFinalizedState))
+
   chatInboxUnverified.response.result()
 
   // +1 for the finish call
@@ -735,6 +765,12 @@ function * _loadInbox (action: ?LoadInbox): SagaGenerator<any, any> {
     if (incoming.chatInboxConversation) {
       incoming.chatInboxConversation.response.result()
       let conversation: ?InboxState = _inboxConversationToConversation(incoming.chatInboxConversation.params.conv, author, following || {}, metaData)
+
+      const supersedesState: Constants.SupersedesState = _inboxConversationToSupersedesState(incoming.chatInboxConversation.params.conv, author, following || {}, metaData)
+      const supersededByState: Constants.SupersededByState = _inboxConversationToSupersededByState(incoming.chatInboxConversation.params.conv, author, following || {}, metaData)
+      yield put(({type: 'chat:updateSupersedesState', payload: {supersedesState}}: Constants.UpdateSupersedesState))
+      yield put(({type: 'chat:updateSupersededByState', payload: {supersededByState}}: Constants.UpdateSupersededByState))
+
       if (conversation && action && action.payload.newConversationIDKey) {
         conversation = conversation.set('youCreated', true)
       }
