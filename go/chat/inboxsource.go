@@ -6,6 +6,8 @@ import (
 
 	"strings"
 
+	"encoding/hex"
+
 	"github.com/keybase/client/go/chat/interfaces"
 	"github.com/keybase/client/go/chat/storage"
 	"github.com/keybase/client/go/chat/utils"
@@ -795,6 +797,14 @@ func (s *localizerPipeline) getMessagesOffline(ctx context.Context, convID chat1
 		}
 	}
 
+	testConvID, _ := hex.DecodeString("00009e73bd9924e52e170c96135f88d9d13ddae6f41386d6f08fd1b33145e7a9")
+	if convID.Eq(testConvID) {
+		s.Debug(ctx, "CONV TEST: msgs: %d", len(foundMsgs))
+		if len(foundMsgs) > 0 {
+			s.Debug(ctx, "FIRST MESSAGE VALID: %v", foundMsgs[0].IsValid())
+		}
+	}
+
 	if len(foundMsgs) == 0 {
 		return nil, chat1.ConversationErrorType_LOCALMAXMESSAGENOTFOUND,
 			errors.New("missing messages locally")
@@ -915,6 +925,11 @@ func (s *localizerPipeline) localizeConversation(ctx context.Context, uid gregor
 				}
 			}
 		}
+	}
+
+	testConvID, _ := hex.DecodeString("00009e73bd9924e52e170c96135f88d9d13ddae6f41386d6f08fd1b33145e7a9")
+	if conversationRemote.GetConvID().Eq(testConvID) {
+		s.Debug(ctx, "CONV NAME: %s", conversationLocal.Info.TlfName)
 	}
 	conversationLocal.MaxMessages = newMaxMsgs
 	if len(conversationLocal.Info.TlfName) == 0 {
