@@ -25,6 +25,7 @@ const propsHoc = withProps(
       moreToLoad,
       muted,
       onAttach,
+      onBack,
       onDeleteMessage,
       onEditLastMessage,
       onEditMessage,
@@ -40,6 +41,7 @@ const propsHoc = withProps(
       onRetryMessage,
       onStoreInputText,
       onSelectAttachment,
+      onToggleSidePanel,
       selectedConversation,
       onShowEditor,
       sidePanelOpen,
@@ -95,7 +97,14 @@ const propsHoc = withProps(
       selectedConversation,
     }
 
-    return {inputProps, listProps, onOpenNewerConversation}
+    const headerProps = {
+      sidePanelOpen,
+      onToggleSidePanel,
+      onBack,
+      selectedConversation,
+    }
+
+    return {inputProps, listProps, onOpenNewerConversation, headerProps}
   }
 )
 

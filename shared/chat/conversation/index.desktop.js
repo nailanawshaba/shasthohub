@@ -105,7 +105,7 @@ class Conversation extends Component<void, Props, State> {
     return (
       <Box className='conversation' style={containerStyle} onDragEnter={this._onDragEnter} onPaste={this._onPaste}>
         {offline}
-        <Header sidePanelOpen={sidePanelOpen} onToggleSidePanel={onToggleSidePanel} onBack={onBack} selectedConversation={selectedConversation} />
+        <Header {...this.props.headerProps} />
         <List {...this.props.listProps} />
         {banner}
         {finalizeInfo
