@@ -8,6 +8,7 @@ const ff: FeatureFlags = {
   mobileAppsExist: __DEV__,
   plansEnabled: __DEV__,
   tabPeopleEnabled: __DEV__,
+  folderFilesEnabled: false,
 }
 
 if (__DEV__) {
