@@ -83,7 +83,7 @@ const TopLine = ({hasUnread, showBold, participants, subColor, timestamp, userna
   )
 }
 
-const BottomLine = ({participantNeedToRekey, youNeedToRekey, isMuted, showBold, subColor, snippet, backgroundColor}) => {
+const BottomLine = ({participantNeedToRekey, youNeedToRekey, isMuted, showBold, subColor, snippet, backgroundColor, miscError}) => {
   const boldOverride = showBold ? globalStyles.fontBold : null
 
   let content
@@ -144,6 +144,7 @@ const _Row = (props: RowProps) => {
             snippet={props.snippet}
             subColor={props.subColor}
             youNeedToRekey={props.youNeedToRekey}
+            miscError={props.miscError}
           />
         </Box>
       </Box>
