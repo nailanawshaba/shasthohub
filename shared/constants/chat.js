@@ -296,6 +296,7 @@ export const StateRecord = Record({
   rekeyInfos: Map(),
   alwaysShow: Set(),
   pendingConversations: Map(),
+  miscErrors: Map(),
   nowOverride: null,
   editingMessage: null,
   initialConversation: null,
@@ -380,6 +381,7 @@ export type UpdateInbox = NoErrorTypedAction<'chat:updateInbox', {conversation: 
 export type UpdateInboxComplete = NoErrorTypedAction<'chat:updateInboxComplete', void>
 export type UpdateInboxRekeyOthers = NoErrorTypedAction<'chat:updateInboxRekeyOthers', {conversationIDKey: ConversationIDKey, rekeyers: Array<string>}>
 export type UpdateInboxRekeySelf = NoErrorTypedAction<'chat:updateInboxRekeySelf', {conversationIDKey: ConversationIDKey}>
+export type UpdateInboxMiscError = NoErrorTypedAction<'chat:updateInboxMiscError', {conversationIDKey: ConversationIDKey}>
 export type UpdateLatestMessage = NoErrorTypedAction<'chat:updateLatestMessage', {conversationIDKey: ConversationIDKey}>
 export type UpdateMessage = NoErrorTypedAction<'chat:updateMessage', {conversationIDKey: ConversationIDKey, message: $Shape<AttachmentMessage> | $Shape<TextMessage>, messageID: MessageID}>
 export type UpdateMetadata = NoErrorTypedAction<'chat:updateMetadata', {users: Array<string>}>

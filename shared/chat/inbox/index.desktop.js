@@ -82,7 +82,7 @@ const TopLine = ({hasUnread, showBold, participants, subColor, timestamp, userna
   )
 }
 
-const BottomLine = ({participantNeedToRekey, youNeedToRekey, showBold, subColor, snippet}) => {
+const BottomLine = ({participantNeedToRekey, youNeedToRekey, showBold, subColor, snippet, miscError}) => {
   const boldOverride = showBold ? globalStyles.fontBold : null
 
   let content
@@ -93,6 +93,8 @@ const BottomLine = ({participantNeedToRekey, youNeedToRekey, showBold, subColor,
     content = <Text type='BodySmall' backgroundMode='Terminal' style={{color: subColor}}>Waiting for participants to rekey</Text>
   } else if (snippet) {
     content = <Markdown preview={true} style={{...noWrapStyle, ...boldOverride, color: subColor, fontSize: 11, lineHeight: '15px', minHeight: 15}}>{snippet}</Markdown>
+  } else if (miscError) {
+    content = <Text type='BodySmallSemibold' backgroundMode='Terminal' style={{alignSelf: 'flex-start', backgroundColor: globalColors.red, borderRadius: 2, color: globalColors.white, fontSize: 10, paddingLeft: 2, paddingRight: 2}}>ERROR</Text>
   } else {
     return null
   }
@@ -137,6 +139,7 @@ const _Row = (props: RowProps) => {
           snippet={props.snippet}
           subColor={props.subColor}
           youNeedToRekey={props.youNeedToRekey}
+          miscError={props.miscError}
         />
       </div>
     </div>

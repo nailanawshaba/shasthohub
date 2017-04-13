@@ -306,6 +306,11 @@ function updateInboxRekeySelf (conversationIDKey: Constants.ConversationIDKey): 
   return {payload: {conversationIDKey}, type: 'chat:updateInboxRekeySelf'}
 }
 
+function updateInboxMiscError (conversationIDKey: Constants.ConversationIDKey):
+Constants.UpdateInboxMiscError {
+  return {payload: {conversationIDKey}, type: 'chat:updateInboxMiscError'}
+}
+
 function updateInboxRekeyOthers (conversationIDKey: Constants.ConversationIDKey, rekeyers: Array<string>): Constants.UpdateInboxRekeyOthers {
   return {payload: {conversationIDKey, rekeyers}, type: 'chat:updateInboxRekeyOthers'}
 }
@@ -418,6 +423,7 @@ export {
   updateFinalizedState,
   updateInbox,
   updateInboxComplete,
+  updateInboxMiscError,
   updateInboxRekeyOthers,
   updateInboxRekeySelf,
   updateLatestMessage,

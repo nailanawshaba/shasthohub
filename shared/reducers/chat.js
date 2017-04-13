@@ -414,6 +414,10 @@ function reducer (state: Constants.State = initialState, action: Constants.Actio
       const {conversationIDKey} = action.payload
       return state.set('rekeyInfos', state.get('rekeyInfos').set(conversationIDKey, new Constants.RekeyInfoRecord({youCanRekey: true})))
     }
+    case 'chat:updateInboxMiscError': {
+      const {conversationIDKey} = action.payload
+      return state.set('miscErrors', state.get('miscErrors').set(conversationIDKey, true))
+    }
     case 'chat:addPendingConversation': {
       const {participants} = action.payload
       const sorted = participants.sort()

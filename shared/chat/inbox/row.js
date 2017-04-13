@@ -10,7 +10,7 @@ import {selectConversation} from '../../actions/chat/creators'
 import type {TypedState} from '../../constants/reducer'
 import type {ConversationIDKey} from '../../constants/chat'
 
-function _rowDerivedProps (rekeyInfo, finalizeInfo, unreadCount, isSelected) {
+function _rowDerivedProps (rekeyInfo, finalizeInfo, unreadCount, isSelected, miscError) {
   // Derived props
 
   // If it's finalized we don't show the rekey as they can't solve it themselves
@@ -45,6 +45,7 @@ const makeGetParticipants = conversationIDKey => state => (
 )
 const getNowOverride = state => state.chat.get('nowOverride')
 const makeGetFinalizedInfo = conversationIDKey => state => state.chat.get('finalizedState').get(conversationIDKey)
+const makeGetMiscError = conversationIDKey => state => state.chat.get('miscErrors').get(conversationIDKey)
 
 const makeSelector = (conversationIDKey) => {
   const isPending = isPendingConversationIDKey(conversationIDKey)
@@ -60,13 +61,14 @@ const makeSelector = (conversationIDKey) => {
         snippet: '',
         timestamp: formatTimeForConversationList(Date.now(), nowOverride),
         unreadCount: 0,
+        miscError: false,
         ..._rowDerivedProps(null, null, 0, isSelected),
       })
     )
   } else {
     return createImmutableEqualSelector(
-      [makeGetConversation(conversationIDKey), makeGetIsSelected(conversationIDKey), makeGetUnreadCounts(conversationIDKey), getYou, makeGetRekeyInfo(conversationIDKey), getNowOverride, makeGetFinalizedInfo(conversationIDKey)],
-      (conversation, isSelected, unreadCount, you, rekeyInfo, nowOverride, finalizeInfo) => ({
+      [makeGetConversation(conversationIDKey), makeGetIsSelected(conversationIDKey), makeGetUnreadCounts(conversationIDKey), getYou, makeGetRekeyInfo(conversationIDKey), getNowOverride, makeGetFinalizedInfo(conversationIDKey), makeGetMiscError(conversationIDKey)],
+      (conversation, isSelected, unreadCount, you, rekeyInfo, nowOverride, finalizeInfo, miscError) => ({
         conversationIDKey,
         isMuted: conversation.get('status') === 'muted',
         isSelected,
@@ -75,6 +77,7 @@ const makeSelector = (conversationIDKey) => {
         snippet: conversation.get('snippet'),
         timestamp: formatTimeForConversationList(conversation.get('time'), nowOverride),
         unreadCount,
+        miscError,
         ..._rowDerivedProps(rekeyInfo, finalizeInfo, unreadCount, isSelected),
       })
     )
