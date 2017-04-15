@@ -71,13 +71,13 @@ const TopLine = ({hasUnread, showBold, participants, subColor, timestamp, userna
             inline={true}
             plainText={true}
             type='BodySemibold'
-            style={{...boldOverride, color: usernameColor}}
+            style={{...boldOverride, color: usernameColor, fontSize: 18}}
             containerStyle={{color: usernameColor, paddingRight: 7}}
             users={participants.map(p => ({username: p})).toArray()}
             title={participants.join(', ')} />
         </Box>
       </Box>
-      <Text type='BodySmall' style={{...boldOverride, color: subColor, lineHeight: 18}}>{timestamp}</Text>
+      <Text type='BodySmall' style={{...boldOverride, color: subColor, lineHeight: 18, fontSize: 14}}>{timestamp}</Text>
       {hasUnread && <Box style={unreadDotStyle} />}
     </Box>
   )
@@ -93,13 +93,13 @@ const BottomLine = ({participantNeedToRekey, youNeedToRekey, isMuted, showBold, 
   } else if (participantNeedToRekey) {
     content = <Text type='BodySmall' backgroundMode='Terminal' style={{color: subColor}}>Waiting for participants to rekey</Text>
   } else if (snippet) {
-    content = <Markdown preview={true} style={{...boldOverride, color: subColor, fontSize: 12, lineHeight: 16}}>{snippet}</Markdown>
+    content = <Markdown preview={true} style={{...boldOverride, color: subColor, fontSize: 14, lineHeight: 16}}>{snippet}</Markdown>
   } else {
     return null
   }
 
   return (
-    <Box style={{...globalStyles.flexBoxRow, backgroundColor, marginTop: 10, flexGrow: 1, maxHeight: 16, minHeight: 16, position: 'relative'}}>
+    <Box style={{...globalStyles.flexBoxRow, backgroundColor, marginTop: 5, fontSize: 12, flexGrow: 1, maxHeight: 16, minHeight: 16, position: 'relative'}}>
       <Box style={{...globalStyles.flexBoxRow, alignItems: 'flex-start', bottom: 0, justifyContent: 'flex-start', left: 0, position: 'absolute', right: 0, top: 0}}>
         {content}
       </Box>
@@ -207,7 +207,7 @@ const boxStyle = {
   ...globalStyles.flexBoxColumn,
   backgroundColor: globalColors.white,
   flex: 1,
-  paddingTop: statusBarHeight,
+  paddingTop: 0,
 }
 
 const listStyle = {

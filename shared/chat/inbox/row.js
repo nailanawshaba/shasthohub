@@ -21,7 +21,7 @@ function _rowDerivedProps (rekeyInfo, finalizeInfo, unreadCount, isSelected) {
   const subColor = isSelected ? globalColors.black_40 : hasUnread ? globalColors.black_40 : globalColors.black_40
   const showBold = !isSelected && hasUnread
   const backgroundColor = isSelected ? globalColors.darkBlue : hasUnread ? globalColors.blue4 : globalColors.white
-  const usernameColor = isSelected ? globalColors.black_75 : hasUnread ? globalColors.blue : globalColors.blue
+  const usernameColor = isSelected ? globalColors.black_75 : hasUnread ? globalColors.black : globalColors.black
 
   return {
     backgroundColor,
