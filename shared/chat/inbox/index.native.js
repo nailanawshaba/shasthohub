@@ -44,7 +44,7 @@ const Avatars = ({participants, youNeedToRekey, participantNeedToRekey, isMuted,
   const avatarProps = participants.slice(0, 2).map((username, idx) => ({
     borderColor: rowBorderColor(idx, idx === (avatarCount - 1), backgroundColor),
     loadingColor: globalColors.blue3_40,
-    size: 32,
+    size: 128,
     style: {
       opacity: youNeedToRekey || participantNeedToRekey ? 0.4 : 1,
     },
@@ -52,9 +52,9 @@ const Avatars = ({participants, youNeedToRekey, participantNeedToRekey, isMuted,
   })).toArray()
 
   return (
-    <Box style={{...globalStyles.flexBoxRow, alignItems: 'flex-end', backgroundColor, justifyContent: 'flex-start', maxWidth: 55, minWidth: 55, paddingLeft: 4}}>
+    <Box style={{...globalStyles.flexBoxRow, alignItems: 'flex-end', backgroundColor, justifyContent: 'flex-start', maxWidth: 100, minWidth: 65, paddingLeft: 4}}>
       <Box style={{position: 'relative'}}>
-        <MultiAvatar singleSize={40} multiSize={32} avatarProps={avatarProps} style={{alignSelf: 'center', backgroundColor}} />
+        <MultiAvatar singleSize={48} multiSize={40} avatarProps={avatarProps} style={{alignSelf: 'center', backgroundColor}} />
         {icon}
       </Box>
     </Box>
@@ -99,7 +99,7 @@ const BottomLine = ({participantNeedToRekey, youNeedToRekey, isMuted, showBold, 
   }
 
   return (
-    <Box style={{...globalStyles.flexBoxRow, backgroundColor, flexGrow: 1, maxHeight: 16, minHeight: 16, position: 'relative'}}>
+    <Box style={{...globalStyles.flexBoxRow, backgroundColor, marginTop: 10, flexGrow: 1, maxHeight: 16, minHeight: 16, position: 'relative'}}>
       <Box style={{...globalStyles.flexBoxRow, alignItems: 'flex-start', bottom: 0, justifyContent: 'flex-start', left: 0, position: 'absolute', right: 0, top: 0}}>
         {content}
       </Box>
@@ -205,7 +205,7 @@ class ConversationList extends PureComponent<void, Props, {dataSource: any}> {
 
 const boxStyle = {
   ...globalStyles.flexBoxColumn,
-  backgroundColor: globalColors.darkBlue4,
+  backgroundColor: globalColors.white,
   flex: 1,
   paddingTop: statusBarHeight,
 }
@@ -217,10 +217,10 @@ const listStyle = {
 
 const unreadDotStyle = {
   backgroundColor: globalColors.orange,
-  borderRadius: 3,
-  height: 6,
+  borderRadius: 8,
+  height: 10,
   marginLeft: 4,
-  width: 6,
+  width: 10,
 }
 
 const avatarMutedIconStyle = {
@@ -242,8 +242,8 @@ const conversationRowStyle = {
   borderBottomWidth: 1,
   flexGrow: 1,
   justifyContent: 'center',
-  maxHeight: 56,
-  minHeight: 56,
+  maxHeight: 75,
+  minHeight: 75,
   paddingRight: 8,
 }
 
@@ -252,8 +252,9 @@ const rowContainerStyle = {
   ...globalStyles.clickable,
   alignItems: 'center',
   flexGrow: 1,
-  maxHeight: 56,
-  minHeight: 56,
+  maxHeight: 75,
+  minHeight: 75,
+  backgroundColor: globalColors.white,
 }
 
 export default ConversationList

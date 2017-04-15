@@ -18,10 +18,10 @@ function _rowDerivedProps (rekeyInfo, finalizeInfo, unreadCount, isSelected) {
   const participantNeedToRekey = !finalizeInfo && rekeyInfo && !!rekeyInfo.get('rekeyParticipants').count()
 
   const hasUnread = !!unreadCount
-  const subColor = isSelected ? globalColors.black_40 : hasUnread ? globalColors.white : globalColors.blue3_40
+  const subColor = isSelected ? globalColors.black_40 : hasUnread ? globalColors.black_40 : globalColors.black_40
   const showBold = !isSelected && hasUnread
-  const backgroundColor = isSelected ? globalColors.white : hasUnread ? globalColors.darkBlue : globalColors.darkBlue4
-  const usernameColor = isSelected ? globalColors.black_75 : hasUnread ? globalColors.white : globalColors.blue3_60
+  const backgroundColor = isSelected ? globalColors.darkBlue : hasUnread ? globalColors.blue4 : globalColors.white
+  const usernameColor = isSelected ? globalColors.black_75 : hasUnread ? globalColors.blue : globalColors.blue
 
   return {
     backgroundColor,
