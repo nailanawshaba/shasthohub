@@ -86,7 +86,7 @@ func (i *baseBox) writeDiskBox(ctx context.Context, key libkb.DbKey, data interf
 	}
 
 	if i.encrypted {
-		// Encrypt outbox if configure as such
+		// Encrypt outbox
 		enckey, err := getSecretBoxKey(ctx, i.G(), DefaultSecretUI)
 		if err != nil {
 			return err

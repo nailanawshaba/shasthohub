@@ -321,6 +321,7 @@ export const StateRecord = Record({
   initialConversation: null,
   attachmentPlaceholderPreviews: Map(),
   inboxUntrustedState: 'unloaded',
+  convGenericError: Map(),
 })
 
 export type UntrustedState = 'unloaded' | 'loaded' | 'loading'
@@ -402,6 +403,7 @@ export type UpdateInbox = NoErrorTypedAction<'chat:updateInbox', {conversation: 
 export type UpdateInboxComplete = NoErrorTypedAction<'chat:updateInboxComplete', void>
 export type UpdateInboxRekeyOthers = NoErrorTypedAction<'chat:updateInboxRekeyOthers', {conversationIDKey: ConversationIDKey, rekeyers: Array<string>}>
 export type UpdateInboxRekeySelf = NoErrorTypedAction<'chat:updateInboxRekeySelf', {conversationIDKey: ConversationIDKey}>
+export type UpdateInboxGenericError = NoErrorTypedAction<'chat:updateInboxGenericError', {conversationIDKey: ConversationIDKey, error: ConversationErrorLocal}>
 export type UpdateLatestMessage = NoErrorTypedAction<'chat:updateLatestMessage', {conversationIDKey: ConversationIDKey}>
 export type UpdateMessage = NoErrorTypedAction<'chat:updateMessage', {conversationIDKey: ConversationIDKey, message: $Shape<AttachmentMessage> | $Shape<TextMessage>, messageID: MessageID}>
 export type UpdateMetadata = NoErrorTypedAction<'chat:updateMetadata', {users: Array<string>}>

@@ -77,9 +77,16 @@ class Conversation extends Component<void, Props, State> {
       </Box>
     )
 
+    const error = this.props.genericError && (
+     <Box style={{...globalStyles.flexBoxCenter, backgroundColor: globalColors.black_10, flex: 1, maxHeight: globalMargins.medium}}>
+        <Text type='BodySmallSemibold'>There was an error loading the conversation</Text>
+      </Box>
+    )
+
     return (
       <Box className='conversation' style={containerStyle} onDragEnter={this._onDragEnter} onPaste={this._onPaste}>
         {offline}
+        {error}
         <Header sidePanelOpen={this.props.sidePanelOpen} onToggleSidePanel={this.props.onToggleSidePanel} onBack={this.props.onBack} />
         <List
           focusInputCounter={this.props.focusInputCounter}

@@ -312,6 +312,10 @@ function updateInboxRekeyOthers (conversationIDKey: Constants.ConversationIDKey,
   return {payload: {conversationIDKey, rekeyers}, type: 'chat:updateInboxRekeyOthers'}
 }
 
+function updateInboxGenericError (conversationIDKey: Constants.ConversationIDKey, error: ConversationErrorLocal): Constants.UpdateInboxGenericError  {
+  return {payload: {conversationIDKey, error}, type: 'chat:updateInboxGenericError'}
+}
+
 function updateInboxComplete (): Constants.UpdateInboxComplete {
   return {payload: undefined, type: 'chat:updateInboxComplete'}
 }
@@ -422,6 +426,7 @@ export {
   updateInboxComplete,
   updateInboxRekeyOthers,
   updateInboxRekeySelf,
+  updateInboxGenericError,
   updateLatestMessage,
   updateMessage,
   updateMetadata,

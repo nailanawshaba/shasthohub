@@ -39,6 +39,7 @@ const getYou = state => state.config.username || ''
 const makeGetConversation = conversationIDKey => state => state.chat.get('inbox').find(i => i.get('conversationIDKey') === conversationIDKey)
 const makeGetIsSelected = conversationIDKey => state => newestConversationIDKey(getSelectedConversation(state), state.chat) === conversationIDKey
 const makeGetRekeyInfo = conversationIDKey => state => state.chat.get('rekeyInfos').get(conversationIDKey)
+const makeGetGenericError = conversationIDKey => state => state.chat.get('convGenericError').get(conversationIDKey)
 const makeGetUnreadCounts = conversationIDKey => state => state.chat.get('conversationUnreadCounts').get(conversationIDKey)
 const makeGetParticipants = conversationIDKey => state => (
   participantFilter(state.chat.get('pendingConversations').get(conversationIDKey), state.config.username || '')
@@ -57,6 +58,7 @@ const makeSelector = (conversationIDKey) => {
         isSelected,
         participants,
         rekeyInfo: null,
+        genericError: null,
         snippet: '',
         timestamp: formatTimeForConversationList(Date.now(), nowOverride),
         unreadCount: 0,
@@ -65,18 +67,20 @@ const makeSelector = (conversationIDKey) => {
     )
   } else {
     return createImmutableEqualSelector(
-      [makeGetConversation(conversationIDKey), makeGetIsSelected(conversationIDKey), makeGetUnreadCounts(conversationIDKey), getYou, makeGetRekeyInfo(conversationIDKey), getNowOverride, makeGetFinalizedInfo(conversationIDKey)],
-      (conversation, isSelected, unreadCount, you, rekeyInfo, nowOverride, finalizeInfo) => ({
+      [makeGetConversation(conversationIDKey), makeGetIsSelected(conversationIDKey), makeGetUnreadCounts(conversationIDKey), getYou, makeGetRekeyInfo(conversationIDKey), getNowOverride, makeGetFinalizedInfo(conversationIDKey), makeGetGenericError(conversationIDKey)],
+      (conversation, isSelected, unreadCount, you, rekeyInfo, nowOverride, finalizeInfo, genericError) => {
+        return {
         conversationIDKey,
         isMuted: conversation.get('status') === 'muted',
         isSelected,
         participants: participantFilter(conversation.get('participants'), you),
         rekeyInfo,
+        genericError,
         snippet: conversation.get('snippet'),
         timestamp: formatTimeForConversationList(conversation.get('time'), nowOverride),
         unreadCount,
         ..._rowDerivedProps(rekeyInfo, finalizeInfo, unreadCount, isSelected),
-      })
+      }}
     )
   }
 }

@@ -33,6 +33,7 @@ const mapStateToProps = (state: TypedState, {routePath, routeState}): StateProps
   let supersededBy = null
   let showLoader = false
   let threadLoadedOffline = false
+  let genericError = null
 
   if (selectedConversationIDKey !== Constants.nothingSelected) {
     rekeyInfo = state.chat.get('rekeyInfos').get(selectedConversationIDKey)
@@ -47,8 +48,13 @@ const mapStateToProps = (state: TypedState, {routePath, routeState}): StateProps
       showLoader = !(selected && selected.state === 'unboxed') || conversationState.isRequesting
       threadLoadedOffline = conversationState.loadedOffline
     }
+    genericError = state.chat.get('convGenericError').get(selectedConversationIDKey)
   }
 
+  console.log("GENERIC ERROR CHECK")
+  if (genericError) {
+    console.log("GENERIC ERROR: " + JSON.stringify(genericError))
+  }
   return {
     finalizeInfo,
     rekeyInfo,
@@ -57,6 +63,7 @@ const mapStateToProps = (state: TypedState, {routePath, routeState}): StateProps
     supersededBy,
     supersedes,
     threadLoadedOffline,
+    genericError,
   }
 }
 

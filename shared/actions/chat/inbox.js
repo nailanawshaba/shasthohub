@@ -264,7 +264,7 @@ function * unboxConversations (conversationIDKeys: Array<Constants.ConversationI
           break
         }
         case ChatTypes.LocalConversationErrorType.transient: {
-          // Just ignore these, it is a transient error
+          yield put(Creators.updateInboxGenericError(conversationIDKey, error))
           break
         }
         default:
