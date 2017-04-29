@@ -210,7 +210,8 @@ function * untrustedInboxVisible (action: Constants.UntrustedInboxVisible): Saga
 }
 
 // Loads the trusted inbox segments
-function * unboxConversations (conversationIDKeys: Array<Constants.ConversationIDKey>): Generator<any, any, any> {
+function * unboxConversations (conversationIDKeys: Array<Constants.ConversationIDKey>, ttl?: number = 1): Generator<any, any, any> {
+  console.log('my ttl is', ttl)
   yield put(Creators.setUnboxing(conversationIDKeys))
 
   const channelConfig = singleFixedChannelConfig([
@@ -236,7 +237,7 @@ function * unboxConversations (conversationIDKeys: Array<Constants.ConversationI
       chatInboxFailed: takeFromChannelMap(loadInboxChanMap, 'chat.1.chatUi.chatInboxFailed'),
       chatInboxUnverified: takeFromChannelMap(loadInboxChanMap, 'chat.1.chatUi.chatInboxUnverified'),
       finished: takeFromChannelMap(loadInboxChanMap, 'finished'),
-      timeout: call(delay, 30000),
+      timeout: call(delay, ttl),
     })
 
     // Ignore untrusted version
@@ -286,6 +287,8 @@ function * unboxConversations (conversationIDKeys: Array<Constants.ConversationI
       }
     } else if (incoming.timeout) {
       console.warn('timed out request for unboxConversations, bailing')
+      console.warn('trying again')
+      yield call(unboxConversations, conversationIDKeys, ttl * 2)
       break
     } else if (incoming.finished) {
       break
