@@ -25,6 +25,7 @@ import {showMainWindow} from '../platform-specific'
 import {some} from 'lodash'
 import {toDeviceType} from '../../constants/types/more'
 import {usernameSelector} from '../../constants/selectors'
+import {appInBackground} from './index.platform'
 
 import type {Action} from '../../constants/types/flux'
 import type {ChangedFocus} from '../../constants/app'
@@ -120,7 +121,7 @@ function * _incomingMessage (action: Constants.IncomingMessage): SagaGenerator<a
         const chatTabSelected = (selectedTab === chatTab)
         const conversationIsFocused = conversationIDKey === selectedConversationIDKey && appFocused && chatTabSelected
 
-        if (message && message.messageID && conversationIsFocused) {
+        if (message && message.messageID && conversationIsFocused && !appInBackground()) {
           yield call(ChatTypes.localMarkAsReadLocalRpcPromise, {
             param: {
               conversationID: incomingMessage.convID,
@@ -830,7 +831,7 @@ function * _markThreadsStale (action: Constants.MarkThreadsStale): SagaGenerator
 
   // Selected is stale?
   const selectedConversation = yield select(Constants.getSelectedConversation)
-  if (!selectedConversation) {
+  if (!selectedConversation || appInBackground()) {
     return
   }
   yield put(Creators.clearMessages(selectedConversation))
