@@ -48,15 +48,23 @@ const BOOL isDebug = NO;
 - (void) setDirectoryAttributesRecursively:(NSString*) path attributes:(NSDictionary*)attributes
 {
   NSFileManager* fm = [NSFileManager defaultManager];
-  NSArray *subPaths = [fm subpathsAtPath:path];
+  NSArray* contents = [fm contentsOfDirectoryAtPath:path error:nil];
+  printf("setting attributes on directory: %s\n", [path UTF8String]);
   [fm setAttributes:attributes ofItemAtPath:path error:nil];
-  for (NSString *aPath in subPaths) {
+  for (NSString *spath in contents) {
     BOOL isDirectory;
-    [fm fileExistsAtPath:aPath isDirectory:&isDirectory];
+    [fm fileExistsAtPath:spath isDirectory:&isDirectory];
     if (isDirectory) {
-      [self setDirectoryAttributesRecursively:aPath attributes:attributes];
+      [self setDirectoryAttributesRecursively:spath attributes:attributes];
     } else {
-      [fm setAttributes:attributes ofItemAtPath:aPath error:nil];
+      
+      NSError *error = nil;
+      NSString* fullPath =[[path stringByAppendingString:@"/"] stringByAppendingString:spath];
+      printf("setting attributes on file: %s\n", [fullPath UTF8String]);
+      [fm setAttributes:attributes ofItemAtPath:fullPath error:&error];
+      if (error != nil) {
+        printf("error: %s\n", [[error description] UTF8String]);
+      }
     }
   }
 }
@@ -175,7 +183,11 @@ const BOOL isDebug = NO;
 
   // Mark a background task so we don't get insta killed by the OS
   if (!self.backgroundTask || self.backgroundTask == UIBackgroundTaskInvalid) {
+    time_t beginTime = time(NULL);
+    printf("started background task: %ld\n", beginTime);
     self.backgroundTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+      time_t endTime = time(NULL);
+      printf("stopped background task: elapsed: %ld (endtime: %ld)\n", endTime-beginTime, endTime);
       [[UIApplication sharedApplication] endBackgroundTask:self.backgroundTask];
       self.backgroundTask = UIBackgroundTaskInvalid;
     }];
