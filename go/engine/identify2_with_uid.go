@@ -688,6 +688,13 @@ func (e *Identify2WithUID) runIdentifyPrecomputation() (err error) {
 	return nil
 }
 
+func (e *Identify2WithUID) displayUserCard(ctx context.Context, iui libkb.IdentifyUI) error {
+	if e.arg.IdentifyBehavior.WarningInsteadOfErrorOnBrokenTracks() {
+		return nil
+	}
+	return displayUserCard(ctx, e.G(), iui, e.them.GetUID(), (e.me != nil))
+}
+
 func (e *Identify2WithUID) displayUserCardAsync(ctx context.Context, iui libkb.IdentifyUI) <-chan error {
 	if e.arg.IdentifyBehavior.WarningInsteadOfErrorOnBrokenTracks() {
 		return nil
@@ -731,7 +738,17 @@ func (e *Identify2WithUID) runIdentifyUI(netContext context.Context, ctx *Contex
 		return err
 	}
 
-	waiter := e.displayUserCardAsync(netContext, iui)
+	var waiter <-chan error
+	if e.G().GetAppType() == libkb.MobileAppType {
+		e.G().Log.CDebugf(netContext, "+ Running UserCard (mobile)")
+		if err := e.displayUserCard(netContext, iui); err != nil {
+			e.G().Log.CDebugf(netContext, "| Failure in showing UserCard: %s", err.Error())
+			return err
+		}
+		e.G().Log.CDebugf(netContext, "- Running UserCard (mobile)")
+	} else {
+		waiter = e.displayUserCardAsync(netContext, iui)
+	}
 
 	e.G().Log.CDebugf(netContext, "| IdentifyUI.Identify(%s)", e.them.GetName())
 	var them *libkb.User
