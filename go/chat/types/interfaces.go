@@ -19,11 +19,17 @@ type Resumable interface {
 	Stop(ctx context.Context) chan struct{}
 }
 
-type TLFInfoSource interface {
-	Lookup(ctx context.Context, tlfName string, vis chat1.TLFVisibility) (*TLFInfo, error)
-	CryptKeys(ctx context.Context, tlfName string) (keybase1.GetTLFCryptKeysRes, error)
-	PublicCanonicalTLFNameAndID(ctx context.Context, tlfName string) (keybase1.CanonicalTLFNameAndIDWithBreaks, error)
-	CompleteAndCanonicalizePrivateTlfName(ctx context.Context, tlfName string) (res keybase1.CanonicalTLFNameAndIDWithBreaks, err error)
+type CryptKey interface {
+	Material() keybase1.Bytes32
+	Generation() int
+}
+
+type NameInfoSource interface {
+	Lookup(ctx context.Context, name string, vis chat1.TLFVisibility) (*NameInfo, error)
+}
+
+type CryptKeysSource interface {
+	CryptKeys(ctx context.Context, name string, vis chat1.TLFVisibility) (CryptKeysRes, error)
 }
 
 type ConversationSource interface {
@@ -42,7 +48,7 @@ type ConversationSource interface {
 	TransformSupersedes(ctx context.Context, convID chat1.ConversationID, uid gregor1.UID, msgs []chat1.MessageUnboxed, finalizeInfo *chat1.ConversationFinalizeInfo) ([]chat1.MessageUnboxed, error)
 
 	SetRemoteInterface(func() chat1.RemoteInterface)
-	SetTLFInfoSource(tlfInfoSource TLFInfoSource)
+	SetNameInfoSource(nameInfoSource NameInfoSource)
 }
 
 type MessageDeliverer interface {
@@ -80,10 +86,10 @@ type InboxSource interface {
 		convIDs []chat1.ConversationID, finalizeInfo chat1.ConversationFinalizeInfo) ([]chat1.ConversationLocal, error)
 
 	GetInboxQueryLocalToRemote(ctx context.Context,
-		lquery *chat1.GetInboxLocalQuery) (*chat1.GetInboxQuery, *TLFInfo, error)
+		lquery *chat1.GetInboxLocalQuery) (*chat1.GetInboxQuery, *NameInfo, error)
 
 	SetRemoteInterface(func() chat1.RemoteInterface)
-	SetTLFInfoSource(tlfInfoSource TLFInfoSource)
+	SetNameInfoSource(nameInfoSource NameInfoSource)
 }
 
 type ServerCacheVersions interface {

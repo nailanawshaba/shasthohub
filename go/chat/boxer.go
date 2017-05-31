@@ -49,7 +49,7 @@ type Boxer struct {
 	boxWithVersion chat1.MessageBoxedVersion
 
 	// TLF info source
-	tlfInfoSource types.TLFInfoSource
+	ckSource types.CryptKeysSource
 
 	// Replaceable for testing.
 	// Normally set to normal implementations.
@@ -63,7 +63,7 @@ type Boxer struct {
 	testingSignatureMangle func([]byte) []byte
 }
 
-func NewBoxer(g *globals.Context, tlfInfoSource types.TLFInfoSource) *Boxer {
+func NewBoxer(g *globals.Context, ckSource types.CryptKeysSource) *Boxer {
 	return &Boxer{
 		DebugLabeler:   utils.NewDebugLabeler(g, "Boxer", false),
 		boxWithVersion: chat1.MessageBoxedVersion_V1,
@@ -825,7 +825,7 @@ func (b *Boxer) BoxMessage(ctx context.Context, msg chat1.MessagePlaintext, sign
 		return nil, NewBoxingError("blank TLF name given", true)
 	}
 
-	cres, err := CtxKeyFinder(ctx).Find(ctx, b.tlfInfoSource, tlfName,
+	cres, err := CtxKeyFinder(ctx).Find(ctx, b.ckSource, tlfName,
 		msg.ClientHeader.TlfPublic)
 
 	if err != nil {

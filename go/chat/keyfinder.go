@@ -5,34 +5,35 @@ import (
 	"sync"
 
 	"github.com/keybase/client/go/chat/types"
-	"github.com/keybase/client/go/protocol/keybase1"
+	"github.com/keybase/client/go/protocol/chat1"
 	context "golang.org/x/net/context"
 )
 
 // KeyFinder remembers results from previous calls to CryptKeys().
 type KeyFinder interface {
-	Find(ctx context.Context, tlf types.TLFInfoSource, tlfName string, tlfPublic bool) (keybase1.GetTLFCryptKeysRes, error)
+	Find(ctx context.Context, tlf types.CryptKeysSource, name string, public bool) (types.CryptKeysRes, error)
 }
 
 type KeyFinderImpl struct {
 	sync.Mutex
-	keys map[string]keybase1.GetTLFCryptKeysRes
+	keys map[string]types.CryptKeysRes
 }
 
 // NewKeyFinder creates a KeyFinder.
 func NewKeyFinder() KeyFinder {
 	return &KeyFinderImpl{
-		keys: make(map[string]keybase1.GetTLFCryptKeysRes),
+		keys: make(map[string]types.CryptKeysRes),
 	}
 }
 
-func (k *KeyFinderImpl) cacheKey(tlfName string, tlfPublic bool) string {
-	return fmt.Sprintf("%s|%v", tlfName, tlfPublic)
+func (k *KeyFinderImpl) cacheKey(name string, public bool) string {
+	return fmt.Sprintf("%s|%v", name, public)
 }
 
 // Find finds keybase1.TLFCryptKeys for tlfName, checking for existing
 // results.
-func (k *KeyFinderImpl) Find(ctx context.Context, tlf types.TLFInfoSource, tlfName string, tlfPublic bool) (keybase1.GetTLFCryptKeysRes, error) {
+func (k *KeyFinderImpl) Find(ctx context.Context, cks types.CryptKeysSource, name string,
+	public bool) (types.CryptKeysRes, error) {
 
 	ckey := k.cacheKey(tlfName, tlfPublic)
 	k.Lock()
@@ -42,25 +43,18 @@ func (k *KeyFinderImpl) Find(ctx context.Context, tlf types.TLFInfoSource, tlfNa
 		return existing, nil
 	}
 
-	var keys keybase1.GetTLFCryptKeysRes
-	if tlfPublic {
-		res, err := tlf.PublicCanonicalTLFNameAndID(ctx, tlfName)
-		if err != nil {
-			return keybase1.GetTLFCryptKeysRes{}, err
-		}
-		keys.NameIDBreaks = res
-		keys.CryptKeys = []keybase1.CryptKey{publicCryptKey}
-	} else {
-		var err error
-		keys, err = tlf.CryptKeys(ctx, tlfName)
-		if err != nil {
-			return keybase1.GetTLFCryptKeysRes{}, err
-		}
+	vis := chat1.TLFVisibility_PRIVATE
+	if public {
+		vis = chat1.TLFVisibility_PUBLIC
+	}
+	res, err := cks.CryptKeys(ctx, name, vis)
+	if err != nil {
+		return types.CryptKeysRes{}, err
 	}
 
 	k.Lock()
-	k.keys[ckey] = keys
+	k.keys[ckey] = res
 	k.Unlock()
 
-	return keys, nil
+	return res, nil
 }

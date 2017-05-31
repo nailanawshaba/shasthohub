@@ -1252,3 +1252,11 @@ func (u UserVersion) PercentForm() string {
 	}
 	return fmt.Sprintf("%s%%%d", u.Username, u.EldestSeqno)
 }
+
+func (k CryptKey) Material() Bytes32 {
+	return k.Key
+}
+
+func (k CryptKey) Generation() int {
+	return k.KeyGeneration
+}
