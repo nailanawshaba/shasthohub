@@ -79,6 +79,9 @@ func (k *KeyFinderImpl) Find(ctx context.Context, name string,
 	if err != nil {
 		return types.NameInfo{}, err
 	}
+	if public {
+		nameInfo.CryptKeys = append(nameInfo.CryptKeys, publicCryptKey)
+	}
 
 	k.Lock()
 	k.keys[ckey] = nameInfo

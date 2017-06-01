@@ -31,6 +31,9 @@ func NewKBFSNameInfoSource(g *globals.Context) *KBFSNameInfoSource {
 }
 
 func (t *KBFSNameInfoSource) tlfKeysClient() (*keybase1.TlfKeysClient, error) {
+	if t.G().ConnectionManager == nil {
+		return nil, fmt.Errorf("no connection manager available")
+	}
 	xp := t.G().ConnectionManager.LookupByClientType(keybase1.ClientType_KBFS)
 	if xp == nil {
 		return nil, fmt.Errorf("KBFS client wasn't found")

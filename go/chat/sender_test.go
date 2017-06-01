@@ -255,10 +255,10 @@ func TestNonblockTimer(t *testing.T) {
 		},
 		MessageBody: chat1.MessageBody{},
 	}
-	firstMessageBoxed, _, err := baseSender.Prepare(context.TODO(), firstMessagePlaintext,
+	firstMessageBoxed, _, err := baseSender.Prepare(ctx, firstMessagePlaintext,
 		chat1.ConversationMembersType_KBFS, nil)
 	require.NoError(t, err)
-	res, err := ri.NewConversationRemote2(context.TODO(), chat1.NewConversationRemote2Arg{
+	res, err := ri.NewConversationRemote2(ctx, chat1.NewConversationRemote2Arg{
 		IdTriple:   trip,
 		TLFMessage: *firstMessageBoxed,
 	})
@@ -267,7 +267,7 @@ func TestNonblockTimer(t *testing.T) {
 	// Send a bunch of nonblocking messages
 	var sentRef []sentRecord
 	for i := 0; i < 5; i++ {
-		_, msgBoxed, _, err := baseSender.Send(context.TODO(), res.ConvID, chat1.MessagePlaintext{
+		_, msgBoxed, _, err := baseSender.Send(ctx, res.ConvID, chat1.MessagePlaintext{
 			ClientHeader: chat1.MessageClientHeader{
 				Conv:        trip,
 				Sender:      u.User.GetUID().ToBytes(),
@@ -289,7 +289,7 @@ func TestNonblockTimer(t *testing.T) {
 	var obids []chat1.OutboxID
 	msgID := *sentRef[len(sentRef)-1].msgID
 	for i := 0; i < 5; i++ {
-		obr, err := outbox.PushMessage(context.TODO(), res.ConvID, chat1.MessagePlaintext{
+		obr, err := outbox.PushMessage(ctx, res.ConvID, chat1.MessagePlaintext{
 			ClientHeader: chat1.MessageClientHeader{
 				Conv:      trip,
 				Sender:    u.User.GetUID().ToBytes(),
@@ -316,7 +316,7 @@ func TestNonblockTimer(t *testing.T) {
 
 	// Send a bunch of nonblocking messages
 	for i := 0; i < 5; i++ {
-		_, msgBoxed, _, err := baseSender.Send(context.TODO(), res.ConvID, chat1.MessagePlaintext{
+		_, msgBoxed, _, err := baseSender.Send(ctx, res.ConvID, chat1.MessagePlaintext{
 			ClientHeader: chat1.MessageClientHeader{
 				Conv:        trip,
 				Sender:      u.User.GetUID().ToBytes(),
@@ -336,12 +336,12 @@ func TestNonblockTimer(t *testing.T) {
 
 	// Check get thread, make sure it makes sense
 	typs := []chat1.MessageType{chat1.MessageType_TEXT}
-	tres, _, err := tc.ChatG.ConvSource.Pull(context.TODO(), res.ConvID, u.User.GetUID().ToBytes(),
+	tres, _, err := tc.ChatG.ConvSource.Pull(ctx, res.ConvID, u.User.GetUID().ToBytes(),
 		&chat1.GetThreadQuery{MessageTypes: typs}, nil)
 	tres.Messages = utils.FilterByType(tres.Messages, &chat1.GetThreadQuery{MessageTypes: typs}, true)
 	t.Logf("source size: %d", len(tres.Messages))
 	require.NoError(t, err)
-	require.NoError(t, outbox.SprinkleIntoThread(context.TODO(), res.ConvID, &tres))
+	require.NoError(t, outbox.SprinkleIntoThread(ctx, res.ConvID, &tres))
 	checkThread(t, tres, sentRef)
 	clock.Advance(5 * time.Minute)
 

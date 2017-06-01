@@ -123,17 +123,17 @@ func TestSyncerConnected(t *testing.T) {
 	case <-time.After(20 * time.Second):
 		require.Fail(t, "no threads stale received")
 	}
-	_, _, err := ibox.ReadAll(context.TODO())
+	_, _, err := ibox.ReadAll(ctx)
 	require.Error(t, err)
 	require.IsType(t, storage.MissError{}, err)
 
 	t.Logf("test incremental")
 	mconv := convs[1]
-	_, _, cerr := tc.ChatG.ConvSource.Pull(context.TODO(), mconv.GetConvID(), uid, nil, nil)
+	_, _, cerr := tc.ChatG.ConvSource.Pull(ctx, mconv.GetConvID(), uid, nil, nil)
 	require.NoError(t, cerr)
-	_, _, serr := tc.ChatG.InboxSource.Read(context.TODO(), uid, nil, true, nil, nil)
+	_, _, serr := tc.ChatG.InboxSource.Read(ctx, uid, nil, true, nil, nil)
 	require.NoError(t, serr)
-	_, iconvs, err := ibox.ReadAll(context.TODO())
+	_, iconvs, err := ibox.ReadAll(ctx)
 	require.NoError(t, err)
 	require.Equal(t, len(convs), len(iconvs))
 	ri.SyncInboxFunc = func(m *kbtest.ChatRemoteMock, ctx context.Context, vers chat1.InboxVers) (chat1.SyncInboxRes, error) {
@@ -197,15 +197,15 @@ func TestSyncerConnected(t *testing.T) {
 	case <-time.After(20 * time.Second):
 		require.Fail(t, "no threads stale received")
 	}
-	_, _, err = ibox.ReadAll(context.TODO())
+	_, _, err = ibox.ReadAll(ctx)
 	require.Error(t, err)
 	require.IsType(t, storage.MissError{}, err)
-	_, cerr = store.Fetch(context.TODO(), mconv, uid, nil, nil, nil)
+	_, cerr = store.Fetch(ctx, mconv, uid, nil, nil, nil)
 	require.Error(t, cerr)
 	require.IsType(t, storage.MissError{}, cerr)
-	_, _, serr = tc.Context().InboxSource.Read(context.TODO(), uid, nil, true, nil, nil)
+	_, _, serr = tc.Context().InboxSource.Read(ctx, uid, nil, true, nil, nil)
 	require.NoError(t, serr)
-	_, iconvs, err = ibox.ReadAll(context.TODO())
+	_, iconvs, err = ibox.ReadAll(ctx)
 	require.NoError(t, err)
 	require.Equal(t, len(convs), len(iconvs))
 	srvVers, err = ibox.ServerVersion(context.TODO())

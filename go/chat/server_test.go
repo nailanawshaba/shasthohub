@@ -93,7 +93,8 @@ func (c *chatTestContext) as(t *testing.T, user *kbtest.FakeUser) *chatTestUserC
 	mockRemote := kbtest.NewChatRemoteMock(c.world)
 	mockRemote.SetCurrentUser(user.User.GetUID().ToBytes())
 
-	ctx := newTestContextWithTlfMock(tc, kbtest.NewTlfMock(c.world))
+	tlf := kbtest.NewTlfMock(c.world)
+	ctx := newTestContextWithTlfMock(tc, tlf)
 	h.boxer = NewBoxer(g)
 
 	chatStorage := storage.New(g)
@@ -112,6 +113,7 @@ func (c *chatTestContext) as(t *testing.T, user *kbtest.FakeUser) *chatTestUserC
 		func() chat1.RemoteInterface { return mockRemote })
 	deliverer := NewDeliverer(g, baseSender)
 	deliverer.SetClock(c.world.Fc)
+	deliverer.setTestingNameInfoSource(tlf)
 	g.MessageDeliverer = deliverer
 	g.MessageDeliverer.Start(context.TODO(), user.User.GetUID().ToBytes())
 	g.MessageDeliverer.Connected(context.TODO())
@@ -175,7 +177,8 @@ func postLocalForTestNoAdvanceClock(t *testing.T, ctc *chatTestContext, asUser *
 	if err != nil {
 		t.Fatalf("msg.MessageType() error: %v\n", err)
 	}
-	return ctc.as(t, asUser).chatLocalHandler().PostLocal(context.Background(), chat1.PostLocalArg{
+	tc := ctc.as(t, asUser)
+	return ctc.as(t, asUser).chatLocalHandler().PostLocal(tc.startCtx, chat1.PostLocalArg{
 		ConversationID: conv.Id,
 		Msg: chat1.MessagePlaintext{
 			ClientHeader: chat1.MessageClientHeader{
@@ -249,9 +252,10 @@ func TestChatGetInboxAndUnboxLocal(t *testing.T) {
 	defer ctc.cleanup()
 	users := ctc.users()
 
+	ctx := ctc.as(t, users[0]).startCtx
 	created := mustCreateConversationForTest(t, ctc, users[0], chat1.TopicType_CHAT, ctc.as(t, users[1]).user().Username)
 
-	gilres, err := ctc.as(t, users[0]).chatLocalHandler().GetInboxAndUnboxLocal(context.Background(), chat1.GetInboxAndUnboxLocalArg{
+	gilres, err := ctc.as(t, users[0]).chatLocalHandler().GetInboxAndUnboxLocal(ctx, chat1.GetInboxAndUnboxLocalArg{
 		Query: &chat1.GetInboxLocalQuery{
 			ConvIDs: []chat1.ConversationID{created.Id},
 		},
@@ -292,9 +296,10 @@ func TestGetInboxNonblock(t *testing.T) {
 		convs[mustCreateConversationForTest(t, ctc, users[0], chat1.TopicType_CHAT, ctc.as(t, users[i+1]).user().Username).Id.String()] = true
 	}
 
+	ctx := ctc.as(t, users[0]).startCtx
 	t.Logf("blank convos test")
 	// Get inbox (should be blank)
-	_, err := ctc.as(t, users[0]).chatLocalHandler().GetInboxNonblockLocal(context.TODO(),
+	_, err := ctc.as(t, users[0]).chatLocalHandler().GetInboxNonblockLocal(ctx,
 		chat1.GetInboxNonblockLocalArg{
 			IdentifyBehavior: keybase1.TLFIdentifyBehavior_CHAT_CLI,
 		},
@@ -326,7 +331,7 @@ func TestGetInboxNonblock(t *testing.T) {
 		conv := mustCreateConversationForTest(t, ctc, users[0], chat1.TopicType_CHAT, ctc.as(t, users[i+1]).user().Username)
 		convs[conv.Id.String()] = true
 
-		_, err := ctc.as(t, users[0]).chatLocalHandler().PostLocal(context.TODO(), chat1.PostLocalArg{
+		_, err := ctc.as(t, users[0]).chatLocalHandler().PostLocal(ctx, chat1.PostLocalArg{
 			ConversationID: conv.Id,
 			Msg: chat1.MessagePlaintext{
 				ClientHeader: chat1.MessageClientHeader{
@@ -343,7 +348,7 @@ func TestGetInboxNonblock(t *testing.T) {
 	}
 
 	// Get inbox (should be blank)
-	_, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxNonblockLocal(context.TODO(),
+	_, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxNonblockLocal(ctx,
 		chat1.GetInboxNonblockLocalArg{
 			IdentifyBehavior: keybase1.TLFIdentifyBehavior_CHAT_CLI,
 		},
@@ -385,7 +390,8 @@ func TestChatGetInboxAndUnboxLocalTlfName(t *testing.T) {
 
 	tlfName := ctc.as(t, users[1]).user().Username + "," + ctc.as(t, users[0]).user().Username // not canonical
 	visibility := chat1.TLFVisibility_PRIVATE
-	gilres, err := ctc.as(t, users[0]).chatLocalHandler().GetInboxAndUnboxLocal(context.Background(), chat1.GetInboxAndUnboxLocalArg{
+	ctx := ctc.as(t, users[0]).startCtx
+	gilres, err := ctc.as(t, users[0]).chatLocalHandler().GetInboxAndUnboxLocal(ctx, chat1.GetInboxAndUnboxLocalArg{
 		Query: &chat1.GetInboxLocalQuery{
 			Name: &chat1.NameQuery{
 				Name:        tlfName,
@@ -485,7 +491,8 @@ func TestChatGetThreadLocal(t *testing.T) {
 	created := mustCreateConversationForTest(t, ctc, users[0], chat1.TopicType_CHAT, ctc.as(t, users[1]).user().Username)
 	mustPostLocalForTest(t, ctc, users[0], created, chat1.NewMessageBodyWithText(chat1.MessageText{Body: "hello!"}))
 
-	tvres, err := ctc.as(t, users[0]).chatLocalHandler().GetThreadLocal(context.Background(), chat1.GetThreadLocalArg{
+	ctx := ctc.as(t, users[0]).startCtx
+	tvres, err := ctc.as(t, users[0]).chatLocalHandler().GetThreadLocal(ctx, chat1.GetThreadLocalArg{
 		ConversationID: created.Id,
 	})
 	if err != nil {
@@ -509,11 +516,13 @@ func TestChatGetThreadLocalMarkAsRead(t *testing.T) {
 	users := ctc.users()
 
 	withUser1 := mustCreateConversationForTest(t, ctc, users[0], chat1.TopicType_CHAT, ctc.as(t, users[1]).user().Username)
+
 	mustPostLocalForTest(t, ctc, users[0], withUser1, chat1.NewMessageBodyWithText(chat1.MessageText{Body: "hello0"}))
 	mustPostLocalForTest(t, ctc, users[1], withUser1, chat1.NewMessageBodyWithText(chat1.MessageText{Body: "hello1"}))
 	mustPostLocalForTest(t, ctc, users[0], withUser1, chat1.NewMessageBodyWithText(chat1.MessageText{Body: "hello2"}))
 
-	res, err := ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(context.Background(), chat1.GetInboxSummaryForCLILocalQuery{
+	ctx := ctc.as(t, users[0]).startCtx
+	res, err := ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(ctx, chat1.GetInboxSummaryForCLILocalQuery{
 		TopicType: chat1.TopicType_CHAT,
 	})
 	if err != nil {
@@ -556,7 +565,7 @@ func TestChatGetThreadLocalMarkAsRead(t *testing.T) {
 	// PostLocal had worked like integration, this shouldn't be necessary. We
 	// should find out where the problem is and fix it! Although after that fix,
 	// this should probably still stay here just in case.
-	_, err = ctc.as(t, users[0]).chatLocalHandler().GetThreadLocal(context.Background(), chat1.GetThreadLocalArg{
+	_, err = ctc.as(t, users[0]).chatLocalHandler().GetThreadLocal(ctx, chat1.GetThreadLocalArg{
 		ConversationID: withUser1.Id,
 		Query: &chat1.GetThreadQuery{
 			MarkAsRead: false,
@@ -566,7 +575,7 @@ func TestChatGetThreadLocalMarkAsRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tv, err := ctc.as(t, users[0]).chatLocalHandler().GetThreadLocal(context.Background(), chat1.GetThreadLocalArg{
+	tv, err := ctc.as(t, users[0]).chatLocalHandler().GetThreadLocal(ctx, chat1.GetThreadLocalArg{
 		ConversationID: withUser1.Id,
 		Query: &chat1.GetThreadQuery{
 			MarkAsRead: true,
@@ -580,7 +589,7 @@ func TestChatGetThreadLocalMarkAsRead(t *testing.T) {
 		t.Fatalf("unexpected response from GetThreadLocal. expected 2 items, got %d\n", len(tv.Thread.Messages))
 	}
 
-	res, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(context.Background(), chat1.GetInboxSummaryForCLILocalQuery{
+	res, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(ctx, chat1.GetInboxSummaryForCLILocalQuery{
 		TopicType: chat1.TopicType_CHAT,
 	})
 	if err != nil {
@@ -618,7 +627,8 @@ func TestChatGracefulUnboxing(t *testing.T) {
 	ctc.world.Tcs[users[0].Username].ChatG.ConvSource.Clear(created.Id, users[0].User.GetUID().ToBytes())
 	ctc.world.Msgs[created.Id.String()][0].BodyCiphertext.E[0]++
 
-	tv, err := ctc.as(t, users[0]).chatLocalHandler().GetThreadLocal(context.Background(), chat1.GetThreadLocalArg{
+	ctx := ctc.as(t, users[0]).startCtx
+	tv, err := ctc.as(t, users[0]).chatLocalHandler().GetThreadLocal(ctx, chat1.GetThreadLocalArg{
 		ConversationID: created.Id,
 	})
 	if err != nil {
@@ -656,7 +666,8 @@ func TestChatGetInboxSummaryForCLILocal(t *testing.T) {
 	withUser123 := mustCreateConversationForTest(t, ctc, users[0], chat1.TopicType_CHAT, ctc.as(t, users[1]).user().Username, ctc.as(t, users[2]).user().Username, ctc.as(t, users[3]).user().Username)
 	mustPostLocalForTest(t, ctc, users[0], withUser123, chat1.NewMessageBodyWithText(chat1.MessageText{Body: "O_O"}))
 
-	res, err := ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(context.Background(), chat1.GetInboxSummaryForCLILocalQuery{
+	ctx := ctc.as(t, users[0]).startCtx
+	res, err := ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(ctx, chat1.GetInboxSummaryForCLILocalQuery{
 		After:     "1d",
 		TopicType: chat1.TopicType_CHAT,
 	})
@@ -677,7 +688,7 @@ func TestChatGetInboxSummaryForCLILocal(t *testing.T) {
 		t.Fatalf("unexpected response from GetInboxSummaryForCLILocal . expected 2 messages in the first conversation, got %d\n", len(res.Conversations[0].MaxMessages))
 	}
 
-	res, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(context.Background(), chat1.GetInboxSummaryForCLILocalQuery{
+	res, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(ctx, chat1.GetInboxSummaryForCLILocalQuery{
 		ActivitySortedLimit: 2,
 		TopicType:           chat1.TopicType_CHAT,
 	})
@@ -688,7 +699,7 @@ func TestChatGetInboxSummaryForCLILocal(t *testing.T) {
 		t.Fatalf("unexpected response from GetInboxSummaryForCLILocal . expected 2 items, got %d\n", len(res.Conversations))
 	}
 
-	res, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(context.Background(), chat1.GetInboxSummaryForCLILocalQuery{
+	res, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(ctx, chat1.GetInboxSummaryForCLILocalQuery{
 		ActivitySortedLimit: 2,
 		TopicType:           chat1.TopicType_CHAT,
 	})
@@ -699,7 +710,7 @@ func TestChatGetInboxSummaryForCLILocal(t *testing.T) {
 		t.Fatalf("unexpected response from GetInboxSummaryForCLILocal . expected 2 items, got %d\n", len(res.Conversations))
 	}
 
-	res, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(context.Background(), chat1.GetInboxSummaryForCLILocalQuery{
+	res, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(ctx, chat1.GetInboxSummaryForCLILocalQuery{
 		UnreadFirst: true,
 		UnreadFirstLimit: chat1.UnreadFirstNumLimit{
 			AtLeast: 0,
@@ -718,7 +729,7 @@ func TestChatGetInboxSummaryForCLILocal(t *testing.T) {
 		t.Fatalf("unexpected response from GetInboxSummaryForCLILocal; unread conversation is not the first in response.\n")
 	}
 
-	res, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(context.Background(), chat1.GetInboxSummaryForCLILocalQuery{
+	res, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(ctx, chat1.GetInboxSummaryForCLILocalQuery{
 		UnreadFirst: true,
 		UnreadFirstLimit: chat1.UnreadFirstNumLimit{
 			AtLeast: 0,
@@ -734,7 +745,7 @@ func TestChatGetInboxSummaryForCLILocal(t *testing.T) {
 		t.Fatalf("unexpected response from GetInboxSummaryForCLILocal . expected 1 items, got %d\n", len(res.Conversations))
 	}
 
-	res, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(context.Background(), chat1.GetInboxSummaryForCLILocalQuery{
+	res, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxSummaryForCLILocal(ctx, chat1.GetInboxSummaryForCLILocalQuery{
 		UnreadFirst: true,
 		UnreadFirstLimit: chat1.UnreadFirstNumLimit{
 			AtLeast: 3,
@@ -765,7 +776,8 @@ func TestGetMessagesLocal(t *testing.T) {
 	// It would probably be good if this changed to return either in req order or ascending.
 	getIDs := []chat1.MessageID{3, 2, 1}
 
-	res, err := ctc.as(t, users[0]).chatLocalHandler().GetMessagesLocal(context.Background(), chat1.GetMessagesLocalArg{
+	ctx := ctc.as(t, users[0]).startCtx
+	res, err := ctc.as(t, users[0]).chatLocalHandler().GetMessagesLocal(ctx, chat1.GetMessagesLocalArg{
 		ConversationID: created.Id,
 		MessageIDs:     getIDs,
 	})
@@ -809,10 +821,11 @@ func TestGetOutbox(t *testing.T) {
 
 	u := users[0]
 	h := ctc.as(t, users[0]).h
+	ctx := ctc.as(t, users[0]).startCtx
 	tc := ctc.world.Tcs[ctc.as(t, users[0]).user().Username]
 	outbox := storage.NewOutbox(tc.Context(), users[0].User.GetUID().ToBytes())
 
-	obr, err := outbox.PushMessage(context.TODO(), created.Id, chat1.MessagePlaintext{
+	obr, err := outbox.PushMessage(ctx, created.Id, chat1.MessagePlaintext{
 		ClientHeader: chat1.MessageClientHeader{
 			Sender:    u.User.GetUID().ToBytes(),
 			TlfName:   u.Username,
@@ -824,7 +837,7 @@ func TestGetOutbox(t *testing.T) {
 	}, keybase1.TLFIdentifyBehavior_CHAT_CLI)
 	require.NoError(t, err)
 
-	thread, err := h.GetThreadLocal(context.Background(), chat1.GetThreadLocalArg{
+	thread, err := h.GetThreadLocal(ctx, chat1.GetThreadLocalArg{
 		ConversationID: created.Id,
 	})
 	require.NoError(t, err)
@@ -833,7 +846,7 @@ func TestGetOutbox(t *testing.T) {
 	require.Equal(t, 1, len(routbox), "wrong size outbox")
 	require.Equal(t, obr.OutboxID, routbox[0].Outbox().OutboxID, "wrong outbox ID")
 
-	thread, err = h.GetThreadLocal(context.Background(), chat1.GetThreadLocalArg{
+	thread, err = h.GetThreadLocal(ctx, chat1.GetThreadLocalArg{
 		ConversationID: created2.Id,
 	})
 	require.NoError(t, err)
@@ -855,9 +868,10 @@ func TestChatGap(t *testing.T) {
 
 	u := users[0]
 	h := ctc.as(t, users[0]).h
+	ctx := ctc.as(t, users[0]).startCtx
 	tc := ctc.world.Tcs[ctc.as(t, users[0]).user().Username]
 	msgID := res.MessageID
-	mres, err := h.remoteClient().GetMessagesRemote(context.TODO(), chat1.GetMessagesRemoteArg{
+	mres, err := h.remoteClient().GetMessagesRemote(ctx, chat1.GetMessagesRemoteArg{
 		ConversationID: created.Id,
 		MessageIDs:     []chat1.MessageID{msgID},
 	})
@@ -882,7 +896,7 @@ func TestChatGap(t *testing.T) {
 	enc := codec.NewEncoderBytes(&data, &mh)
 	require.NoError(t, enc.Encode(payload))
 	ph := NewPushHandler(tc.Context())
-	require.NoError(t, ph.Activity(context.TODO(), &gregor1.OutOfBandMessage{
+	require.NoError(t, ph.Activity(ctx, &gregor1.OutOfBandMessage{
 		Uid_:    u.User.GetUID().ToBytes(),
 		System_: "chat.activity",
 		Body_:   data,
@@ -903,7 +917,7 @@ func TestChatGap(t *testing.T) {
 	}
 	enc = codec.NewEncoderBytes(&data, &mh)
 	require.NoError(t, enc.Encode(payload))
-	require.NoError(t, ph.Activity(context.TODO(), &gregor1.OutOfBandMessage{
+	require.NoError(t, ph.Activity(ctx, &gregor1.OutOfBandMessage{
 		Uid_:    u.User.GetUID().ToBytes(),
 		System_: "chat.activity",
 		Body_:   data,
@@ -987,7 +1001,8 @@ func TestPostLocalNonblock(t *testing.T) {
 		Body:             "hi",
 		IdentifyBehavior: keybase1.TLFIdentifyBehavior_CHAT_CLI,
 	}
-	res, err := ctc.as(t, users[0]).chatLocalHandler().PostTextNonblock(context.TODO(), arg)
+	tc := ctc.as(t, users[0])
+	res, err := ctc.as(t, users[0]).chatLocalHandler().PostTextNonblock(tc.startCtx, arg)
 	require.NoError(t, err)
 	var unboxed chat1.MessageUnboxed
 	select {
@@ -1010,7 +1025,7 @@ func TestPostLocalNonblock(t *testing.T) {
 		Body:             "hi2",
 		IdentifyBehavior: keybase1.TLFIdentifyBehavior_CHAT_CLI,
 	}
-	res, err = ctc.as(t, users[0]).chatLocalHandler().PostEditNonblock(context.TODO(), earg)
+	res, err = ctc.as(t, users[0]).chatLocalHandler().PostEditNonblock(tc.startCtx, earg)
 	require.NoError(t, err)
 	select {
 	case unboxed = <-listener.newMessage:
@@ -1031,7 +1046,7 @@ func TestPostLocalNonblock(t *testing.T) {
 		Supersedes:       unboxed.GetMessageID(),
 		IdentifyBehavior: keybase1.TLFIdentifyBehavior_CHAT_CLI,
 	}
-	res, err = ctc.as(t, users[0]).chatLocalHandler().PostDeleteNonblock(context.TODO(), darg)
+	res, err = ctc.as(t, users[0]).chatLocalHandler().PostDeleteNonblock(tc.startCtx, darg)
 	require.NoError(t, err)
 	select {
 	case unboxed = <-listener.newMessage:
@@ -1058,7 +1073,9 @@ func TestFindConversations(t *testing.T) {
 	convRemote.Metadata.ActiveList =
 		[]gregor1.UID{users[2].User.GetUID().ToBytes(), users[1].User.GetUID().ToBytes()}
 
-	res, err := ctc.as(t, users[0]).chatLocalHandler().FindConversationsLocal(context.TODO(),
+	ctx := ctc.as(t, users[0]).startCtx
+	ctx2 := ctc.as(t, users[2]).startCtx
+	res, err := ctc.as(t, users[0]).chatLocalHandler().FindConversationsLocal(ctx,
 		chat1.FindConversationsLocalArg{
 			TlfName:          created.TlfName,
 			Visibility:       chat1.TLFVisibility_PUBLIC,
@@ -1070,7 +1087,7 @@ func TestFindConversations(t *testing.T) {
 	require.Equal(t, created.Id, res.Conversations[0].GetConvID(), "wrong conv")
 
 	t.Logf("simple post")
-	_, err = ctc.as(t, users[2]).chatLocalHandler().PostLocal(context.TODO(), chat1.PostLocalArg{
+	_, err = ctc.as(t, users[2]).chatLocalHandler().PostLocal(ctx2, chat1.PostLocalArg{
 		ConversationID:   created.Id,
 		IdentifyBehavior: keybase1.TLFIdentifyBehavior_CHAT_CLI,
 		Msg: chat1.MessagePlaintext{
@@ -1088,7 +1105,7 @@ func TestFindConversations(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Logf("read from conversation")
-	tres, err := ctc.as(t, users[0]).chatLocalHandler().GetThreadLocal(context.TODO(), chat1.GetThreadLocalArg{
+	tres, err := ctc.as(t, users[0]).chatLocalHandler().GetThreadLocal(ctx, chat1.GetThreadLocalArg{
 		ConversationID:   res.Conversations[0].GetConvID(),
 		IdentifyBehavior: keybase1.TLFIdentifyBehavior_CHAT_CLI,
 		Query: &chat1.GetThreadQuery{
@@ -1099,7 +1116,7 @@ func TestFindConversations(t *testing.T) {
 	require.Equal(t, 1, len(tres.Thread.Messages), "wrong length")
 
 	t.Logf("test topic name")
-	_, err = ctc.as(t, users[2]).chatLocalHandler().PostLocal(context.TODO(), chat1.PostLocalArg{
+	_, err = ctc.as(t, users[2]).chatLocalHandler().PostLocal(ctx2, chat1.PostLocalArg{
 		ConversationID:   created.Id,
 		IdentifyBehavior: keybase1.TLFIdentifyBehavior_CHAT_CLI,
 		Msg: chat1.MessagePlaintext{
@@ -1116,7 +1133,7 @@ func TestFindConversations(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	res, err = ctc.as(t, users[0]).chatLocalHandler().FindConversationsLocal(context.TODO(),
+	res, err = ctc.as(t, users[0]).chatLocalHandler().FindConversationsLocal(ctx,
 		chat1.FindConversationsLocalArg{
 			TlfName:          created.TlfName,
 			Visibility:       chat1.TLFVisibility_PUBLIC,
@@ -1126,7 +1143,7 @@ func TestFindConversations(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 0, len(res.Conversations), "conv found")
 
-	res, err = ctc.as(t, users[0]).chatLocalHandler().FindConversationsLocal(context.TODO(),
+	res, err = ctc.as(t, users[0]).chatLocalHandler().FindConversationsLocal(ctx,
 		chat1.FindConversationsLocalArg{
 			TlfName:          created.TlfName,
 			Visibility:       chat1.TLFVisibility_PUBLIC,
@@ -1173,8 +1190,9 @@ func TestGetThreadNonblock(t *testing.T) {
 	query := chat1.GetThreadQuery{
 		MessageTypes: []chat1.MessageType{chat1.MessageType_TEXT},
 	}
+	ctx := ctc.as(t, users[0]).startCtx
 	conv := mustCreateConversationForTest(t, ctc, users[0], chat1.TopicType_CHAT, users[0].Username)
-	_, err := ctc.as(t, users[0]).chatLocalHandler().GetThreadNonblock(context.TODO(),
+	_, err := ctc.as(t, users[0]).chatLocalHandler().GetThreadNonblock(ctx,
 		chat1.GetThreadNonblockArg{
 			ConversationID:   conv.Id,
 			IdentifyBehavior: keybase1.TLFIdentifyBehavior_CHAT_CLI,
@@ -1193,7 +1211,7 @@ func TestGetThreadNonblock(t *testing.T) {
 	}
 
 	t.Logf("read back full thread")
-	_, err = ctc.as(t, users[0]).chatLocalHandler().GetThreadNonblock(context.TODO(),
+	_, err = ctc.as(t, users[0]).chatLocalHandler().GetThreadNonblock(ctx,
 		chat1.GetThreadNonblockArg{
 			ConversationID:   conv.Id,
 			IdentifyBehavior: keybase1.TLFIdentifyBehavior_CHAT_CLI,
@@ -1207,7 +1225,7 @@ func TestGetThreadNonblock(t *testing.T) {
 	t.Logf("read back with a delay on the local pull")
 	delay := time.Hour * 800
 	ctc.as(t, users[0]).h.cachedThreadDelay = &delay
-	_, err = ctc.as(t, users[0]).chatLocalHandler().GetThreadNonblock(context.TODO(),
+	_, err = ctc.as(t, users[0]).chatLocalHandler().GetThreadNonblock(ctx,
 		chat1.GetThreadNonblockArg{
 			ConversationID:   conv.Id,
 			IdentifyBehavior: keybase1.TLFIdentifyBehavior_CHAT_CLI,
@@ -1250,7 +1268,8 @@ func TestGetThreadNonblockError(t *testing.T) {
 		return chat1.RemoteClient{Cli: errorClient{}}
 	})
 
-	_, err := ctc.as(t, users[0]).chatLocalHandler().GetThreadNonblock(context.TODO(),
+	ctx := ctc.as(t, users[0]).startCtx
+	_, err := ctc.as(t, users[0]).chatLocalHandler().GetThreadNonblock(ctx,
 		chat1.GetThreadNonblockArg{
 			ConversationID:   conv.Id,
 			IdentifyBehavior: keybase1.TLFIdentifyBehavior_CHAT_CLI,
@@ -1300,7 +1319,8 @@ func TestGetInboxNonblockError(t *testing.T) {
 		return chat1.RemoteClient{Cli: errorClient{}}
 	})
 
-	_, err := ctc.as(t, users[0]).chatLocalHandler().GetInboxNonblockLocal(context.TODO(),
+	ctx := ctc.as(t, users[0]).startCtx
+	_, err := ctc.as(t, users[0]).chatLocalHandler().GetInboxNonblockLocal(ctx,
 		chat1.GetInboxNonblockLocalArg{
 			Query: &chat1.GetInboxLocalQuery{
 				ConvIDs: []chat1.ConversationID{conv.Id},
@@ -1346,7 +1366,7 @@ func TestGetInboxNonblockError(t *testing.T) {
 		TopicType: &ttype,
 	}
 	p := &chat1.Pagination{Num: 10}
-	_, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxNonblockLocal(context.TODO(),
+	_, err = ctc.as(t, users[0]).chatLocalHandler().GetInboxNonblockLocal(ctx,
 		chat1.GetInboxNonblockLocalArg{
 			Query:            query,
 			Pagination:       p,

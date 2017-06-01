@@ -220,6 +220,9 @@ func (t ConversationIDTriple) ToConversationID(shardID [2]byte) ConversationID {
 
 func (t ConversationIDTriple) Derivable(cid ConversationID) bool {
 	h := t.Hash()
+	if len(h) <= 2 || len(cid) <= 2 {
+		return false
+	}
 	return bytes.Equal(h[2:], []byte(cid[2:]))
 }
 

@@ -5,7 +5,6 @@ package chat
 
 import (
 	"crypto/sha256"
-	"strings"
 	"testing"
 	"time"
 
@@ -275,19 +274,17 @@ func TestChatMessageUnboxInvalidBodyHash(t *testing.T) {
 		tc, boxer := setupChatTest(t, "unbox")
 		defer tc.Cleanup()
 
-		u, err := kbtest.CreateAndSignupFakeUser("unbox", tc.G)
-		if err != nil {
-			t.Fatal(err)
-		}
-
 		world := kbtest.NewChatMockWorld(t, "unbox", 4)
+		u := world.GetUsers()[0]
+		tc = world.Tcs[u.Username]
+		uid := u.User.GetUID().ToBytes()
 		tlf := kbtest.NewTlfMock(world)
 		ctx := newTestContextWithTlfMock(tc, tlf)
 
 		header := chat1.MessageClientHeader{
-			Sender:    gregor1.UID(u.User.GetUID().ToBytes()),
+			Sender:    uid,
 			TlfPublic: false,
-			TlfName:   "hi",
+			TlfName:   u.Username,
 		}
 		text := "hi"
 		msg := textMsgWithHeader(t, text, header)
@@ -339,19 +336,17 @@ func TestChatMessageUnboxNoCryptKey(t *testing.T) {
 		tc, boxer := setupChatTest(t, "unbox")
 		defer tc.Cleanup()
 
-		u, err := kbtest.CreateAndSignupFakeUser("unbox", tc.G)
-		if err != nil {
-			t.Fatal(err)
-		}
-
 		world := kbtest.NewChatMockWorld(t, "unbox", 4)
+		u := world.GetUsers()[0]
+		uid := u.User.GetUID().ToBytes()
+		tc = world.Tcs[u.Username]
 		tlf := kbtest.NewTlfMock(world)
 		ctx := newTestContextWithTlfMock(tc, tlf)
 
 		header := chat1.MessageClientHeader{
-			Sender:    gregor1.UID(u.User.GetUID().ToBytes()),
-			TlfPublic: true,
-			TlfName:   "hi",
+			Sender:    uid,
+			TlfPublic: false,
+			TlfName:   u.Username + "M",
 		}
 		text := "hi"
 		msg := textMsgWithHeader(t, text, header)
@@ -359,32 +354,8 @@ func TestChatMessageUnboxNoCryptKey(t *testing.T) {
 		signKP := getSigningKeyPairForTest(t, tc, u)
 
 		boxer.boxWithVersion = mbVersion
-		boxed, err := boxer.BoxMessage(ctx, msg, chat1.ConversationMembersType_KBFS, signKP)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// need to give it a server header...
-		boxed.ServerHeader = &chat1.MessageServerHeader{
-			Ctime: gregor1.ToTime(time.Now()),
-		}
-
-		// NOTE: this is hashing a lot of zero values, and it might break when we add more checks
-		convID := header.Conv.ToConversationID([2]byte{0, 0})
-		conv := chat1.Conversation{
-			Metadata: chat1.ConversationMetadata{
-				ConversationID: convID,
-			},
-		}
-
-		// This should produce a non-permanent error. So err will be set.
-		decmsg, ierr := boxer.UnboxMessage(ctx, *boxed, conv)
-		if !strings.Contains(ierr.Error(), "no key found") {
-			t.Fatalf("error should contain 'no key found': %v", ierr)
-		}
-		if decmsg.IsValid() {
-			t.Fatalf("message should not be unboxable")
-		}
+		_, err := boxer.BoxMessage(ctx, msg, chat1.ConversationMembersType_KBFS, signKP)
+		require.Error(t, err)
 	})
 }
 
@@ -614,20 +585,17 @@ func TestChatMessagePublic(t *testing.T) {
 		tc, boxer := setupChatTest(t, "unbox")
 		defer tc.Cleanup()
 
-		// need a real user
-		u, err := kbtest.CreateAndSignupFakeUser("unbox", tc.G)
-		if err != nil {
-			t.Fatal(err)
-		}
-
 		world := kbtest.NewChatMockWorld(t, "unbox", 4)
+		u := world.GetUsers()[0]
+		uid := u.User.GetUID().ToBytes()
+		tc = world.Tcs[u.Username]
 		tlf := kbtest.NewTlfMock(world)
 		ctx := newTestContextWithTlfMock(tc, tlf)
 
 		header := chat1.MessageClientHeader{
-			Sender:    gregor1.UID(u.User.GetUID().ToBytes()),
+			Sender:    uid,
 			TlfPublic: true,
-			TlfName:   "hi",
+			TlfName:   u.Username,
 		}
 		msg := textMsgWithHeader(t, text, header)
 
