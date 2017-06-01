@@ -136,7 +136,7 @@ func (s *RemoteConversationSource) Pull(ctx context.Context, convID chat1.Conver
 	var rl []*chat1.RateLimit
 
 	// Get conversation metadata
-	conv, ratelim, err := utils.GetUnverifiedConv(ctx, s.G(), uid, convID, true)
+	conv, ratelim, err := GetUnverifiedConv(ctx, s.G(), uid, convID, true)
 	rl = append(rl, ratelim)
 	if err != nil {
 		return chat1.ThreadView{}, rl, err
@@ -334,7 +334,7 @@ func (s *HybridConversationSource) Push(ctx context.Context, convID chat1.Conver
 	defer s.lockTab.Release(ctx, uid, convID)
 
 	// Grab conversation information before pushing
-	conv, _, err := utils.GetUnverifiedConv(ctx, s.G(), uid, convID, true)
+	conv, _, err := GetUnverifiedConv(ctx, s.G(), uid, convID, true)
 	if err != nil {
 		return decmsg, continuousUpdate, err
 	}
@@ -483,7 +483,7 @@ func (s *HybridConversationSource) Pull(ctx context.Context, convID chat1.Conver
 	defer s.lockTab.Release(ctx, uid, convID)
 
 	// Get conversation metadata
-	conv, ratelim, err := utils.GetUnverifiedConv(ctx, s.G(), uid, convID, true)
+	conv, ratelim, err := GetUnverifiedConv(ctx, s.G(), uid, convID, true)
 	rl = append(rl, ratelim)
 
 	// Post process thread before returning
@@ -545,6 +545,11 @@ func (s *HybridConversationSource) Pull(ctx context.Context, convID chat1.Conver
 		}
 		s.Debug(ctx, "Pull: cache miss: err: %s", err.Error())
 	} else {
+		if _, ok := err.(ConvNotFoundError); ok && !s.IsOffline() {
+			// If we failed to find the conversation, it might be a public conversation, so let's
+			// try to get it here.
+			s.ri().GetPublicConversations(ctx, chat1.GetPublicConversationsArg{})
+		}
 		s.Debug(ctx, "Pull: error fetching conv metadata: convID: %s uid: %s err: %s", convID, uid,
 			err.Error())
 	}

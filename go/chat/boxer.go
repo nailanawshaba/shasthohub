@@ -159,7 +159,8 @@ func (b *Boxer) checkInvariants(ctx context.Context, convID chat1.ConversationID
 	// Check that the ConversationIDTriple in the signed message header matches
 	// the conversation ID we were expecting.
 	if !unboxed.ClientHeader.Conv.Derivable(convID) {
-		err := fmt.Errorf("conversation ID mismatch")
+		err := fmt.Errorf("conversation ID mismatch: header: %x convID: %s",
+			unboxed.ClientHeader.Conv.Hash(), convID)
 		return NewPermanentUnboxingError(err)
 	}
 

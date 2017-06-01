@@ -782,7 +782,7 @@ func (h *Server) GetMessagesLocal(ctx context.Context, arg chat1.GetMessagesLoca
 	// if arg.ConversationID is a finalized TLF, the TLF name in boxed.Msgs
 	// could need expansion.  Look up the conversation metadata.
 	uid := h.G().Env.GetUID()
-	conv, rl, err := utils.GetUnverifiedConv(ctx, h.G(), uid.ToBytes(), arg.ConversationID, true)
+	conv, rl, err := GetUnverifiedConv(ctx, h.G(), uid.ToBytes(), arg.ConversationID, true)
 	if err != nil {
 		return deflt, err
 	}

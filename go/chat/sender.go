@@ -436,7 +436,7 @@ func (s *BlockingSender) Send(ctx context.Context, convID chat1.ConversationID,
 	defer s.Trace(ctx, func() error { return err }, fmt.Sprintf("Send(%s)", convID))()
 
 	// Get conversation metadata first
-	conv, _, err := utils.GetUnverifiedConv(ctx, s.G(), msg.ClientHeader.Sender, convID, true)
+	conv, _, err := GetUnverifiedConv(ctx, s.G(), msg.ClientHeader.Sender, convID, true)
 	if err != nil {
 		s.Debug(ctx, "error getting conversation metadata: %s", err.Error())
 		return chat1.OutboxID{}, nil, nil, err

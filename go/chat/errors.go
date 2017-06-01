@@ -236,3 +236,17 @@ func (e OfflineClient) Call(ctx context.Context, method string, arg interface{},
 func (e OfflineClient) Notify(ctx context.Context, method string, arg interface{}) error {
 	return OfflineError{}
 }
+
+type ConvNotFoundError struct {
+	convID chat1.ConversationID
+}
+
+func NewConvNotFoundError(convID chat1.ConversationID) ConvNotFoundError {
+	return ConvNotFoundError{
+		convID: convID,
+	}
+}
+
+func (e ConvNotFoundError) Error() string {
+	return fmt.Sprintf("conversation not found: %s", e.convID)
+}
