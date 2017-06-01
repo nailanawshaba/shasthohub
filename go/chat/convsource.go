@@ -55,8 +55,8 @@ func (s *baseConversationSource) SetRemoteInterface(ri func() chat1.RemoteInterf
 }
 
 func (s *baseConversationSource) postProcessThread(ctx context.Context, uid gregor1.UID,
-	convID chat1.ConversationID, thread *chat1.ThreadView, q *chat1.GetThreadQuery,
-	finalizeInfo *chat1.ConversationFinalizeInfo, superXform supersedesTransform, checkPrev bool) (err error) {
+	conv chat1.Conversation, thread *chat1.ThreadView, q *chat1.GetThreadQuery,
+	superXform supersedesTransform, checkPrev bool) (err error) {
 
 	// Sanity check the prev pointers in this thread.
 	// TODO: We'll do this against what's in the cache once that's ready,
@@ -74,7 +74,7 @@ func (s *baseConversationSource) postProcessThread(ctx context.Context, uid greg
 		if superXform == nil {
 			superXform = newBasicSupersedesTransform(s.G())
 		}
-		if thread.Messages, err = superXform.Run(ctx, convID, uid, thread.Messages, finalizeInfo); err != nil {
+		if thread.Messages, err = superXform.Run(ctx, conv, uid, thread.Messages); err != nil {
 			return err
 		}
 	}
@@ -84,7 +84,7 @@ func (s *baseConversationSource) postProcessThread(ctx context.Context, uid greg
 
 	// Fetch outbox and tack onto the result
 	outbox := storage.NewOutbox(s.G(), uid)
-	if err = outbox.SprinkleIntoThread(ctx, convID, thread); err != nil {
+	if err = outbox.SprinkleIntoThread(ctx, conv.GetConvID(), thread); err != nil {
 		if _, ok := err.(storage.MissError); !ok {
 			return err
 		}
@@ -93,9 +93,9 @@ func (s *baseConversationSource) postProcessThread(ctx context.Context, uid greg
 	return nil
 }
 
-func (s *baseConversationSource) TransformSupersedes(ctx context.Context, convID chat1.ConversationID, uid gregor1.UID, msgs []chat1.MessageUnboxed, finalizeInfo *chat1.ConversationFinalizeInfo) ([]chat1.MessageUnboxed, error) {
+func (s *baseConversationSource) TransformSupersedes(ctx context.Context, conv chat1.Conversation, uid gregor1.UID, msgs []chat1.MessageUnboxed) ([]chat1.MessageUnboxed, error) {
 	transform := newBasicSupersedesTransform(s.G())
-	return transform.Run(ctx, convID, uid, msgs, finalizeInfo)
+	return transform.Run(ctx, conv, uid, msgs)
 }
 
 type RemoteConversationSource struct {
@@ -160,7 +160,7 @@ func (s *RemoteConversationSource) Pull(ctx context.Context, convID chat1.Conver
 	}
 
 	// Post process thread before returning
-	if err = s.postProcessThread(ctx, uid, convID, &thread, query, conv.Metadata.FinalizeInfo, nil, true); err != nil {
+	if err = s.postProcessThread(ctx, uid, conv, &thread, query, nil, true); err != nil {
 		return chat1.ThreadView{}, nil, err
 	}
 
@@ -396,11 +396,6 @@ func (s *HybridConversationSource) identifyTLF(ctx context.Context, conv chat1.C
 			s.Debug(ctx, "identifyTLF: identifying from msg ID: %d name: %s convID: %s",
 				msg.GetMessageID(), tlfName, conv.GetConvID())
 
-			vis := chat1.TLFVisibility_PRIVATE
-			if msg.Valid().ClientHeader.TlfPublic {
-				vis = chat1.TLFVisibility_PUBLIC
-			}
-
 			_, err := CtxKeyFinder(ctx, s.G()).Find(ctx, tlfName, conv.GetMembersType(),
 				msg.Valid().ClientHeader.TlfPublic)
 			if err != nil {
@@ -488,18 +483,13 @@ func (s *HybridConversationSource) Pull(ctx context.Context, convID chat1.Conver
 	defer s.lockTab.Release(ctx, uid, convID)
 
 	// Get conversation metadata
-	var finalizeInfo *chat1.ConversationFinalizeInfo
 	conv, ratelim, err := utils.GetUnverifiedConv(ctx, s.G(), uid, convID, true)
 	rl = append(rl, ratelim)
-	if err == nil {
-		finalizeInfo = conv.Metadata.FinalizeInfo
-	}
 
 	// Post process thread before returning
 	defer func() {
 		if err == nil {
-			err = s.postProcessThread(ctx, uid, convID, &thread, query,
-				finalizeInfo, nil, true)
+			err = s.postProcessThread(ctx, uid, conv, &thread, query, nil, true)
 		}
 	}()
 
@@ -685,10 +675,9 @@ func (s *HybridConversationSource) PullLocalOnly(ctx context.Context, convID cha
 	defer func() {
 		if err == nil {
 			superXform := newBasicSupersedesTransform(s.G())
-			superXform.SetMessagesFunc(func(ctx context.Context, convID chat1.ConversationID,
-				uid gregor1.UID, msgIDs []chat1.MessageID,
-				finalizeInfo *chat1.ConversationFinalizeInfo) (res []chat1.MessageUnboxed, err error) {
-				msgs, err := storage.New(s.G()).FetchMessages(ctx, convID, uid, msgIDs)
+			superXform.SetMessagesFunc(func(ctx context.Context, conv chat1.Conversation,
+				uid gregor1.UID, msgIDs []chat1.MessageID) (res []chat1.MessageUnboxed, err error) {
+				msgs, err := storage.New(s.G()).FetchMessages(ctx, conv.GetConvID(), uid, msgIDs)
 				if err != nil {
 					return nil, err
 				}
@@ -699,7 +688,10 @@ func (s *HybridConversationSource) PullLocalOnly(ctx context.Context, convID cha
 				}
 				return res, nil
 			})
-			err = s.postProcessThread(ctx, uid, convID, &tv, query, nil, superXform, false)
+			// Form a fake version of a conversation so we don't need to hit the network ever here
+			var conv chat1.Conversation
+			conv.Metadata.ConversationID = convID
+			err = s.postProcessThread(ctx, uid, conv, &tv, query, superXform, false)
 		}
 	}()
 

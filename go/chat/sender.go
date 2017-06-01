@@ -23,7 +23,8 @@ import (
 
 type Sender interface {
 	Send(ctx context.Context, convID chat1.ConversationID, msg chat1.MessagePlaintext, clientPrev chat1.MessageID) (chat1.OutboxID, *chat1.MessageBoxed, *chat1.RateLimit, error)
-	Prepare(ctx context.Context, msg chat1.MessagePlaintext, conv chat1.Conversation) (*chat1.MessageBoxed, []chat1.Asset, error)
+	Prepare(ctx context.Context, msg chat1.MessagePlaintext, membersType chat1.ConversationMembersType,
+		conv *chat1.Conversation) (*chat1.MessageBoxed, []chat1.Asset, error)
 }
 
 type BlockingSender struct {
@@ -77,7 +78,7 @@ func (s *BlockingSender) addSenderToMessage(msg chat1.MessagePlaintext) (chat1.M
 }
 
 func (s *BlockingSender) addPrevPointersAndCheckConvID(ctx context.Context, msg chat1.MessagePlaintext,
-	convID chat1.ConversationID) (chat1.MessagePlaintext, error) {
+	conv chat1.Conversation) (chat1.MessagePlaintext, error) {
 
 	// Make sure the caller hasn't already assembled this list. For now, this
 	// should never happen, and we'll return an error just in case we make a
@@ -89,7 +90,7 @@ func (s *BlockingSender) addPrevPointersAndCheckConvID(ctx context.Context, msg 
 
 	var prevs []chat1.MessagePreviousPointer
 
-	res, _, err := s.G().ConvSource.Pull(ctx, convID, msg.ClientHeader.Sender,
+	res, _, err := s.G().ConvSource.Pull(ctx, conv.GetConvID(), msg.ClientHeader.Sender,
 		&chat1.GetThreadQuery{
 			DisableResolveSupersedes: true,
 		},
@@ -114,7 +115,7 @@ func (s *BlockingSender) addPrevPointersAndCheckConvID(ctx context.Context, msg 
 
 	for _, msg2 := range res.Messages {
 		if msg2.IsValid() {
-			err = s.checkConvID(ctx, convID, msg, msg2)
+			err = s.checkConvID(ctx, conv, msg, msg2)
 			if err != nil {
 				return chat1.MessagePlaintext{}, err
 			}
@@ -140,7 +141,7 @@ func (s *BlockingSender) addPrevPointersAndCheckConvID(ctx context.Context, msg 
 // That message (msgToSend) will have the header.{TlfName,TlfPublic} set to the user's intention.
 // But the header.Conv.{Tlfid,TopicType,TopicID} and the convID to post to may be erroneously set to a different conversation's values.
 // This method checks that all of those fields match. Using `msgReference` as the validated link from {TlfName,TlfPublic} <-> ConvTriple.
-func (s *BlockingSender) checkConvID(ctx context.Context, convID chat1.ConversationID,
+func (s *BlockingSender) checkConvID(ctx context.Context, conv chat1.Conversation,
 	msgToSend chat1.MessagePlaintext, msgReference chat1.MessageUnboxed) error {
 
 	headerQ := msgToSend.ClientHeader
@@ -148,8 +149,8 @@ func (s *BlockingSender) checkConvID(ctx context.Context, convID chat1.Conversat
 
 	fmtConv := func(conv chat1.ConversationIDTriple) string { return hex.EncodeToString(conv.Hash()) }
 
-	if !headerQ.Conv.Derivable(convID) {
-		s.Debug(ctx, "checkConvID: ConvID %s </- %s", fmtConv(headerQ.Conv), convID)
+	if !headerQ.Conv.Derivable(conv.GetConvID()) {
+		s.Debug(ctx, "checkConvID: ConvID %s </- %s", fmtConv(headerQ.Conv), conv.GetConvID())
 		return fmt.Errorf("ConversationID does not match reference message")
 	}
 
@@ -164,7 +165,8 @@ func (s *BlockingSender) checkConvID(ctx context.Context, convID chat1.Conversat
 	}
 	if headerQ.TlfName != headerRef.TlfName {
 		// Try normalizing both tlfnames if simple comparison fails because they may have resolved.
-		namesEq, err := s.boxer.CompareTlfNames(ctx, headerQ.TlfName, headerRef.TlfName, headerQ.TlfPublic)
+		namesEq, err := s.boxer.CompareTlfNames(ctx, headerQ.TlfName, headerRef.TlfName, conv,
+			headerQ.TlfPublic)
 		if err != nil {
 			return err
 		}
@@ -184,7 +186,7 @@ func (s *BlockingSender) checkConvID(ctx context.Context, convID chat1.Conversat
 // could omit messages. Those messages would then not be signed into the `Deletes` list. And their
 // associated attachment assets would be left undeleted.
 func (s *BlockingSender) getAllDeletedEdits(ctx context.Context, msg chat1.MessagePlaintext,
-	convID chat1.ConversationID) (chat1.MessagePlaintext, []chat1.Asset, error) {
+	conv chat1.Conversation) (chat1.MessagePlaintext, []chat1.Asset, error) {
 
 	var pendingAssetDeletes []chat1.Asset
 
@@ -200,7 +202,7 @@ func (s *BlockingSender) getAllDeletedEdits(ctx context.Context, msg chat1.Messa
 
 	// Get the one message to be deleted by ID.
 	var uid gregor1.UID = s.G().Env.GetUID().ToBytes()
-	deleteTargets, err := s.G().ConvSource.GetMessages(ctx, convID, uid, []chat1.MessageID{deleteTargetID}, nil)
+	deleteTargets, err := s.G().ConvSource.GetMessages(ctx, conv, uid, []chat1.MessageID{deleteTargetID})
 	if err != nil {
 		return msg, nil, err
 	}
@@ -238,11 +240,12 @@ func (s *BlockingSender) getAllDeletedEdits(ctx context.Context, msg chat1.Messa
 	// Use ConvSource with an `After` which query. Fetches from a combination of local cache
 	// and the server. This is an opportunity for the server to retain messages that should
 	// have been deleted without getting caught.
-	tv, _, err := s.G().ConvSource.Pull(ctx, convID, msg.ClientHeader.Sender, &chat1.GetThreadQuery{
-		MarkAsRead:   false,
-		MessageTypes: []chat1.MessageType{chat1.MessageType_EDIT, chat1.MessageType_ATTACHMENTUPLOADED},
-		After:        &timeBeforeFirst,
-	}, nil)
+	tv, _, err := s.G().ConvSource.Pull(ctx, conv.GetConvID(), msg.ClientHeader.Sender,
+		&chat1.GetThreadQuery{
+			MarkAsRead:   false,
+			MessageTypes: []chat1.MessageType{chat1.MessageType_EDIT, chat1.MessageType_ATTACHMENTUPLOADED},
+			After:        &timeBeforeFirst,
+		}, nil)
 	if err != nil {
 		return msg, nil, err
 	}
@@ -256,7 +259,8 @@ func (s *BlockingSender) getAllDeletedEdits(ctx context.Context, msg chat1.Messa
 		body := m.Valid().MessageBody
 		typ, err := body.MessageType()
 		if err != nil {
-			s.Debug(ctx, "getAllDeletedEdits: error getting message type: convID: %s msgID: %d err: %s", convID, m.GetMessageID(), err.Error())
+			s.Debug(ctx, "getAllDeletedEdits: error getting message type: convID: %s msgID: %d err: %s",
+				conv.GetConvID(), m.GetMessageID(), err.Error())
 			continue
 		}
 		switch typ {
@@ -277,7 +281,8 @@ func (s *BlockingSender) getAllDeletedEdits(ctx context.Context, msg chat1.Messa
 				pendingAssetDeletes = append(pendingAssetDeletes, pads2...)
 			}
 		default:
-			s.Debug(ctx, "getAllDeletedEdits: unexpected message type: convID: %s msgID: %d typ: %v", convID, m.GetMessageID(), typ)
+			s.Debug(ctx, "getAllDeletedEdits: unexpected message type: convID: %s msgID: %d typ: %v",
+				conv.GetConvID(), m.GetMessageID(), typ)
 			continue
 		}
 	}
@@ -323,7 +328,7 @@ func (s *BlockingSender) assetsForMessage(ctx context.Context, msgBody chat1.Mes
 // Prepare a message to be sent.
 // Returns (boxedMessage, pendingAssetDeletes, error)
 func (s *BlockingSender) Prepare(ctx context.Context, plaintext chat1.MessagePlaintext,
-	conv chat1.Conversation) (*chat1.MessageBoxed, []chat1.Asset, error) {
+	membersType chat1.ConversationMembersType, conv *chat1.Conversation) (*chat1.MessageBoxed, []chat1.Asset, error) {
 	// Make sure it is a proper length
 	if err := msgchecker.CheckMessagePlaintext(plaintext); err != nil {
 		return nil, nil, err
@@ -335,8 +340,8 @@ func (s *BlockingSender) Prepare(ctx context.Context, plaintext chat1.MessagePla
 	}
 
 	// convID will be nil in makeFirstMessage
-	if convID != nil {
-		msg, err = s.addPrevPointersAndCheckConvID(ctx, msg, *convID)
+	if conv != nil {
+		msg, err = s.addPrevPointersAndCheckConvID(ctx, msg, *conv)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -344,9 +349,9 @@ func (s *BlockingSender) Prepare(ctx context.Context, plaintext chat1.MessagePla
 
 	// Make sure our delete message gets everything it should
 	var pendingAssetDeletes []chat1.Asset
-	if convID != nil {
+	if conv != nil {
 		// Be careful not to shadow (msg, pendingAssetDeletes) with this assignment.
-		msg, pendingAssetDeletes, err = s.getAllDeletedEdits(ctx, msg, *convID)
+		msg, pendingAssetDeletes, err = s.getAllDeletedEdits(ctx, msg, *conv)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -360,7 +365,7 @@ func (s *BlockingSender) Prepare(ctx context.Context, plaintext chat1.MessagePla
 
 	// For now, BoxMessage canonicalizes the TLF name. We should try to refactor
 	// it a bit to do it here.
-	boxed, err := s.boxer.BoxMessage(ctx, msg, skp)
+	boxed, err := s.boxer.BoxMessage(ctx, msg, membersType, skp)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -436,7 +441,7 @@ func (s *BlockingSender) Send(ctx context.Context, convID chat1.ConversationID,
 	}
 
 	// Add a bunch of stuff to the message (like prev pointers, sender info, ...)
-	boxed, pendingAssetDeletes, err := s.Prepare(ctx, msg, conv)
+	boxed, pendingAssetDeletes, err := s.Prepare(ctx, msg, conv.GetMembersType(), &conv)
 	if err != nil {
 		s.Debug(ctx, "error in Prepare: %s", err.Error())
 		return chat1.OutboxID{}, nil, nil, err
@@ -739,19 +744,32 @@ func (s *Deliverer) deliverLoop() {
 
 type NonblockingSender struct {
 	globals.Contextified
+	utils.DebugLabeler
 	sender Sender
 }
 
 func NewNonblockingSender(g *globals.Context, sender Sender) *NonblockingSender {
 	s := &NonblockingSender{
 		Contextified: globals.NewContextified(g),
+		DebugLabeler: utils.NewDebugLabeler(g, "NonblockingSender", false),
 		sender:       sender,
 	}
 	return s
 }
 
-func (s *NonblockingSender) Prepare(ctx context.Context, plaintext chat1.MessagePlaintext, convID *chat1.ConversationID) (*chat1.MessageBoxed, []chat1.Asset, error) {
-	return s.sender.Prepare(ctx, plaintext, convID)
+func (s *NonblockingSender) Prepare(ctx context.Context, msg chat1.MessagePlaintext,
+	membersType chat1.ConversationMembersType, convID *chat1.ConversationID) (*chat1.MessageBoxed, []chat1.Asset, error) {
+	var conv *chat1.Conversation
+	if convID != nil {
+		// Get conversation metadata first
+		uconv, _, err := utils.GetUnverifiedConv(ctx, s.G(), msg.ClientHeader.Sender, *convID, true)
+		if err != nil {
+			s.Debug(ctx, "Prepare: error getting conversation metadata: %s", err.Error())
+			return nil, nil, err
+		}
+		conv = &uconv
+	}
+	return s.sender.Prepare(ctx, msg, membersType, conv)
 }
 
 func (s *NonblockingSender) Send(ctx context.Context, convID chat1.ConversationID,

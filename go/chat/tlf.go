@@ -43,19 +43,19 @@ func (t *KBFSNameInfoSource) tlfKeysClient() (*keybase1.TlfKeysClient, error) {
 
 func (t *KBFSNameInfoSource) Lookup(ctx context.Context, tlfName string,
 	visibility chat1.TLFVisibility) (res types.NameInfo, err error) {
-	defer t.Trace(ctx, func() error { return ferr }, fmt.Sprintf("Lookup(%s)", tlfName))()
+	defer t.Trace(ctx, func() error { return err }, fmt.Sprintf("Lookup(%s)", tlfName))()
 	var lastErr error
 	for i := 0; i < 5; i++ {
 		if visibility == chat1.TLFVisibility_PUBLIC {
 			var pres keybase1.CanonicalTLFNameAndIDWithBreaks
-			pres, err = t.PublicCanonicalTLFNameAndID(ctx, name)
-			res.CanonicalName = pres.CanonicalName
+			pres, err = t.PublicCanonicalTLFNameAndID(ctx, tlfName)
+			res.CanonicalName = pres.CanonicalName.String()
 			res.ID = chat1.TLFID(pres.TlfID.ToBytes())
 			res.IdentifyFailures = pres.Breaks.Breaks
 		} else {
 			var cres keybase1.GetTLFCryptKeysRes
-			cres, err = t.CryptKeys(ctx, name)
-			res.CanonicalName = cres.NameIDBreaks.CanonicalName
+			cres, err = t.CryptKeys(ctx, tlfName)
+			res.CanonicalName = cres.NameIDBreaks.CanonicalName.String()
 			res.ID = chat1.TLFID(cres.NameIDBreaks.TlfID.ToBytes())
 			res.IdentifyFailures = cres.NameIDBreaks.Breaks.Breaks
 			for _, key := range cres.CryptKeys {
@@ -70,12 +70,12 @@ func (t *KBFSNameInfoSource) Lookup(ctx context.Context, tlfName string,
 				time.Sleep(500 * time.Millisecond)
 				continue
 			}
-			return nil, err
+			return res, err
 		}
 		return res, nil
 	}
 
-	return nil, lastErr
+	return res, lastErr
 }
 
 func (t *KBFSNameInfoSource) CryptKeys(ctx context.Context, tlfName string) (res keybase1.GetTLFCryptKeysRes, ferr error) {
@@ -87,7 +87,7 @@ func (t *KBFSNameInfoSource) CryptKeys(ctx context.Context, tlfName string) (res
 		fmt.Sprintf("CryptKeys(tlf=%s,mode=%v)", tlfName, identBehavior))()
 
 	// call identifyTLF and GetTLFCryptKeys concurrently:
-	group, ectx := errgroup.WithContext(BackgroundContext(ctx, t.G().GetEnv()))
+	group, ectx := errgroup.WithContext(BackgroundContext(ctx, t.G()))
 
 	var ib []keybase1.TLFIdentifyFailure
 	group.Go(func() error {
@@ -147,7 +147,7 @@ func (t *KBFSNameInfoSource) PublicCanonicalTLFNameAndID(ctx context.Context, tl
 		fmt.Sprintf("PublicCanonicalTLFNameAndID(tlf=%s,mode=%v)", tlfName, identBehavior))()
 
 	// call identifyTLF and CanonicalTLFNameAndIDWithBreaks concurrently:
-	group, ectx := errgroup.WithContext(BackgroundContext(ctx, t.G().GetEnv()))
+	group, ectx := errgroup.WithContext(BackgroundContext(ctx, t.G()))
 
 	var ib []keybase1.TLFIdentifyFailure
 	group.Go(func() error {
@@ -223,7 +223,7 @@ func (t *KBFSNameInfoSource) CompleteAndCanonicalizePrivateTlfName(ctx context.C
 
 func (t *KBFSNameInfoSource) identifyTLF(ctx context.Context, arg keybase1.TLFQuery, private bool) ([]keybase1.TLFIdentifyFailure, error) {
 	// need new context as errgroup will cancel it.
-	group, ectx := errgroup.WithContext(BackgroundContext(ctx, t.G().GetEnv()))
+	group, ectx := errgroup.WithContext(BackgroundContext(ctx, t.G()))
 	assertions := make(chan string)
 
 	group.Go(func() error {

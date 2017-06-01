@@ -814,7 +814,8 @@ func (b *Boxer) latestMerkleRoot() (*chat1.MerkleRoot, error) {
 // BoxMessage encrypts a keybase1.MessagePlaintext into a chat1.MessageBoxed.  It
 // finds the most recent key for the TLF.
 func (b *Boxer) BoxMessage(ctx context.Context, msg chat1.MessagePlaintext,
-	conv chat1.Conversation, signingKeyPair libkb.NaclSigningKeyPair) (*chat1.MessageBoxed, error) {
+	membersType chat1.ConversationMembersType,
+	signingKeyPair libkb.NaclSigningKeyPair) (*chat1.MessageBoxed, error) {
 	tlfName := msg.ClientHeader.TlfName
 	var encryptionKey types.CryptKey
 
@@ -822,7 +823,7 @@ func (b *Boxer) BoxMessage(ctx context.Context, msg chat1.MessagePlaintext,
 		return nil, NewBoxingError("blank TLF name given", true)
 	}
 
-	nameInfo, err := CtxKeyFinder(ctx, b.G()).Find(ctx, tlfName, conv.GetMembersType(),
+	nameInfo, err := CtxKeyFinder(ctx, b.G()).Find(ctx, tlfName, membersType,
 		msg.ClientHeader.TlfPublic)
 
 	if err != nil {

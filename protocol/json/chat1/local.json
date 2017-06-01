@@ -1286,14 +1286,28 @@
     },
     {
       "type": "record",
+      "name": "NameQuery",
+      "fields": [
+        {
+          "type": "string",
+          "name": "name"
+        },
+        {
+          "type": "ConversationMembersType",
+          "name": "membersType"
+        }
+      ]
+    },
+    {
+      "type": "record",
       "name": "GetInboxLocalQuery",
       "fields": [
         {
           "type": [
             null,
-            "string"
+            "NameQuery"
           ],
-          "name": "tlfName"
+          "name": "name"
         },
         {
           "type": [
@@ -2362,6 +2376,10 @@
         {
           "name": "tlfName",
           "type": "string"
+        },
+        {
+          "name": "membersType",
+          "type": "ConversationMembersType"
         },
         {
           "name": "visibility",

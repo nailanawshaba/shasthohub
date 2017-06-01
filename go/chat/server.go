@@ -139,7 +139,7 @@ func (h *Server) GetInboxNonblockLocal(ctx context.Context, arg chat1.GetInboxNo
 	localizeCb := make(chan NonblockInboxResult, 1)
 
 	// Invoke nonblocking inbox read and get remote inbox version to send back as our result
-	localizer := NewNonblockingLocalizer(h.G(), localizeCb, arg.MaxUnbox, h.tlfInfoSource)
+	localizer := NewNonblockingLocalizer(h.G(), localizeCb, arg.MaxUnbox)
 	_, rl, err := h.G().InboxSource.Read(ctx, uid.ToBytes(), localizer, true, arg.Query, arg.Pagination)
 	if err != nil {
 		// If this is a convID based query, let's go ahead and drop those onto the retrier
@@ -270,7 +270,7 @@ func (h *Server) GetInboxAndUnboxLocal(ctx context.Context, arg chat1.GetInboxAn
 	}
 
 	// Read inbox from the source
-	localizer := NewBlockingLocalizer(h.G(), h.tlfInfoSource)
+	localizer := NewBlockingLocalizer(h.G())
 	ib, rl, err := h.G().InboxSource.Read(ctx, uid.ToBytes(), localizer, true, arg.Query,
 		arg.Pagination)
 	if err != nil {
@@ -462,7 +462,8 @@ func (h *Server) NewConversationLocal(ctx context.Context, arg chat1.NewConversa
 		return chat1.NewConversationLocalRes{}, err
 	}
 
-	info, err := h.tlfInfoSource.Lookup(ctx, arg.TlfName, arg.TlfVisibility)
+	info, err := CtxKeyFinder(ctx, h.G()).Find(ctx, arg.TlfName, arg.MembersType,
+		arg.TlfVisibility == chat1.TLFVisibility_PUBLIC)
 	if err != nil {
 		return chat1.NewConversationLocalRes{}, err
 	}
@@ -480,7 +481,8 @@ func (h *Server) NewConversationLocal(ctx context.Context, arg chat1.NewConversa
 			return chat1.NewConversationLocalRes{}, fmt.Errorf("error creating topic ID: %s", err)
 		}
 
-		firstMessageBoxed, err := h.makeFirstMessage(ctx, triple, info.CanonicalName, arg.TlfVisibility, arg.TopicName)
+		firstMessageBoxed, err := h.makeFirstMessage(ctx, triple, info.CanonicalName,
+			arg.MembersType, arg.TlfVisibility, arg.TopicName)
 		if err != nil {
 			return chat1.NewConversationLocalRes{}, fmt.Errorf("error preparing message: %s", err)
 		}
@@ -557,7 +559,9 @@ func (h *Server) NewConversationLocal(ctx context.Context, arg chat1.NewConversa
 	return chat1.NewConversationLocalRes{}, reserr
 }
 
-func (h *Server) makeFirstMessage(ctx context.Context, triple chat1.ConversationIDTriple, tlfName string, tlfVisibility chat1.TLFVisibility, topicName *string) (*chat1.MessageBoxed, error) {
+func (h *Server) makeFirstMessage(ctx context.Context, triple chat1.ConversationIDTriple,
+	tlfName string, membersType chat1.ConversationMembersType, tlfVisibility chat1.TLFVisibility,
+	topicName *string) (*chat1.MessageBoxed, error) {
 	var msg chat1.MessagePlaintext
 	if topicName != nil {
 		msg = chat1.MessagePlaintext{
@@ -588,7 +592,7 @@ func (h *Server) makeFirstMessage(ctx context.Context, triple chat1.Conversation
 	}
 
 	sender := NewBlockingSender(h.G(), h.boxer, h.store, h.remoteClient)
-	mbox, _, err := sender.Prepare(ctx, msg, nil)
+	mbox, _, err := sender.Prepare(ctx, msg, membersType, nil)
 	return mbox, err
 }
 
@@ -787,14 +791,14 @@ func (h *Server) GetMessagesLocal(ctx context.Context, arg chat1.GetMessagesLoca
 	}
 
 	// use ConvSource to get the messages, to try the cache first
-	messages, err := h.G().ConvSource.GetMessages(ctx, arg.ConversationID, uid.ToBytes(), arg.MessageIDs, conv.Metadata.FinalizeInfo)
+	messages, err := h.G().ConvSource.GetMessages(ctx, conv, uid.ToBytes(), arg.MessageIDs)
 	if err != nil {
 		return deflt, err
 	}
 
 	// unless arg says not to, transform the superseded messages
 	if !arg.DisableResolveSupersedes {
-		messages, err = h.G().ConvSource.TransformSupersedes(ctx, arg.ConversationID, uid.ToBytes(), messages, conv.Metadata.FinalizeInfo)
+		messages, err = h.G().ConvSource.TransformSupersedes(ctx, conv, uid.ToBytes(), messages)
 		if err != nil {
 			return deflt, err
 		}
@@ -1913,7 +1917,10 @@ func (h *Server) FindConversationsLocal(ctx context.Context,
 
 	// First look in the local user inbox
 	query := chat1.GetInboxLocalQuery{
-		TlfName:           &arg.TlfName,
+		Name: &chat1.NameQuery{
+			Name:        arg.TlfName,
+			MembersType: arg.MembersType,
+		},
 		TlfVisibility:     &arg.Visibility,
 		TopicType:         &arg.TopicType,
 		TopicName:         &arg.TopicName,
@@ -1945,14 +1952,14 @@ func (h *Server) FindConversationsLocal(ctx context.Context,
 
 		// If we miss the inbox, and we are looking for a public TLF, let's try and find
 		// any conversation that matches
-		tlfInfo, err := GetInboxQueryTLFInfo(ctx, h.tlfInfoSource, &query)
+		nameInfo, err := GetInboxQueryNameInfo(ctx, h.G(), &query)
 		if err != nil {
 			return res, err
 		}
 
 		// Call into gregor to try and find some public convs
 		pubConvs, err := h.remoteClient().GetPublicConversations(ctx, chat1.GetPublicConversationsArg{
-			TlfID:            tlfInfo.ID,
+			TlfID:            nameInfo.ID,
 			TopicType:        arg.TopicType,
 			SummarizeMaxMsgs: true,
 		})
@@ -1965,7 +1972,7 @@ func (h *Server) FindConversationsLocal(ctx context.Context,
 
 		// Localize the convs (if any)
 		if len(pubConvs.Conversations) > 0 {
-			localizer := NewBlockingLocalizer(h.G(), h.tlfInfoSource)
+			localizer := NewBlockingLocalizer(h.G())
 			convsLocal, err := localizer.Localize(ctx, uid.ToBytes(), chat1.Inbox{
 				ConvsUnverified: pubConvs.Conversations,
 			})

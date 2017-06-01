@@ -246,14 +246,16 @@ func (b *baseInboxSource) GetInboxQueryLocalToRemote(ctx context.Context,
 	}
 
 	rquery = &chat1.GetInboxQuery{}
-	if lquery.TlfName != nil && len(*lquery.TlfName) > 0 {
+	if lquery.Name != nil && len(lquery.Name.Name) > 0 {
 		var err error
-		info, err = b.tlfInfoSource.Lookup(ctx, *lquery.TlfName, lquery.Visibility())
+		info, err = CtxKeyFinder(ctx, b.G()).Find(ctx, lquery.Name.Name, lquery.Name.MembersType,
+			lquery.Visibility() == chat1.TLFVisibility_PUBLIC)
 		if err != nil {
 			return nil, info, err
 		}
 		rquery.TlfID = &info.ID
-		b.Debug(ctx, "GetInboxQueryLocalToRemote: mapped TLF %q to TLFID %v", *lquery.TlfName, info.ID)
+		b.Debug(ctx, "GetInboxQueryLocalToRemote: mapped name %q to TLFID %v",
+			lquery.Name.Name, info.ID)
 	}
 
 	rquery.After = lquery.After
@@ -271,12 +273,13 @@ func (b *baseInboxSource) GetInboxQueryLocalToRemote(ctx context.Context,
 	return rquery, info, nil
 }
 
-func GetInboxQueryNameInfo(ctx context.Context,
+func GetInboxQueryNameInfo(ctx context.Context, g *globals.Context,
 	lquery *chat1.GetInboxLocalQuery) (types.NameInfo, error) {
-	if lquery.TlfName == nil || len(*lquery.TlfName) == 0 {
+	if lquery.Name == nil || len(lquery.Name.Name) == 0 {
 		return types.NameInfo{}, nil
 	}
-	return CtxKeyFinder(ctx, g).Find(ctx, *lquery.TlfName, lquery.Visibility())
+	return CtxKeyFinder(ctx, g).Find(ctx, lquery.Name.Name, lquery.Name.MembersType,
+		lquery.Visibility() == chat1.TLFVisibility_PUBLIC)
 }
 
 type RemoteInboxSource struct {
@@ -903,8 +906,7 @@ func (s *localizerPipeline) localizeConversation(ctx context.Context, uid gregor
 
 			// Resolve edits/deletes
 			var newMsg []chat1.MessageUnboxed
-			if newMsg, err = s.superXform.Run(ctx, conversationLocal.GetConvID(), uid,
-				[]chat1.MessageUnboxed{mm}, conversationRemote.Metadata.FinalizeInfo); err != nil {
+			if newMsg, err = s.superXform.Run(ctx, conversationRemote, uid, []chat1.MessageUnboxed{mm}); err != nil {
 				s.Debug(ctx, "failed to transform message: id: %d err: %s", mm.GetMessageID(),
 					err.Error())
 			} else {
