@@ -116,7 +116,7 @@ func (b *Boxer) detectKBFSPermanentServerError(err error) bool {
 func (b *Boxer) UnboxMessage(ctx context.Context, boxed chat1.MessageBoxed, conv chat1.Conversation) (chat1.MessageUnboxed, UnboxingError) {
 	tlfName := boxed.ClientHeader.TLFNameExpanded(conv.Metadata.FinalizeInfo)
 	tlfPublic := boxed.ClientHeader.TlfPublic
-	nameInfo, err := CtxKeyFinder(ctx).Find(ctx, tlfName, conv.GetMembersType(), tlfPublic)
+	nameInfo, err := CtxKeyFinder(ctx, b.G()).Find(ctx, tlfName, conv.GetMembersType(), tlfPublic)
 	if err != nil {
 		// Check to see if this is a permanent error from the server
 		if b.detectKBFSPermanentServerError(err) {
@@ -127,9 +127,9 @@ func (b *Boxer) UnboxMessage(ctx context.Context, boxed chat1.MessageBoxed, conv
 	}
 
 	var encryptionKey types.CryptKey
-	for _, key := range keys.CryptKeys {
+	for _, key := range nameInfo.CryptKeys {
 		if key.Generation() == boxed.KeyGeneration {
-			encryptionKey = &key
+			encryptionKey = key
 			break
 		}
 	}
@@ -141,7 +141,7 @@ func (b *Boxer) UnboxMessage(ctx context.Context, boxed chat1.MessageBoxed, conv
 
 	unboxed, ierr := b.unbox(ctx, boxed, encryptionKey)
 	if ierr == nil {
-		ierr = b.checkInvariants(ctx, convID, boxed, unboxed)
+		ierr = b.checkInvariants(ctx, conv.GetConvID(), boxed, unboxed)
 	}
 	if ierr != nil {
 		b.Debug(ctx, "failed to unbox message: msgID: %d err: %s", boxed.ServerHeader.MessageID,
@@ -727,13 +727,13 @@ func (b *Boxer) makeBodyHash(bodyCiphertext chat1.EncryptedData) (chat1.Hash, Un
 }
 
 // unboxThread transforms a chat1.ThreadViewBoxed to a keybase1.ThreadView.
-func (b *Boxer) UnboxThread(ctx context.Context, boxed chat1.ThreadViewBoxed, convID chat1.ConversationID, finalizeInfo *chat1.ConversationFinalizeInfo) (thread chat1.ThreadView, err error) {
+func (b *Boxer) UnboxThread(ctx context.Context, boxed chat1.ThreadViewBoxed, conv chat1.Conversation) (thread chat1.ThreadView, err error) {
 
 	thread = chat1.ThreadView{
 		Pagination: boxed.Pagination,
 	}
 
-	if thread.Messages, err = b.UnboxMessages(ctx, boxed.Messages, convID, finalizeInfo); err != nil {
+	if thread.Messages, err = b.UnboxMessages(ctx, boxed.Messages, conv); err != nil {
 		return chat1.ThreadView{}, err
 	}
 
@@ -783,9 +783,9 @@ func (b *Boxer) getSenderInfoLocal(ctx context.Context, uid1 gregor1.UID, device
 	return username, deviceName, deviceType
 }
 
-func (b *Boxer) UnboxMessages(ctx context.Context, boxed []chat1.MessageBoxed, convID chat1.ConversationID, finalizeInfo *chat1.ConversationFinalizeInfo) (unboxed []chat1.MessageUnboxed, err error) {
+func (b *Boxer) UnboxMessages(ctx context.Context, boxed []chat1.MessageBoxed, conv chat1.Conversation) (unboxed []chat1.MessageUnboxed, err error) {
 	for _, msg := range boxed {
-		decmsg, err := b.UnboxMessage(ctx, msg, convID, finalizeInfo)
+		decmsg, err := b.UnboxMessage(ctx, msg, conv)
 		if err != nil {
 			return unboxed, err
 		}
@@ -822,7 +822,7 @@ func (b *Boxer) BoxMessage(ctx context.Context, msg chat1.MessagePlaintext,
 		return nil, NewBoxingError("blank TLF name given", true)
 	}
 
-	nameInfo, err := CtxKeyFinder(ctx).Find(ctx, tlfName, conv.GetMembersType(),
+	nameInfo, err := CtxKeyFinder(ctx, b.G()).Find(ctx, tlfName, conv.GetMembersType(),
 		msg.ClientHeader.TlfPublic)
 
 	if err != nil {
@@ -834,7 +834,7 @@ func (b *Boxer) BoxMessage(ctx context.Context, msg chat1.MessagePlaintext,
 	} else {
 		for _, key := range nameInfo.CryptKeys {
 			if encryptionKey == nil || key.Generation() > encryptionKey.Generation() {
-				encryptionKey = &key
+				encryptionKey = key
 			}
 		}
 	}
@@ -928,7 +928,7 @@ func (b *Boxer) boxV1(messagePlaintext chat1.MessagePlaintext, key types.CryptKe
 		ClientHeader:     messagePlaintext.ClientHeader,
 		BodyCiphertext:   *encryptedBody,
 		HeaderCiphertext: encryptedHeader.AsSealed(),
-		KeyGeneration:    key.KeyGeneration,
+		KeyGeneration:    key.Generation(),
 	}
 
 	return boxed, nil
@@ -990,7 +990,7 @@ func (b *Boxer) boxV2(messagePlaintext chat1.MessagePlaintext, baseEncryptionKey
 		HeaderCiphertext: headerSealed.AsSealed(),
 		BodyCiphertext:   *bodyEncrypted,
 		VerifyKey:        verifyKey,
-		KeyGeneration:    baseEncryptionKey.KeyGeneration,
+		KeyGeneration:    baseEncryptionKey.Generation(),
 	}
 
 	return boxed, nil
@@ -1352,11 +1352,11 @@ func (b *Boxer) compareHeadersV1(ctx context.Context, hServer chat1.MessageClien
 func (b *Boxer) CompareTlfNames(ctx context.Context, tlfName1, tlfName2 string,
 	conv chat1.Conversation, tlfPublic bool) (bool, error) {
 	get1 := func(tlfName string, tlfPublic bool) (string, error) {
-		cres, err := CtxKeyFinder(ctx).Find(ctx, tlfName, conv.GetMembersType(), tlfPublic)
+		nameInfo, err := CtxKeyFinder(ctx, b.G()).Find(ctx, tlfName, conv.GetMembersType(), tlfPublic)
 		if err != nil {
 			return "", err
 		}
-		return string(cres.NameIDBreaks.CanonicalName), nil
+		return nameInfo.CanonicalName, nil
 	}
 
 	c1, err := get1(tlfName1, tlfPublic)

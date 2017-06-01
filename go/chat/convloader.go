@@ -138,7 +138,7 @@ func (b *BackgroundConvLoader) load(ctx context.Context, task clTask, uid gregor
 	b.Debug(ctx, "loading conversation %s", task.convID)
 
 	var breaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, b.G().GetEnv(), keybase1.TLFIdentifyBehavior_CHAT_GUI, &breaks, b.identNotifier)
+	ctx = Context(ctx, b.G(), keybase1.TLFIdentifyBehavior_CHAT_GUI, &breaks, b.identNotifier)
 
 	query := &chat1.GetThreadQuery{MarkAsRead: false}
 	pagination := &chat1.Pagination{Num: 50}

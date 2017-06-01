@@ -394,17 +394,17 @@ func (s *HybridConversationSource) identifyTLF(ctx context.Context, conv chat1.C
 
 			tlfName := msg.Valid().ClientHeader.TLFNameExpanded(conv.Metadata.FinalizeInfo)
 			s.Debug(ctx, "identifyTLF: identifying from msg ID: %d name: %s convID: %s",
-				msg.GetMessageID(), tlfName, convID)
+				msg.GetMessageID(), tlfName, conv.GetConvID())
 
 			vis := chat1.TLFVisibility_PRIVATE
 			if msg.Valid().ClientHeader.TlfPublic {
 				vis = chat1.TLFVisibility_PUBLIC
 			}
 
-			_, err := CtxKeyFinder(ctx).Find(ctx, tlfName, conv.GetMembersType(),
+			_, err := CtxKeyFinder(ctx, s.G()).Find(ctx, tlfName, conv.GetMembersType(),
 				msg.Valid().ClientHeader.TlfPublic)
 			if err != nil {
-				s.Debug(ctx, "identifyTLF: failure: name: %s convID: %s", tlfName, convID)
+				s.Debug(ctx, "identifyTLF: failure: name: %s convID: %s", tlfName, conv.GetConvID())
 				return err
 			}
 
