@@ -23,7 +23,7 @@ import (
 
 type Sender interface {
 	Send(ctx context.Context, convID chat1.ConversationID, msg chat1.MessagePlaintext, clientPrev chat1.MessageID) (chat1.OutboxID, *chat1.MessageBoxed, *chat1.RateLimit, error)
-	Prepare(ctx context.Context, msg chat1.MessagePlaintext, convID *chat1.ConversationID) (*chat1.MessageBoxed, []chat1.Asset, error)
+	Prepare(ctx context.Context, msg chat1.MessagePlaintext, conv chat1.Conversation) (*chat1.MessageBoxed, []chat1.Asset, error)
 }
 
 type BlockingSender struct {
@@ -322,7 +322,8 @@ func (s *BlockingSender) assetsForMessage(ctx context.Context, msgBody chat1.Mes
 
 // Prepare a message to be sent.
 // Returns (boxedMessage, pendingAssetDeletes, error)
-func (s *BlockingSender) Prepare(ctx context.Context, plaintext chat1.MessagePlaintext, convID *chat1.ConversationID) (*chat1.MessageBoxed, []chat1.Asset, error) {
+func (s *BlockingSender) Prepare(ctx context.Context, plaintext chat1.MessagePlaintext,
+	conv chat1.Conversation) (*chat1.MessageBoxed, []chat1.Asset, error) {
 	// Make sure it is a proper length
 	if err := msgchecker.CheckMessagePlaintext(plaintext); err != nil {
 		return nil, nil, err
@@ -427,8 +428,15 @@ func (s *BlockingSender) Send(ctx context.Context, convID chat1.ConversationID,
 	msg chat1.MessagePlaintext, clientPrev chat1.MessageID) (obid chat1.OutboxID, boxed *chat1.MessageBoxed, rl *chat1.RateLimit, err error) {
 	defer s.Trace(ctx, func() error { return err }, fmt.Sprintf("Send(%s)", convID))()
 
+	// Get conversation metadata first
+	conv, _, err := utils.GetUnverifiedConv(ctx, s.G(), msg.ClientHeader.Sender, convID, true)
+	if err != nil {
+		s.Debug(ctx, "error getting conversation metadata: %s", err.Error())
+		return chat1.OutboxID{}, nil, nil, err
+	}
+
 	// Add a bunch of stuff to the message (like prev pointers, sender info, ...)
-	boxed, pendingAssetDeletes, err := s.Prepare(ctx, msg, &convID)
+	boxed, pendingAssetDeletes, err := s.Prepare(ctx, msg, conv)
 	if err != nil {
 		s.Debug(ctx, "error in Prepare: %s", err.Error())
 		return chat1.OutboxID{}, nil, nil, err
@@ -694,7 +702,7 @@ func (s *Deliverer) deliverLoop() {
 		var breaks []keybase1.TLFIdentifyFailure
 		for _, obr := range obrs {
 
-			bctx := Context(context.Background(), s.G().GetEnv(), obr.IdentifyBehavior, &breaks,
+			bctx := Context(context.Background(), s.G(), obr.IdentifyBehavior, &breaks,
 				s.identNotifier)
 			if !s.connected {
 				err = errors.New("disconnected from chat server")

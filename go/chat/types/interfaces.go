@@ -37,9 +37,9 @@ type ConversationSource interface {
 		pagination *chat1.Pagination) (chat1.ThreadView, []*chat1.RateLimit, error)
 	PullLocalOnly(ctx context.Context, convID chat1.ConversationID, uid gregor1.UID,
 		query *chat1.GetThreadQuery, p *chat1.Pagination) (chat1.ThreadView, error)
-	GetMessages(ctx context.Context, convID chat1.ConversationID, uid gregor1.UID, msgIDs []chat1.MessageID, finalizeInfo *chat1.ConversationFinalizeInfo) ([]chat1.MessageUnboxed, error)
-	GetMessagesWithRemotes(ctx context.Context, convID chat1.ConversationID, uid gregor1.UID,
-		msgs []chat1.MessageBoxed, finalizeInfo *chat1.ConversationFinalizeInfo) ([]chat1.MessageUnboxed, error)
+	GetMessages(ctx context.Context, conv chat1.Conversation, uid gregor1.UID, msgIDs []chat1.MessageID) ([]chat1.MessageUnboxed, error)
+	GetMessagesWithRemotes(ctx context.Context, conv chat1.Conversation, uid gregor1.UID,
+		msgs []chat1.MessageBoxed) ([]chat1.MessageUnboxed, error)
 	Clear(convID chat1.ConversationID, uid gregor1.UID) error
 	TransformSupersedes(ctx context.Context, convID chat1.ConversationID, uid gregor1.UID, msgs []chat1.MessageUnboxed, finalizeInfo *chat1.ConversationFinalizeInfo) ([]chat1.MessageUnboxed, error)
 
@@ -81,7 +81,7 @@ type InboxSource interface {
 		convIDs []chat1.ConversationID, finalizeInfo chat1.ConversationFinalizeInfo) ([]chat1.ConversationLocal, error)
 
 	GetInboxQueryLocalToRemote(ctx context.Context,
-		lquery *chat1.GetInboxLocalQuery) (*chat1.GetInboxQuery, *NameInfo, error)
+		lquery *chat1.GetInboxLocalQuery) (*chat1.GetInboxQuery, NameInfo, error)
 
 	SetRemoteInterface(func() chat1.RemoteInterface)
 }

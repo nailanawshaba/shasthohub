@@ -122,7 +122,7 @@ func (h *Server) handleOfflineError(ctx context.Context, err error,
 
 func (h *Server) GetInboxNonblockLocal(ctx context.Context, arg chat1.GetInboxNonblockLocalArg) (res chat1.NonblockFetchRes, err error) {
 	var breaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), arg.IdentifyBehavior, &breaks, h.identNotifier)
+	ctx = Context(ctx, h.G(), arg.IdentifyBehavior, &breaks, h.identNotifier)
 	defer h.Trace(ctx, func() error { return err }, "GetInboxNonblockLocal")()
 	defer func() { err = h.handleOfflineError(ctx, err, &res) }()
 	if err = h.assertLoggedIn(ctx); err != nil {
@@ -224,7 +224,7 @@ func (h *Server) GetInboxNonblockLocal(ctx context.Context, arg chat1.GetInboxNo
 
 func (h *Server) MarkAsReadLocal(ctx context.Context, arg chat1.MarkAsReadLocalArg) (res chat1.MarkAsReadLocalRes, err error) {
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), keybase1.TLFIdentifyBehavior_CHAT_GUI, &identBreaks,
+	ctx = Context(ctx, h.G(), keybase1.TLFIdentifyBehavior_CHAT_GUI, &identBreaks,
 		h.identNotifier)
 	defer h.Trace(ctx, func() error { return err },
 		fmt.Sprintf("MarkAsReadLocal(%s)", arg.ConversationID))()
@@ -256,7 +256,7 @@ func (h *Server) MarkAsReadLocal(ctx context.Context, arg chat1.MarkAsReadLocalA
 // GetInboxAndUnboxLocal implements keybase.chatLocal.getInboxAndUnboxLocal protocol.
 func (h *Server) GetInboxAndUnboxLocal(ctx context.Context, arg chat1.GetInboxAndUnboxLocalArg) (res chat1.GetInboxAndUnboxLocalRes, err error) {
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
+	ctx = Context(ctx, h.G(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
 	defer h.Trace(ctx, func() error { return err }, "GetInboxAndUnboxLocal")()
 	defer func() { err = h.handleOfflineError(ctx, err, &res) }()
 	if err = h.assertLoggedIn(ctx); err != nil {
@@ -290,7 +290,7 @@ func (h *Server) GetInboxAndUnboxLocal(ctx context.Context, arg chat1.GetInboxAn
 
 func (h *Server) GetCachedThread(ctx context.Context, arg chat1.GetCachedThreadArg) (res chat1.GetThreadLocalRes, err error) {
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
+	ctx = Context(ctx, h.G(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
 	defer h.Trace(ctx, func() error { return err }, "GetCachedThread")()
 	defer func() { err = h.handleOfflineError(ctx, err, &res) }()
 	if err = h.assertLoggedIn(ctx); err != nil {
@@ -315,7 +315,7 @@ func (h *Server) GetCachedThread(ctx context.Context, arg chat1.GetCachedThreadA
 // GetThreadLocal implements keybase.chatLocal.getThreadLocal protocol.
 func (h *Server) GetThreadLocal(ctx context.Context, arg chat1.GetThreadLocalArg) (res chat1.GetThreadLocalRes, err error) {
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
+	ctx = Context(ctx, h.G(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
 	defer h.Trace(ctx, func() error { return err }, "GetThreadLocal")()
 	defer func() { err = h.handleOfflineError(ctx, err, &res) }()
 	if err = h.assertLoggedIn(ctx); err != nil {
@@ -340,7 +340,7 @@ func (h *Server) GetThreadLocal(ctx context.Context, arg chat1.GetThreadLocalArg
 
 func (h *Server) GetThreadNonblock(ctx context.Context, arg chat1.GetThreadNonblockArg) (res chat1.NonblockFetchRes, fullErr error) {
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
+	ctx = Context(ctx, h.G(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
 	uid := h.G().Env.GetUID()
 	defer h.Trace(ctx, func() error { return fullErr },
 		fmt.Sprintf("GetThreadNonblock(%s)", arg.ConversationID))()
@@ -456,7 +456,7 @@ func (h *Server) GetThreadNonblock(ctx context.Context, arg chat1.GetThreadNonbl
 // Create a new conversation. Or in the case of CHAT, create-or-get a conversation.
 func (h *Server) NewConversationLocal(ctx context.Context, arg chat1.NewConversationLocalArg) (res chat1.NewConversationLocalRes, reserr error) {
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
+	ctx = Context(ctx, h.G(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
 	defer h.Trace(ctx, func() error { return reserr }, "NewConversationLocal")()
 	if err := h.assertLoggedIn(ctx); err != nil {
 		return chat1.NewConversationLocalRes{}, err
@@ -594,7 +594,7 @@ func (h *Server) makeFirstMessage(ctx context.Context, triple chat1.Conversation
 
 func (h *Server) GetInboxSummaryForCLILocal(ctx context.Context, arg chat1.GetInboxSummaryForCLILocalQuery) (res chat1.GetInboxSummaryForCLILocalRes, err error) {
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), keybase1.TLFIdentifyBehavior_CHAT_CLI, &identBreaks,
+	ctx = Context(ctx, h.G(), keybase1.TLFIdentifyBehavior_CHAT_CLI, &identBreaks,
 		h.identNotifier)
 	defer h.Trace(ctx, func() error { return err }, "GetInboxSummaryForCLILocal")()
 	defer func() { err = h.handleOfflineError(ctx, err, &res) }()
@@ -695,7 +695,7 @@ func (h *Server) GetInboxSummaryForCLILocal(ctx context.Context, arg chat1.GetIn
 
 func (h *Server) GetConversationForCLILocal(ctx context.Context, arg chat1.GetConversationForCLILocalQuery) (res chat1.GetConversationForCLILocalRes, err error) {
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), keybase1.TLFIdentifyBehavior_CHAT_CLI, &identBreaks,
+	ctx = Context(ctx, h.G(), keybase1.TLFIdentifyBehavior_CHAT_CLI, &identBreaks,
 		h.identNotifier)
 	defer h.Trace(ctx, func() error { return err }, "GetConversationForCLILocal")()
 	defer func() { err = h.handleOfflineError(ctx, err, &res) }()
@@ -764,7 +764,7 @@ func (h *Server) GetConversationForCLILocal(ctx context.Context, arg chat1.GetCo
 
 func (h *Server) GetMessagesLocal(ctx context.Context, arg chat1.GetMessagesLocalArg) (res chat1.GetMessagesLocalRes, err error) {
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
+	ctx = Context(ctx, h.G(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
 	defer h.Trace(ctx, func() error { return err }, "GetMessagesLocal")()
 	defer func() { err = h.handleOfflineError(ctx, err, &res) }()
 	deflt := chat1.GetMessagesLocalRes{}
@@ -810,7 +810,7 @@ func (h *Server) GetMessagesLocal(ctx context.Context, arg chat1.GetMessagesLoca
 
 func (h *Server) SetConversationStatusLocal(ctx context.Context, arg chat1.SetConversationStatusLocalArg) (res chat1.SetConversationStatusLocalRes, err error) {
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
+	ctx = Context(ctx, h.G(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
 	defer h.Trace(ctx, func() error { return err }, "SetConversationStatusLocal")()
 	if err = h.assertLoggedIn(ctx); err != nil {
 		return chat1.SetConversationStatusLocalRes{}, err
@@ -871,7 +871,7 @@ func (h *Server) SetConversationStatusLocal(ctx context.Context, arg chat1.SetCo
 // PostLocal implements keybase.chatLocal.postLocal protocol.
 func (h *Server) PostLocal(ctx context.Context, arg chat1.PostLocalArg) (res chat1.PostLocalRes, err error) {
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
+	ctx = Context(ctx, h.G(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
 	defer h.Trace(ctx, func() error { return err }, "PostLocal")()
 	if err = h.assertLoggedIn(ctx); err != nil {
 		return chat1.PostLocalRes{}, err
@@ -963,7 +963,7 @@ func (h *Server) PostTextNonblock(ctx context.Context, arg chat1.PostTextNonbloc
 func (h *Server) PostLocalNonblock(ctx context.Context, arg chat1.PostLocalNonblockArg) (res chat1.PostLocalNonblockRes, err error) {
 
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
+	ctx = Context(ctx, h.G(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
 	defer h.Trace(ctx, func() error { return err }, "PostLocalNonblock")()
 	if err = h.assertLoggedIn(ctx); err != nil {
 		return chat1.PostLocalNonblockRes{}, err
@@ -1471,7 +1471,7 @@ func (h *Server) postAttachmentLocalInOrder(ctx context.Context, arg postAttachm
 // DownloadAttachmentLocal implements chat1.LocalInterface.DownloadAttachmentLocal.
 func (h *Server) DownloadAttachmentLocal(ctx context.Context, arg chat1.DownloadAttachmentLocalArg) (res chat1.DownloadAttachmentLocalRes, err error) {
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
+	ctx = Context(ctx, h.G(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
 	defer h.Trace(ctx, func() error { return err }, "DownloadAttachmentLocal")()
 	defer func() { err = h.handleOfflineError(ctx, err, &res) }()
 	darg := downloadAttachmentArg{
@@ -1519,7 +1519,7 @@ type downloadAttachmentArg struct {
 func (h *Server) downloadAttachmentLocal(ctx context.Context, arg downloadAttachmentArg) (chat1.DownloadAttachmentLocalRes, error) {
 
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
+	ctx = Context(ctx, h.G(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
 	chatUI := h.getChatUI(arg.SessionID)
 	progress := func(bytesComplete, bytesTotal int64) {
 		parg := chat1.ChatAttachmentDownloadProgressArg{
@@ -1903,7 +1903,7 @@ func (h *Server) deleteAssets(ctx context.Context, conversationID chat1.Conversa
 func (h *Server) FindConversationsLocal(ctx context.Context,
 	arg chat1.FindConversationsLocalArg) (res chat1.FindConversationsLocalRes, err error) {
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
+	ctx = Context(ctx, h.G(), arg.IdentifyBehavior, &identBreaks, h.identNotifier)
 	defer h.Trace(ctx, func() error { return err }, "FindConversationsLocal")()
 	defer func() { err = h.handleOfflineError(ctx, err, &res) }()
 	if err = h.assertLoggedIn(ctx); err != nil {
@@ -1991,7 +1991,7 @@ func (h *Server) FindConversationsLocal(ctx context.Context,
 
 func (h *Server) UpdateTyping(ctx context.Context, arg chat1.UpdateTypingArg) (err error) {
 	var identBreaks []keybase1.TLFIdentifyFailure
-	ctx = Context(ctx, h.G().GetEnv(), keybase1.TLFIdentifyBehavior_CHAT_GUI,
+	ctx = Context(ctx, h.G(), keybase1.TLFIdentifyBehavior_CHAT_GUI,
 		&identBreaks, h.identNotifier)
 	defer h.Trace(ctx, func() error { return err }, fmt.Sprintf("StartTyping(%s)", arg.ConversationID))()
 	if err = h.assertLoggedIn(ctx); err != nil {

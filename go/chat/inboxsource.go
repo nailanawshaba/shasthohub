@@ -128,7 +128,7 @@ func (b *NonblockingLocalizer) Localize(ctx context.Context, uid gregor1.UID, in
 	}
 
 	// Spawn off localization into its own goroutine and use cb to communicate with outside world
-	bctx := BackgroundContext(ctx, b.G().GetEnv())
+	bctx := BackgroundContext(ctx, b.G())
 	go func() {
 		b.Debug(bctx, "Localize: starting background localization: convs: %d",
 			len(inbox.ConvsUnverified))
@@ -155,20 +155,24 @@ func filterConvLocals(convLocals []chat1.ConversationLocal, rquery *chat1.GetInb
 			// inbox query contained a TLF name, so check to make sure that
 			// the conversation from the server matches tlfInfo from kbfs
 
-			if convLocal.Info.TLFNameExpanded() != tlfInfo.CanonicalName {
+			if convLocal.Info.TLFNameExpanded() != nameInfo.CanonicalName {
 				if convLocal.Error == nil {
-					return nil, fmt.Errorf("server conversation TLF name mismatch: %s, expected %s", convLocal.Info.TLFNameExpanded(), tlfInfo.CanonicalName)
+					return nil, fmt.Errorf("server conversation TLF name mismatch: %s, expected %s",
+						convLocal.Info.TLFNameExpanded(), nameInfo.CanonicalName)
 				}
 			}
 			if convLocal.Info.Visibility != rquery.Visibility() {
-				return nil, fmt.Errorf("server conversation TLF visibility mismatch: %s, expected %s", convLocal.Info.Visibility, rquery.Visibility())
+				return nil, fmt.Errorf("server conversation TLF visibility mismatch: %s, expected %s",
+					convLocal.Info.Visibility, rquery.Visibility())
 			}
 			if !nameInfo.ID.Eq(convLocal.Info.Triple.Tlfid) {
-				return nil, fmt.Errorf("server conversation TLF ID mismatch: %s, expected %s", convLocal.Info.Triple.Tlfid, tlfInfo.ID)
+				return nil, fmt.Errorf("server conversation TLF ID mismatch: %s, expected %s",
+					convLocal.Info.Triple.Tlfid, nameInfo.ID)
 			}
 			// tlfInfo.ID and rquery.TlfID should always match, but just in case:
 			if !rquery.TlfID.Eq(convLocal.Info.Triple.Tlfid) {
-				return nil, fmt.Errorf("server conversation TLF ID mismatch: %s, expected %s", convLocal.Info.Triple.Tlfid, rquery.TlfID)
+				return nil, fmt.Errorf("server conversation TLF ID mismatch: %s, expected %s",
+					convLocal.Info.Triple.Tlfid, rquery.TlfID)
 			}
 
 			// Note that previously, we made a call to KBFS to lookup the TLF in
@@ -238,7 +242,7 @@ func (b *baseInboxSource) GetInboxQueryLocalToRemote(ctx context.Context,
 	lquery *chat1.GetInboxLocalQuery) (rquery *chat1.GetInboxQuery, info types.NameInfo, err error) {
 
 	if lquery == nil {
-		return nil, nil, nil
+		return nil, info, nil
 	}
 
 	rquery = &chat1.GetInboxQuery{}
@@ -246,7 +250,7 @@ func (b *baseInboxSource) GetInboxQueryLocalToRemote(ctx context.Context,
 		var err error
 		info, err = b.tlfInfoSource.Lookup(ctx, *lquery.TlfName, lquery.Visibility())
 		if err != nil {
-			return nil, nil, err
+			return nil, info, err
 		}
 		rquery.TlfID = &info.ID
 		b.Debug(ctx, "GetInboxQueryLocalToRemote: mapped TLF %q to TLFID %v", *lquery.TlfName, info.ID)
@@ -270,9 +274,9 @@ func (b *baseInboxSource) GetInboxQueryLocalToRemote(ctx context.Context,
 func GetInboxQueryNameInfo(ctx context.Context,
 	lquery *chat1.GetInboxLocalQuery) (types.NameInfo, error) {
 	if lquery.TlfName == nil || len(*lquery.TlfName) == 0 {
-		return nil, nil
+		return types.NameInfo{}, nil
 	}
-	return tlfInfo.Lookup(ctx, *lquery.TlfName, lquery.Visibility())
+	return CtxKeyFinder(ctx, g).Find(ctx, *lquery.TlfName, lquery.Visibility())
 }
 
 type RemoteInboxSource struct {
@@ -441,7 +445,7 @@ func (s *HybridInboxSource) Read(ctx context.Context, uid gregor1.UID,
 
 	defer s.Trace(ctx, func() error { return err }, "Read")()
 	if localizer == nil {
-		localizer = NewBlockingLocalizer(s.G(), s.tlfInfoSource)
+		localizer = NewBlockingLocalizer(s.G())
 	}
 	if s.IsOffline() {
 		localizer.SetOffline()
@@ -838,8 +842,8 @@ func (s *localizerPipeline) localizeConversation(ctx context.Context, uid gregor
 			msgs, errTyp, err = s.getMessagesOffline(ctx, conversationRemote.GetConvID(),
 				uid, conversationRemote.MaxMsgSummaries, conversationRemote.Metadata.FinalizeInfo)
 		} else {
-			msgs, err = s.G().ConvSource.GetMessages(ctx, conversationRemote.Metadata.ConversationID,
-				uid, utils.PluckMessageIDs(conversationRemote.MaxMsgSummaries), conversationRemote.Metadata.FinalizeInfo)
+			msgs, err = s.G().ConvSource.GetMessages(ctx, conversationRemote,
+				uid, utils.PluckMessageIDs(conversationRemote.MaxMsgSummaries))
 			if !s.isErrPermanent(err) {
 				errTyp = chat1.ConversationErrorType_TRANSIENT
 			}
@@ -858,8 +862,7 @@ func (s *localizerPipeline) localizeConversation(ctx context.Context, uid gregor
 	} else {
 		// Use the attached MaxMsgs
 		msgs, err := s.G().ConvSource.GetMessagesWithRemotes(ctx,
-			conversationRemote.Metadata.ConversationID, uid, conversationRemote.MaxMsgs,
-			conversationRemote.Metadata.FinalizeInfo)
+			conversationRemote, uid, conversationRemote.MaxMsgs)
 		if err != nil {
 			convErr := s.checkRekeyError(ctx, err, conversationRemote, unverifiedTLFName)
 			if convErr != nil {
@@ -939,9 +942,9 @@ func (s *localizerPipeline) localizeConversation(ctx context.Context, uid gregor
 	// Only do this check if there is a chance the TLF name might be an SBS name. Only attempt
 	// this if we are online
 	if !s.offline && s.needsCanonicalize(conversationLocal.Info.TlfName) {
-		info, err := CtxKeyFinder(ctx).Lookup(ctx,
+		info, err := CtxKeyFinder(ctx, s.G()).Find(ctx,
 			conversationLocal.Info.TLFNameExpanded(), conversationLocal.GetMembersType(),
-			conversationLocal.Info.Visibility)
+			conversationLocal.Info.Visibility == chat1.TLFVisibility_PUBLIC)
 		if err != nil {
 			errMsg := err.Error()
 			conversationLocal.Error = chat1.NewConversationErrorLocal(

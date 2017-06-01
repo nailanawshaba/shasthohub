@@ -6,6 +6,7 @@ import (
 
 	"github.com/keybase/client/go/chat/globals"
 	"github.com/keybase/client/go/chat/types"
+	"github.com/keybase/client/go/chat/utils"
 	"github.com/keybase/client/go/protocol/chat1"
 	context "golang.org/x/net/context"
 )
@@ -17,7 +18,9 @@ type KeyFinder interface {
 
 type KeyFinderImpl struct {
 	globals.Contextified
+	utils.DebugLabeler
 	sync.Mutex
+
 	keys map[string]types.NameInfo
 }
 
@@ -25,6 +28,7 @@ type KeyFinderImpl struct {
 func NewKeyFinder(g *globals.Context) KeyFinder {
 	return &KeyFinderImpl{
 		Contextified: globals.NewContextified(g),
+		DebugLabeler: utils.NewDebugLabeler(g, "KeyFinder", false),
 		keys:         make(map[string]types.NameInfo),
 	}
 }
@@ -37,12 +41,12 @@ func (k *KeyFinderImpl) createNameInfoSource(ctx context.Context,
 	membersType chat1.ConversationMembersType) types.NameInfoSource {
 	switch membersType {
 	case chat1.ConversationMembersType_KBFS:
-		return NewKBFSNameInfoSource(g)
+		return NewKBFSNameInfoSource(k.G())
 	case chat1.ConversationMembersType_TEAM:
-		return NewTeamsNameInfoSource(g)
+		return NewTeamsNameInfoSource(k.G())
 	}
-	t.Debug(ctx, "createNameInfoSource: unknown members type, using KBFS: %v", membersType)
-	return NewKBFSNameInfoSource(g)
+	k.Debug(ctx, "createNameInfoSource: unknown members type, using KBFS: %v", membersType)
+	return NewKBFSNameInfoSource(k.G())
 }
 
 // Find finds keybase1.TLFCryptKeys for tlfName, checking for existing
@@ -50,7 +54,7 @@ func (k *KeyFinderImpl) createNameInfoSource(ctx context.Context,
 func (k *KeyFinderImpl) Find(ctx context.Context, name string,
 	membersType chat1.ConversationMembersType, public bool) (types.NameInfo, error) {
 
-	ckey := k.cacheKey(tlfName, membersType, tlfPublic)
+	ckey := k.cacheKey(name, membersType, public)
 	k.Lock()
 	existing, ok := k.keys[ckey]
 	k.Unlock()
@@ -62,10 +66,10 @@ func (k *KeyFinderImpl) Find(ctx context.Context, name string,
 	if public {
 		vis = chat1.TLFVisibility_PUBLIC
 	}
-	nameSource := k.createNameInfoSource(membersType)
+	nameSource := k.createNameInfoSource(ctx, membersType)
 	nameInfo, err := nameSource.Lookup(ctx, name, vis)
 	if err != nil {
-		return NameInfo{}, err
+		return types.NameInfo{}, err
 	}
 
 	k.Lock()

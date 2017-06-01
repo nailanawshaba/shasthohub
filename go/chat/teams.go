@@ -1,7 +1,6 @@
 package chat
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/keybase/client/go/chat/globals"
@@ -10,6 +9,7 @@ import (
 	"github.com/keybase/client/go/protocol/chat1"
 	"github.com/keybase/client/go/protocol/keybase1"
 	"github.com/keybase/client/go/teams"
+	context "golang.org/x/net/context"
 )
 
 type TeamsNameInfoSource struct {
