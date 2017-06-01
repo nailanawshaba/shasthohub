@@ -54,10 +54,6 @@ func (s *baseConversationSource) SetRemoteInterface(ri func() chat1.RemoteInterf
 	s.ri = ri
 }
 
-func (s *baseConversationSource) SetTLFInfoSource(tlfInfoSource types.TLFInfoSource) {
-	s.boxer.tlfInfoSource = tlfInfoSource
-}
-
 func (s *baseConversationSource) postProcessThread(ctx context.Context, uid gregor1.UID,
 	convID chat1.ConversationID, thread *chat1.ThreadView, q *chat1.GetThreadQuery,
 	finalizeInfo *chat1.ConversationFinalizeInfo, superXform supersedesTransform, checkPrev bool) (err error) {
@@ -376,8 +372,8 @@ func (s *HybridConversationSource) Push(ctx context.Context, convID chat1.Conver
 	return decmsg, continuousUpdate, nil
 }
 
-func (s *HybridConversationSource) identifyTLF(ctx context.Context, convID chat1.ConversationID,
-	uid gregor1.UID, msgs []chat1.MessageUnboxed, finalizeInfo *chat1.ConversationFinalizeInfo) error {
+func (s *HybridConversationSource) identifyTLF(ctx context.Context, conv chat1.Conversation,
+	uid gregor1.UID, msgs []chat1.MessageUnboxed) error {
 
 	// If we are offline, then bail out of here with no error
 	if s.IsOffline() {
@@ -396,7 +392,7 @@ func (s *HybridConversationSource) identifyTLF(ctx context.Context, convID chat1
 				return nil
 			}
 
-			tlfName := msg.Valid().ClientHeader.TLFNameExpanded(finalizeInfo)
+			tlfName := msg.Valid().ClientHeader.TLFNameExpanded(conv.Metadata.FinalizeInfo)
 			s.Debug(ctx, "identifyTLF: identifying from msg ID: %d name: %s convID: %s",
 				msg.GetMessageID(), tlfName, convID)
 
@@ -405,7 +401,8 @@ func (s *HybridConversationSource) identifyTLF(ctx context.Context, convID chat1
 				vis = chat1.TLFVisibility_PUBLIC
 			}
 
-			_, err := s.boxer.tlfInfoSource.Lookup(ctx, tlfName, vis)
+			_, err := CtxKeyFinder(ctx).Find(ctx, tlfName, conv.GetMembersType(),
+				msg.Valid().ClientHeader.TlfPublic)
 			if err != nil {
 				s.Debug(ctx, "identifyTLF: failure: name: %s convID: %s", tlfName, convID)
 				return err

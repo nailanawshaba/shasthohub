@@ -25,11 +25,7 @@ type CryptKey interface {
 }
 
 type NameInfoSource interface {
-	Lookup(ctx context.Context, name string, vis chat1.TLFVisibility) (*NameInfo, error)
-}
-
-type CryptKeysSource interface {
-	CryptKeys(ctx context.Context, name string, vis chat1.TLFVisibility) (CryptKeysRes, error)
+	Lookup(ctx context.Context, name string, vis chat1.TLFVisibility) (NameInfo, error)
 }
 
 type ConversationSource interface {
@@ -48,7 +44,6 @@ type ConversationSource interface {
 	TransformSupersedes(ctx context.Context, convID chat1.ConversationID, uid gregor1.UID, msgs []chat1.MessageUnboxed, finalizeInfo *chat1.ConversationFinalizeInfo) ([]chat1.MessageUnboxed, error)
 
 	SetRemoteInterface(func() chat1.RemoteInterface)
-	SetNameInfoSource(nameInfoSource NameInfoSource)
 }
 
 type MessageDeliverer interface {
@@ -89,7 +84,6 @@ type InboxSource interface {
 		lquery *chat1.GetInboxLocalQuery) (*chat1.GetInboxQuery, *NameInfo, error)
 
 	SetRemoteInterface(func() chat1.RemoteInterface)
-	SetNameInfoSource(nameInfoSource NameInfoSource)
 }
 
 type ServerCacheVersions interface {

@@ -983,6 +983,10 @@
           "name": "status"
         },
         {
+          "type": "ConversationMembersType",
+          "name": "membersType"
+        },
+        {
           "type": {
             "type": "array",
             "items": "string"

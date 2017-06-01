@@ -48,9 +48,6 @@ type Boxer struct {
 
 	boxWithVersion chat1.MessageBoxedVersion
 
-	// TLF info source
-	ckSource types.CryptKeysSource
-
 	// Replaceable for testing.
 	// Normally set to normal implementations.
 	hashV1 func(data []byte) chat1.Hash
@@ -63,13 +60,12 @@ type Boxer struct {
 	testingSignatureMangle func([]byte) []byte
 }
 
-func NewBoxer(g *globals.Context, ckSource types.CryptKeysSource) *Boxer {
+func NewBoxer(g *globals.Context) *Boxer {
 	return &Boxer{
 		DebugLabeler:   utils.NewDebugLabeler(g, "Boxer", false),
 		boxWithVersion: chat1.MessageBoxedVersion_V1,
 		hashV1:         hashSha256V1,
 		Contextified:   globals.NewContextified(g),
-		tlfInfoSource:  tlfInfoSource,
 	}
 }
 
@@ -117,10 +113,10 @@ func (b *Boxer) detectKBFSPermanentServerError(err error) bool {
 // non-permanent errors, and (MessageUnboxedError, nil) for permanent errors.
 // Permanent errors can be cached and must be treated as a value to deal with,
 // whereas temporary errors are transient failures.
-func (b *Boxer) UnboxMessage(ctx context.Context, boxed chat1.MessageBoxed, convID chat1.ConversationID, finalizeInfo *chat1.ConversationFinalizeInfo) (chat1.MessageUnboxed, UnboxingError) {
-	tlfName := boxed.ClientHeader.TLFNameExpanded(finalizeInfo)
+func (b *Boxer) UnboxMessage(ctx context.Context, boxed chat1.MessageBoxed, conv chat1.Conversation) (chat1.MessageUnboxed, UnboxingError) {
+	tlfName := boxed.ClientHeader.TLFNameExpanded(conv.Metadata.FinalizeInfo)
 	tlfPublic := boxed.ClientHeader.TlfPublic
-	keys, err := CtxKeyFinder(ctx).Find(ctx, b.tlfInfoSource, tlfName, tlfPublic)
+	nameInfo, err := CtxKeyFinder(ctx).Find(ctx, tlfName, conv.GetMembersType(), tlfPublic)
 	if err != nil {
 		// Check to see if this is a permanent error from the server
 		if b.detectKBFSPermanentServerError(err) {
@@ -130,9 +126,9 @@ func (b *Boxer) UnboxMessage(ctx context.Context, boxed chat1.MessageBoxed, conv
 		return chat1.MessageUnboxed{}, NewTransientUnboxingError(err)
 	}
 
-	var encryptionKey *keybase1.CryptKey
+	var encryptionKey types.CryptKey
 	for _, key := range keys.CryptKeys {
-		if key.KeyGeneration == boxed.KeyGeneration {
+		if key.Generation() == boxed.KeyGeneration {
 			encryptionKey = &key
 			break
 		}
@@ -221,7 +217,7 @@ func (b *Boxer) checkInvariants(ctx context.Context, convID chat1.ConversationID
 	return nil
 }
 
-func (b *Boxer) unbox(ctx context.Context, boxed chat1.MessageBoxed, encryptionKey *keybase1.CryptKey) (*chat1.MessageUnboxedValid, UnboxingError) {
+func (b *Boxer) unbox(ctx context.Context, boxed chat1.MessageBoxed, encryptionKey types.CryptKey) (*chat1.MessageUnboxedValid, UnboxingError) {
 	switch boxed.Version {
 	case chat1.MessageBoxedVersion_VNONE, chat1.MessageBoxedVersion_V1:
 		return b.unboxV1(ctx, boxed, encryptionKey)
@@ -297,7 +293,7 @@ func (b *Boxer) bodyUnsupported(ctx context.Context, bodyVersion chat1.BodyPlain
 
 // unboxV1 unboxes a chat1.MessageBoxed into a keybase1.Message given
 // a keybase1.CryptKey.
-func (b *Boxer) unboxV1(ctx context.Context, boxed chat1.MessageBoxed, encryptionKey *keybase1.CryptKey) (*chat1.MessageUnboxedValid, UnboxingError) {
+func (b *Boxer) unboxV1(ctx context.Context, boxed chat1.MessageBoxed, encryptionKey types.CryptKey) (*chat1.MessageUnboxedValid, UnboxingError) {
 	var err error
 	if boxed.ServerHeader == nil {
 		return nil, NewPermanentUnboxingError(errors.New("nil ServerHeader in MessageBoxed"))
@@ -322,7 +318,7 @@ func (b *Boxer) unboxV1(ctx context.Context, boxed chat1.MessageBoxed, encryptio
 	// will remain empty if the body was deleted
 	var bodyVersioned chat1.BodyPlaintext
 	if !skipBodyVerification {
-		packedBody, err := b.open(boxed.BodyCiphertext, libkb.NaclSecretBoxKey(encryptionKey.Key))
+		packedBody, err := b.open(boxed.BodyCiphertext, libkb.NaclSecretBoxKey(encryptionKey.Material()))
 		if err != nil {
 			return nil, NewPermanentUnboxingError(err)
 		}
@@ -332,7 +328,7 @@ func (b *Boxer) unboxV1(ctx context.Context, boxed chat1.MessageBoxed, encryptio
 	}
 
 	// decrypt header
-	packedHeader, err := b.open(boxed.HeaderCiphertext.AsEncrypted(), libkb.NaclSecretBoxKey(encryptionKey.Key))
+	packedHeader, err := b.open(boxed.HeaderCiphertext.AsEncrypted(), libkb.NaclSecretBoxKey(encryptionKey.Material()))
 	if err != nil {
 		return nil, NewPermanentUnboxingError(err)
 	}
@@ -431,13 +427,13 @@ func (b *Boxer) unboxV1(ctx context.Context, boxed chat1.MessageBoxed, encryptio
 	}, nil
 }
 
-func (b *Boxer) unboxV2(ctx context.Context, boxed chat1.MessageBoxed, baseEncryptionKey *keybase1.CryptKey) (*chat1.MessageUnboxedValid, UnboxingError) {
+func (b *Boxer) unboxV2(ctx context.Context, boxed chat1.MessageBoxed, baseEncryptionKey types.CryptKey) (*chat1.MessageUnboxedValid, UnboxingError) {
 	if boxed.ServerHeader == nil {
 		return nil, NewPermanentUnboxingError(errors.New("nil ServerHeader in MessageBoxed"))
 	}
 
 	derivedEncryptionKey, err := libkb.DeriveSymmetricKey(
-		libkb.NaclSecretBoxKey(baseEncryptionKey.Key), libkb.EncryptionReasonChatMessage)
+		libkb.NaclSecretBoxKey(baseEncryptionKey.Material()), libkb.EncryptionReasonChatMessage)
 	if err != nil {
 		return nil, NewPermanentUnboxingError(err)
 	}
@@ -815,28 +811,29 @@ func (b *Boxer) latestMerkleRoot() (*chat1.MerkleRoot, error) {
 	return merkleRoot, nil
 }
 
-// boxMessage encrypts a keybase1.MessagePlaintext into a chat1.MessageBoxed.  It
+// BoxMessage encrypts a keybase1.MessagePlaintext into a chat1.MessageBoxed.  It
 // finds the most recent key for the TLF.
-func (b *Boxer) BoxMessage(ctx context.Context, msg chat1.MessagePlaintext, signingKeyPair libkb.NaclSigningKeyPair) (*chat1.MessageBoxed, error) {
+func (b *Boxer) BoxMessage(ctx context.Context, msg chat1.MessagePlaintext,
+	conv chat1.Conversation, signingKeyPair libkb.NaclSigningKeyPair) (*chat1.MessageBoxed, error) {
 	tlfName := msg.ClientHeader.TlfName
-	var encryptionKey *keybase1.CryptKey
+	var encryptionKey types.CryptKey
 
 	if len(tlfName) == 0 {
 		return nil, NewBoxingError("blank TLF name given", true)
 	}
 
-	cres, err := CtxKeyFinder(ctx).Find(ctx, b.ckSource, tlfName,
+	nameInfo, err := CtxKeyFinder(ctx).Find(ctx, tlfName, conv.GetMembersType(),
 		msg.ClientHeader.TlfPublic)
 
 	if err != nil {
 		return nil, NewBoxingCryptKeysError(err)
 	}
-	msg.ClientHeader.TlfName = string(cres.NameIDBreaks.CanonicalName)
+	msg.ClientHeader.TlfName = nameInfo.CanonicalName
 	if msg.ClientHeader.TlfPublic {
 		encryptionKey = &publicCryptKey
 	} else {
-		for _, key := range cres.CryptKeys {
-			if encryptionKey == nil || key.KeyGeneration > encryptionKey.KeyGeneration {
+		for _, key := range nameInfo.CryptKeys {
+			if encryptionKey == nil || key.Generation() > encryptionKey.Generation() {
 				encryptionKey = &key
 			}
 		}
@@ -869,7 +866,7 @@ func (b *Boxer) BoxMessage(ctx context.Context, msg chat1.MessagePlaintext, sign
 	return boxed, nil
 }
 
-func (b *Boxer) box(messagePlaintext chat1.MessagePlaintext, encryptionKey *keybase1.CryptKey,
+func (b *Boxer) box(messagePlaintext chat1.MessagePlaintext, encryptionKey types.CryptKey,
 	signingKeyPair libkb.NaclSigningKeyPair, version chat1.MessageBoxedVersion) (*chat1.MessageBoxed, error) {
 	switch version {
 	case chat1.MessageBoxedVersion_V1:
@@ -883,14 +880,14 @@ func (b *Boxer) box(messagePlaintext chat1.MessagePlaintext, encryptionKey *keyb
 
 // boxMessageWithKeys encrypts and signs a keybase1.MessagePlaintext into a
 // chat1.MessageBoxed given a keybase1.CryptKey.
-func (b *Boxer) boxV1(messagePlaintext chat1.MessagePlaintext, key *keybase1.CryptKey,
+func (b *Boxer) boxV1(messagePlaintext chat1.MessagePlaintext, key types.CryptKey,
 	signingKeyPair libkb.NaclSigningKeyPair) (*chat1.MessageBoxed, error) {
 
 	body := chat1.BodyPlaintextV1{
 		MessageBody: messagePlaintext.MessageBody,
 	}
 	plaintextBody := chat1.NewBodyPlaintextWithV1(body)
-	encryptedBody, err := b.seal(plaintextBody, libkb.NaclSecretBoxKey(key.Key))
+	encryptedBody, err := b.seal(plaintextBody, libkb.NaclSecretBoxKey(key.Material()))
 	if err != nil {
 		return nil, err
 	}
@@ -921,7 +918,7 @@ func (b *Boxer) boxV1(messagePlaintext chat1.MessagePlaintext, key *keybase1.Cry
 
 	// create a plaintext header
 	plaintextHeader := chat1.NewHeaderPlaintextWithV1(header)
-	encryptedHeader, err := b.seal(plaintextHeader, libkb.NaclSecretBoxKey(key.Key))
+	encryptedHeader, err := b.seal(plaintextHeader, libkb.NaclSecretBoxKey(key.Material()))
 	if err != nil {
 		return nil, err
 	}
@@ -937,11 +934,11 @@ func (b *Boxer) boxV1(messagePlaintext chat1.MessagePlaintext, key *keybase1.Cry
 	return boxed, nil
 }
 
-func (b *Boxer) boxV2(messagePlaintext chat1.MessagePlaintext, baseEncryptionKey *keybase1.CryptKey,
+func (b *Boxer) boxV2(messagePlaintext chat1.MessagePlaintext, baseEncryptionKey types.CryptKey,
 	signingKeyPair libkb.NaclSigningKeyPair) (*chat1.MessageBoxed, error) {
 
 	derivedEncryptionKey, err := libkb.DeriveSymmetricKey(
-		libkb.NaclSecretBoxKey(baseEncryptionKey.Key), libkb.EncryptionReasonChatMessage)
+		libkb.NaclSecretBoxKey(baseEncryptionKey.Material()), libkb.EncryptionReasonChatMessage)
 	if err != nil {
 		return nil, err
 	}
@@ -1352,9 +1349,10 @@ func (b *Boxer) compareHeadersV1(ctx context.Context, hServer chat1.MessageClien
 	return nil
 }
 
-func (b *Boxer) CompareTlfNames(ctx context.Context, tlfName1, tlfName2 string, tlfPublic bool) (bool, error) {
+func (b *Boxer) CompareTlfNames(ctx context.Context, tlfName1, tlfName2 string,
+	conv chat1.Conversation, tlfPublic bool) (bool, error) {
 	get1 := func(tlfName string, tlfPublic bool) (string, error) {
-		cres, err := CtxKeyFinder(ctx).Find(ctx, b.tlfInfoSource, tlfName, tlfPublic)
+		cres, err := CtxKeyFinder(ctx).Find(ctx, tlfName, conv.GetMembersType(), tlfPublic)
 		if err != nil {
 			return "", err
 		}

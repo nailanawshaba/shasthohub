@@ -1917,6 +1917,7 @@ type ConversationInfoLocal struct {
 	TopicName    string                    `codec:"topicName" json:"topicName"`
 	Visibility   TLFVisibility             `codec:"visibility" json:"visibility"`
 	Status       ConversationStatus        `codec:"status" json:"status"`
+	MembersType  ConversationMembersType   `codec:"membersType" json:"membersType"`
 	WriterNames  []string                  `codec:"writerNames" json:"writerNames"`
 	ReaderNames  []string                  `codec:"readerNames" json:"readerNames"`
 	FinalizeInfo *ConversationFinalizeInfo `codec:"finalizeInfo,omitempty" json:"finalizeInfo,omitempty"`
@@ -1924,12 +1925,13 @@ type ConversationInfoLocal struct {
 
 func (o ConversationInfoLocal) DeepCopy() ConversationInfoLocal {
 	return ConversationInfoLocal{
-		Id:         o.Id.DeepCopy(),
-		Triple:     o.Triple.DeepCopy(),
-		TlfName:    o.TlfName,
-		TopicName:  o.TopicName,
-		Visibility: o.Visibility.DeepCopy(),
-		Status:     o.Status.DeepCopy(),
+		Id:          o.Id.DeepCopy(),
+		Triple:      o.Triple.DeepCopy(),
+		TlfName:     o.TlfName,
+		TopicName:   o.TopicName,
+		Visibility:  o.Visibility.DeepCopy(),
+		Status:      o.Status.DeepCopy(),
+		MembersType: o.MembersType.DeepCopy(),
 		WriterNames: (func(x []string) []string {
 			var ret []string
 			for _, v := range x {

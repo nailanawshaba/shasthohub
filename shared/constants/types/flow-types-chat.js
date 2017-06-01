@@ -1044,6 +1044,7 @@ export type ConversationInfoLocal = {
   topicName: string,
   visibility: TLFVisibility,
   status: ConversationStatus,
+  membersType: ConversationMembersType,
   writerNames?: ?Array<string>,
   readerNames?: ?Array<string>,
   finalizeInfo?: ?ConversationFinalizeInfo,

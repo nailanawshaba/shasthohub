@@ -361,6 +361,10 @@ func (c ConversationLocal) GetTopicType() TopicType {
 	return c.Info.Triple.TopicType
 }
 
+func (c ConversationLocal) GetMembersType() ConversationMembersType {
+	return c.Info.MembersType
+}
+
 func (c Conversation) GetMtime() gregor1.Time {
 	return c.ReaderInfo.Mtime
 }
@@ -371,6 +375,10 @@ func (c Conversation) GetConvID() ConversationID {
 
 func (c Conversation) GetTopicType() TopicType {
 	return c.Metadata.IdTriple.TopicType
+}
+
+func (c Conversation) GetMembersType() ConversationMembersType {
+	return c.Metadata.MembersType
 }
 
 func (c Conversation) GetMaxMessage(typ MessageType) (MessageSummary, error) {

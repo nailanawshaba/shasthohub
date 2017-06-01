@@ -16,7 +16,6 @@ import (
 	"github.com/keybase/client/go/chat/globals"
 	"github.com/keybase/client/go/chat/s3"
 	"github.com/keybase/client/go/chat/storage"
-	"github.com/keybase/client/go/chat/types"
 	"github.com/keybase/client/go/chat/utils"
 	"github.com/keybase/client/go/libkb"
 	"github.com/keybase/client/go/protocol/chat1"
@@ -42,7 +41,6 @@ type Server struct {
 
 	serverConn    ServerConnection
 	uiSource      UISource
-	tlfInfoSource types.TLFInfoSource
 	boxer         *Boxer
 	store         *AttachmentStore
 	identNotifier *IdentifyNotifier
@@ -55,15 +53,13 @@ type Server struct {
 
 func NewServer(g *globals.Context, store *AttachmentStore, serverConn ServerConnection,
 	uiSource UISource) *Server {
-	tlf := NewKBFSTLFInfoSource(g)
 	return &Server{
 		Contextified:  globals.NewContextified(g),
 		DebugLabeler:  utils.NewDebugLabeler(g, "Server", false),
 		serverConn:    serverConn,
 		uiSource:      uiSource,
 		store:         store,
-		tlfInfoSource: tlf,
-		boxer:         NewBoxer(g, tlf),
+		boxer:         NewBoxer(g),
 		identNotifier: NewIdentifyNotifier(g),
 	}
 }

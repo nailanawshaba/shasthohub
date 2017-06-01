@@ -22,33 +22,27 @@ type localizerPipeline struct {
 	globals.Contextified
 	utils.DebugLabeler
 
-	offline       bool
-	superXform    supersedesTransform
-	tlfInfoSource types.TLFInfoSource
+	offline    bool
+	superXform supersedesTransform
 }
 
-func newLocalizerPipeline(g *globals.Context, superXform supersedesTransform,
-	tlfInfoSource types.TLFInfoSource) *localizerPipeline {
+func newLocalizerPipeline(g *globals.Context, superXform supersedesTransform) *localizerPipeline {
 	return &localizerPipeline{
-		Contextified:  globals.NewContextified(g),
-		DebugLabeler:  utils.NewDebugLabeler(g, "localizerPipeline", false),
-		superXform:    superXform,
-		tlfInfoSource: tlfInfoSource,
+		Contextified: globals.NewContextified(g),
+		DebugLabeler: utils.NewDebugLabeler(g, "localizerPipeline", false),
+		superXform:   superXform,
 	}
 }
 
 type BlockingLocalizer struct {
 	globals.Contextified
 	pipeline *localizerPipeline
-
-	tlfInfoSource types.TLFInfoSource
 }
 
-func NewBlockingLocalizer(g *globals.Context, tlfInfoSource types.TLFInfoSource) *BlockingLocalizer {
+func NewBlockingLocalizer(g *globals.Context) *BlockingLocalizer {
 	return &BlockingLocalizer{
-		Contextified:  globals.NewContextified(g),
-		pipeline:      newLocalizerPipeline(g, newBasicSupersedesTransform(g), tlfInfoSource),
-		tlfInfoSource: tlfInfoSource,
+		Contextified: globals.NewContextified(g),
+		pipeline:     newLocalizerPipeline(g, newBasicSupersedesTransform(g)),
 	}
 }
 
@@ -81,21 +75,19 @@ type NonblockingLocalizer struct {
 	globals.Contextified
 	utils.DebugLabeler
 
-	tlfInfoSource types.TLFInfoSource
-	pipeline      *localizerPipeline
-	localizeCb    chan NonblockInboxResult
-	maxUnbox      *int
+	pipeline   *localizerPipeline
+	localizeCb chan NonblockInboxResult
+	maxUnbox   *int
 }
 
 func NewNonblockingLocalizer(g *globals.Context, localizeCb chan NonblockInboxResult,
-	maxUnbox *int, tlfInfoSource types.TLFInfoSource) *NonblockingLocalizer {
+	maxUnbox *int) *NonblockingLocalizer {
 	return &NonblockingLocalizer{
-		Contextified:  globals.NewContextified(g),
-		DebugLabeler:  utils.NewDebugLabeler(g, "NonblockingLocalizer", false),
-		pipeline:      newLocalizerPipeline(g, newBasicSupersedesTransform(g), tlfInfoSource),
-		localizeCb:    localizeCb,
-		maxUnbox:      maxUnbox,
-		tlfInfoSource: tlfInfoSource,
+		Contextified: globals.NewContextified(g),
+		DebugLabeler: utils.NewDebugLabeler(g, "NonblockingLocalizer", false),
+		pipeline:     newLocalizerPipeline(g, newBasicSupersedesTransform(g)),
+		localizeCb:   localizeCb,
+		maxUnbox:     maxUnbox,
 	}
 }
 
@@ -155,7 +147,7 @@ func (b *NonblockingLocalizer) Name() string {
 }
 
 func filterConvLocals(convLocals []chat1.ConversationLocal, rquery *chat1.GetInboxQuery,
-	query *chat1.GetInboxLocalQuery, tlfInfo *types.TLFInfo) (res []chat1.ConversationLocal, err error) {
+	query *chat1.GetInboxLocalQuery, nameInfo types.NameInfo) (res []chat1.ConversationLocal, err error) {
 
 	for _, convLocal := range convLocals {
 
@@ -171,7 +163,7 @@ func filterConvLocals(convLocals []chat1.ConversationLocal, rquery *chat1.GetInb
 			if convLocal.Info.Visibility != rquery.Visibility() {
 				return nil, fmt.Errorf("server conversation TLF visibility mismatch: %s, expected %s", convLocal.Info.Visibility, rquery.Visibility())
 			}
-			if !tlfInfo.ID.Eq(convLocal.Info.Triple.Tlfid) {
+			if !nameInfo.ID.Eq(convLocal.Info.Triple.Tlfid) {
 				return nil, fmt.Errorf("server conversation TLF ID mismatch: %s, expected %s", convLocal.Info.Triple.Tlfid, tlfInfo.ID)
 			}
 			// tlfInfo.ID and rquery.TlfID should always match, but just in case:
@@ -199,18 +191,15 @@ type baseInboxSource struct {
 	globals.Contextified
 	utils.DebugLabeler
 
-	tlfInfoSource    types.TLFInfoSource
 	getChatInterface func() chat1.RemoteInterface
 	offline          bool
 }
 
-func newBaseInboxSource(g *globals.Context, getChatInterface func() chat1.RemoteInterface,
-	tlfInfoSource types.TLFInfoSource) *baseInboxSource {
+func newBaseInboxSource(g *globals.Context, getChatInterface func() chat1.RemoteInterface) *baseInboxSource {
 	return &baseInboxSource{
 		Contextified:     globals.NewContextified(g),
 		DebugLabeler:     utils.NewDebugLabeler(g, "baseInboxSource", false),
 		getChatInterface: getChatInterface,
-		tlfInfoSource:    tlfInfoSource,
 	}
 }
 
@@ -245,12 +234,8 @@ func (b *baseInboxSource) SetRemoteInterface(ri func() chat1.RemoteInterface) {
 	b.getChatInterface = ri
 }
 
-func (b *baseInboxSource) SetTLFInfoSource(tlfInfoSource types.TLFInfoSource) {
-	b.tlfInfoSource = tlfInfoSource
-}
-
 func (b *baseInboxSource) GetInboxQueryLocalToRemote(ctx context.Context,
-	lquery *chat1.GetInboxLocalQuery) (rquery *chat1.GetInboxQuery, info *types.TLFInfo, err error) {
+	lquery *chat1.GetInboxLocalQuery) (rquery *chat1.GetInboxQuery, info types.NameInfo, err error) {
 
 	if lquery == nil {
 		return nil, nil, nil
@@ -282,8 +267,8 @@ func (b *baseInboxSource) GetInboxQueryLocalToRemote(ctx context.Context,
 	return rquery, info, nil
 }
 
-func GetInboxQueryTLFInfo(ctx context.Context, tlfInfo types.TLFInfoSource,
-	lquery *chat1.GetInboxLocalQuery) (*types.TLFInfo, error) {
+func GetInboxQueryNameInfo(ctx context.Context,
+	lquery *chat1.GetInboxLocalQuery) (types.NameInfo, error) {
 	if lquery.TlfName == nil || len(*lquery.TlfName) == 0 {
 		return nil, nil
 	}
@@ -298,12 +283,11 @@ type RemoteInboxSource struct {
 
 var _ types.InboxSource = (*RemoteInboxSource)(nil)
 
-func NewRemoteInboxSource(g *globals.Context, ri func() chat1.RemoteInterface,
-	tlfInfoSource types.TLFInfoSource) *RemoteInboxSource {
+func NewRemoteInboxSource(g *globals.Context, ri func() chat1.RemoteInterface) *RemoteInboxSource {
 	return &RemoteInboxSource{
 		Contextified:    globals.NewContextified(g),
 		DebugLabeler:    utils.NewDebugLabeler(g, "RemoteInboxSource", false),
-		baseInboxSource: newBaseInboxSource(g, ri, tlfInfoSource),
+		baseInboxSource: newBaseInboxSource(g, ri),
 	}
 }
 
@@ -312,7 +296,7 @@ func (s *RemoteInboxSource) Read(ctx context.Context, uid gregor1.UID,
 	p *chat1.Pagination) (chat1.Inbox, *chat1.RateLimit, error) {
 
 	if localizer == nil {
-		localizer = NewBlockingLocalizer(s.G(), s.tlfInfoSource)
+		localizer = NewBlockingLocalizer(s.G())
 	}
 	if s.IsOffline() {
 		localizer.SetOffline()
@@ -404,13 +388,11 @@ type HybridInboxSource struct {
 var _ types.InboxSource = (*HybridInboxSource)(nil)
 
 func NewHybridInboxSource(g *globals.Context,
-	getChatInterface func() chat1.RemoteInterface,
-	tlfInfoSource types.TLFInfoSource,
-) *HybridInboxSource {
+	getChatInterface func() chat1.RemoteInterface) *HybridInboxSource {
 	return &HybridInboxSource{
 		Contextified:    globals.NewContextified(g),
 		DebugLabeler:    utils.NewDebugLabeler(g, "HybridInboxSource", false),
-		baseInboxSource: newBaseInboxSource(g, getChatInterface, tlfInfoSource),
+		baseInboxSource: newBaseInboxSource(g, getChatInterface),
 	}
 }
 
@@ -957,8 +939,9 @@ func (s *localizerPipeline) localizeConversation(ctx context.Context, uid gregor
 	// Only do this check if there is a chance the TLF name might be an SBS name. Only attempt
 	// this if we are online
 	if !s.offline && s.needsCanonicalize(conversationLocal.Info.TlfName) {
-		info, err := s.tlfInfoSource.Lookup(ctx,
-			conversationLocal.Info.TLFNameExpanded(), conversationLocal.Info.Visibility)
+		info, err := CtxKeyFinder(ctx).Lookup(ctx,
+			conversationLocal.Info.TLFNameExpanded(), conversationLocal.GetMembersType(),
+			conversationLocal.Info.Visibility)
 		if err != nil {
 			errMsg := err.Error()
 			conversationLocal.Error = chat1.NewConversationErrorLocal(
@@ -1080,12 +1063,11 @@ func (s *localizerPipeline) checkRekeyErrorInner(ctx context.Context, fromErr er
 	return convErrorLocal, nil
 }
 
-func NewInboxSource(g *globals.Context, typ string, ri func() chat1.RemoteInterface,
-	tlfInfoSource types.TLFInfoSource) types.InboxSource {
-	remoteInbox := NewRemoteInboxSource(g, ri, tlfInfoSource)
+func NewInboxSource(g *globals.Context, typ string, ri func() chat1.RemoteInterface) types.InboxSource {
+	remoteInbox := NewRemoteInboxSource(g, ri)
 	switch typ {
 	case "hybrid":
-		return NewHybridInboxSource(g, ri, tlfInfoSource)
+		return NewHybridInboxSource(g, ri)
 	default:
 		return remoteInbox
 	}
