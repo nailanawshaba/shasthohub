@@ -95,6 +95,11 @@ protocol remote {
     union { null, RateLimit } rateLimit;
   }
 
+  record GetPublicConversationRes {
+    Conversation conversation; 
+    union { null, RateLimit } rateLimit;
+  }
+
   record GetPublicConversationsRes {
     array<Conversation> conversations; 
     union { null, RateLimit } rateLimit;
@@ -102,7 +107,8 @@ protocol remote {
 
   GetInboxRemoteRes getInboxRemote(InboxVers vers, union { null, GetInboxQuery } query, union { null, Pagination } pagination);
   GetThreadRemoteRes getThreadRemote(ConversationID conversationID, union { null, GetThreadQuery } query, union { null, Pagination } pagination);
-  GetPublicConversationsRes getPublicConversations(TLFID tlfID, TopicType topicType, boolean summarizeMaxMsgs);
+  GetPublicConversationsRes getPublicConversations(TLFID tlfID, TopicType topicType, boolean summarizeMaxMsgs, union { ConversationID, null } convID);
+
 
   PostRemoteRes postRemote(ConversationID conversationID, MessageBoxed messageBoxed);
   NewConversationRemoteRes newConversationRemote(ConversationIDTriple idTriple);

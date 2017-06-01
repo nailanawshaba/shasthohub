@@ -227,6 +227,23 @@
     },
     {
       "type": "record",
+      "name": "GetPublicConversationRes",
+      "fields": [
+        {
+          "type": "Conversation",
+          "name": "conversation"
+        },
+        {
+          "type": [
+            null,
+            "RateLimit"
+          ],
+          "name": "rateLimit"
+        }
+      ]
+    },
+    {
+      "type": "record",
       "name": "GetPublicConversationsRes",
       "fields": [
         {
@@ -500,6 +517,13 @@
         {
           "name": "summarizeMaxMsgs",
           "type": "boolean"
+        },
+        {
+          "name": "convID",
+          "type": [
+            "ConversationID",
+            null
+          ]
         }
       ],
       "response": "GetPublicConversationsRes"

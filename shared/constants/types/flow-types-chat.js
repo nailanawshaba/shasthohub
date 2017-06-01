@@ -1230,6 +1230,11 @@ export type GetMessagesRemoteRes = {
   rateLimit?: ?RateLimit,
 }
 
+export type GetPublicConversationRes = {
+  conversation: Conversation,
+  rateLimit?: ?RateLimit,
+}
+
 export type GetPublicConversationsRes = {
   conversations?: ?Array<Conversation>,
   rateLimit?: ?RateLimit,
@@ -2081,7 +2086,8 @@ export type remoteGetMessagesRemoteRpcParam = Exact<{
 export type remoteGetPublicConversationsRpcParam = Exact<{
   tlfID: TLFID,
   topicType: TopicType,
-  summarizeMaxMsgs: boolean
+  summarizeMaxMsgs: boolean,
+  convID?: ?ConversationID
 }>
 
 export type remoteGetS3ParamsRpcParam = Exact<{

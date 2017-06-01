@@ -264,6 +264,24 @@ func (o SetConversationStatusRes) DeepCopy() SetConversationStatusRes {
 	}
 }
 
+type GetPublicConversationRes struct {
+	Conversation Conversation `codec:"conversation" json:"conversation"`
+	RateLimit    *RateLimit   `codec:"rateLimit,omitempty" json:"rateLimit,omitempty"`
+}
+
+func (o GetPublicConversationRes) DeepCopy() GetPublicConversationRes {
+	return GetPublicConversationRes{
+		Conversation: o.Conversation.DeepCopy(),
+		RateLimit: (func(x *RateLimit) *RateLimit {
+			if x == nil {
+				return nil
+			}
+			tmp := (*x).DeepCopy()
+			return &tmp
+		})(o.RateLimit),
+	}
+}
+
 type GetPublicConversationsRes struct {
 	Conversations []Conversation `codec:"conversations" json:"conversations"`
 	RateLimit     *RateLimit     `codec:"rateLimit,omitempty" json:"rateLimit,omitempty"`
@@ -636,6 +654,7 @@ type GetPublicConversationsArg struct {
 	TlfID            TLFID     `codec:"tlfID" json:"tlfID"`
 	TopicType        TopicType `codec:"topicType" json:"topicType"`
 	SummarizeMaxMsgs bool      `codec:"summarizeMaxMsgs" json:"summarizeMaxMsgs"`
+	ConvID           ERROR     `codec:"convID" json:"convID"`
 }
 
 func (o GetPublicConversationsArg) DeepCopy() GetPublicConversationsArg {
@@ -643,6 +662,7 @@ func (o GetPublicConversationsArg) DeepCopy() GetPublicConversationsArg {
 		TlfID:            o.TlfID.DeepCopy(),
 		TopicType:        o.TopicType.DeepCopy(),
 		SummarizeMaxMsgs: o.SummarizeMaxMsgs,
+		ConvID:           ERROR,
 	}
 }
 
