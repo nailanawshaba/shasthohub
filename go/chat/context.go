@@ -94,8 +94,14 @@ func CtxAddLogTags(ctx context.Context, env appTypeSource) context.Context {
 
 func Context(ctx context.Context, g *globals.Context, mode keybase1.TLFIdentifyBehavior,
 	breaks *[]keybase1.TLFIdentifyFailure, notifier *IdentifyNotifier) context.Context {
+	if breaks == nil {
+		breaks = new([]keybase1.TLFIdentifyFailure)
+	}
 	res := IdentifyModeCtx(ctx, mode, breaks)
-	res = context.WithValue(res, kfKey, NewKeyFinder(g))
+	val := res.Value(kfKey)
+	if _, ok := val.(KeyFinder); !ok {
+		res = context.WithValue(res, kfKey, NewKeyFinder(g))
+	}
 	res = context.WithValue(res, inKey, notifier)
 	res = CtxAddLogTags(res, g.GetEnv())
 	return res

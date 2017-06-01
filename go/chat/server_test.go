@@ -16,6 +16,7 @@ import (
 	"github.com/keybase/client/go/chat/globals"
 	"github.com/keybase/client/go/chat/msgchecker"
 	"github.com/keybase/client/go/chat/storage"
+	"github.com/keybase/client/go/chat/types"
 	"github.com/keybase/client/go/kbtest"
 	"github.com/keybase/client/go/libkb"
 	"github.com/keybase/client/go/protocol/chat1"
@@ -26,8 +27,9 @@ import (
 )
 
 type chatTestUserContext struct {
-	u *kbtest.FakeUser
-	h *Server
+	startCtx context.Context
+	u        *kbtest.FakeUser
+	h        *Server
 }
 
 func (tuc *chatTestUserContext) user() *kbtest.FakeUser {
@@ -53,6 +55,13 @@ func makeChatTestContext(t *testing.T, name string, numUsers int) *chatTestConte
 
 func (c *chatTestContext) advanceFakeClock(d time.Duration) {
 	c.world.Fc.Advance(d)
+}
+
+func newTestContextWithTlfMock(tc *kbtest.ChatTestContext, tlfMock types.NameInfoSource) context.Context {
+	ctx := Context(context.Background(), tc.Context(), keybase1.TLFIdentifyBehavior_CHAT_CLI,
+		nil, NewIdentifyNotifier(tc.Context()))
+	CtxKeyFinder(ctx, tc.Context()).SetNameInfoSourceOverride(tlfMock)
+	return ctx
 }
 
 type testUISource struct {
@@ -84,15 +93,14 @@ func (c *chatTestContext) as(t *testing.T, user *kbtest.FakeUser) *chatTestUserC
 	mockRemote := kbtest.NewChatRemoteMock(c.world)
 	mockRemote.SetCurrentUser(user.User.GetUID().ToBytes())
 
-	h.tlfInfoSource = kbtest.NewTlfMock(c.world)
-	h.boxer = NewBoxer(g, h.tlfInfoSource)
+	ctx := newTestContextWithTlfMock(tc, kbtest.NewTlfMock(c.world))
+	h.boxer = NewBoxer(g)
 
 	chatStorage := storage.New(g)
 	g.ConvSource = NewHybridConversationSource(g, h.boxer, chatStorage,
 		func() chat1.RemoteInterface { return mockRemote })
 	g.InboxSource = NewHybridInboxSource(g,
-		func() chat1.RemoteInterface { return mockRemote },
-		h.tlfInfoSource)
+		func() chat1.RemoteInterface { return mockRemote })
 	g.ServerCacheVersions = storage.NewServerVersions(g)
 	chatSyncer := NewSyncer(g)
 	g.Syncer = chatSyncer
@@ -115,8 +123,9 @@ func (c *chatTestContext) as(t *testing.T, user *kbtest.FakeUser) *chatTestUserC
 	g.FetchRetrier.Start(context.TODO(), user.User.GetUID().ToBytes())
 
 	tuc := &chatTestUserContext{
-		h: h,
-		u: user,
+		h:        h,
+		u:        user,
+		startCtx: ctx,
 	}
 	c.userContextCache[user.Username] = tuc
 	return tuc
@@ -149,7 +158,8 @@ func mustCreateConversationForTest(t *testing.T, ctc *chatTestContext, creator *
 
 func mustCreateConversationForTestNoAdvanceClock(t *testing.T, ctc *chatTestContext, creator *kbtest.FakeUser, topicType chat1.TopicType, visibility chat1.TLFVisibility, others ...string) (created chat1.ConversationInfoLocal) {
 	var err error
-	ncres, err := ctc.as(t, creator).chatLocalHandler().NewConversationLocal(context.Background(), chat1.NewConversationLocalArg{
+	tc := ctc.as(t, creator)
+	ncres, err := tc.chatLocalHandler().NewConversationLocal(tc.startCtx, chat1.NewConversationLocalArg{
 		TlfName:       strings.Join(others, ",") + "," + creator.Username,
 		TopicType:     topicType,
 		TlfVisibility: visibility,
@@ -377,7 +387,10 @@ func TestChatGetInboxAndUnboxLocalTlfName(t *testing.T) {
 	visibility := chat1.TLFVisibility_PRIVATE
 	gilres, err := ctc.as(t, users[0]).chatLocalHandler().GetInboxAndUnboxLocal(context.Background(), chat1.GetInboxAndUnboxLocalArg{
 		Query: &chat1.GetInboxLocalQuery{
-			TlfName:       &tlfName,
+			Name: &chat1.NameQuery{
+				Name:        tlfName,
+				MembersType: chat1.ConversationMembersType_KBFS,
+			},
 			TlfVisibility: &visibility,
 		},
 	})

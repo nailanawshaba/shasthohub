@@ -177,15 +177,23 @@ func (m TlfMock) getTlfID(cname keybase1.CanonicalTlfName) (keybase1.TLFID, erro
 	return keybase1.TLFID(hex.EncodeToString([]byte(tlfID))), nil
 }
 
-func (m TlfMock) Lookup(ctx context.Context, tlfName string, vis chat1.TLFVisibility) (res *types.TLFInfo, err error) {
+func (m TlfMock) Lookup(ctx context.Context, tlfName string, vis chat1.TLFVisibility) (res types.NameInfo, err error) {
 	var tlfID keybase1.TLFID
 	name := CanonicalTlfNameForTest(tlfName)
-	res = new(types.TLFInfo)
 	res.CanonicalName = name.String()
 	if tlfID, err = m.getTlfID(name); err != nil {
-		return nil, err
+		return res, err
 	}
 	res.ID = tlfID.ToBytes()
+	if vis == chat1.TLFVisibility_PRIVATE {
+		cres, err := m.CryptKeys(ctx, tlfName)
+		if err != nil {
+			return res, err
+		}
+		for _, key := range cres.CryptKeys {
+			res.CryptKeys = append(res.CryptKeys, key)
+		}
+	}
 	return res, nil
 }
 

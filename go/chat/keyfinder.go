@@ -8,12 +8,13 @@ import (
 	"github.com/keybase/client/go/chat/types"
 	"github.com/keybase/client/go/chat/utils"
 	"github.com/keybase/client/go/protocol/chat1"
-	context "golang.org/x/net/context"
+	"golang.org/x/net/context"
 )
 
 // KeyFinder remembers results from previous calls to CryptKeys().
 type KeyFinder interface {
 	Find(ctx context.Context, name string, membersType chat1.ConversationMembersType, public bool) (types.NameInfo, error)
+	SetNameInfoSourceOverride(types.NameInfoSource)
 }
 
 type KeyFinderImpl struct {
@@ -22,6 +23,9 @@ type KeyFinderImpl struct {
 	sync.Mutex
 
 	keys map[string]types.NameInfo
+
+	// Testing
+	testingNameInfoSource types.NameInfoSource
 }
 
 // NewKeyFinder creates a KeyFinder.
@@ -39,6 +43,10 @@ func (k *KeyFinderImpl) cacheKey(name string, membersType chat1.ConversationMemb
 
 func (k *KeyFinderImpl) createNameInfoSource(ctx context.Context,
 	membersType chat1.ConversationMembersType) types.NameInfoSource {
+	if k.testingNameInfoSource != nil {
+		k.Debug(ctx, "createNameInfoSource: warning: using overridden name info source")
+		return k.testingNameInfoSource
+	}
 	switch membersType {
 	case chat1.ConversationMembersType_KBFS:
 		return NewKBFSNameInfoSource(k.G())
@@ -77,4 +85,8 @@ func (k *KeyFinderImpl) Find(ctx context.Context, name string,
 	k.Unlock()
 
 	return nameInfo, nil
+}
+
+func (k *KeyFinderImpl) SetNameInfoSourceOverride(ni types.NameInfoSource) {
+	k.testingNameInfoSource = ni
 }

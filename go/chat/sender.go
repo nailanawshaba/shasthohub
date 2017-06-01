@@ -36,6 +36,8 @@ type BlockingSender struct {
 	getRi func() chat1.RemoteInterface
 }
 
+var _ Sender = (*BlockingSender)(nil)
+
 func NewBlockingSender(g *globals.Context, boxer *Boxer, store *AttachmentStore,
 	getRi func() chat1.RemoteInterface) *BlockingSender {
 	return &BlockingSender{
@@ -512,6 +514,9 @@ type Deliverer struct {
 	connected     bool
 	disconnTime   time.Time
 	clock         clockwork.Clock
+
+	// Testing
+	testingNameInfoSource types.NameInfoSource
 }
 
 var _ types.MessageDeliverer = (*Deliverer)(nil)
@@ -534,6 +539,10 @@ func NewDeliverer(g *globals.Context, sender Sender) *Deliverer {
 	})
 
 	return d
+}
+
+func (s *Deliverer) setTestingNameInfoSource(ni types.NameInfoSource) {
+	s.testingNameInfoSource = ni
 }
 
 func (s *Deliverer) Start(ctx context.Context, uid gregor1.UID) {
@@ -709,6 +718,9 @@ func (s *Deliverer) deliverLoop() {
 
 			bctx := Context(context.Background(), s.G(), obr.IdentifyBehavior, &breaks,
 				s.identNotifier)
+			if s.testingNameInfoSource != nil {
+				CtxKeyFinder(bctx, s.G()).SetNameInfoSourceOverride(s.testingNameInfoSource)
+			}
 			if !s.connected {
 				err = errors.New("disconnected from chat server")
 			} else {
@@ -748,6 +760,8 @@ type NonblockingSender struct {
 	sender Sender
 }
 
+var _ Sender = (*NonblockingSender)(nil)
+
 func NewNonblockingSender(g *globals.Context, sender Sender) *NonblockingSender {
 	s := &NonblockingSender{
 		Contextified: globals.NewContextified(g),
@@ -758,17 +772,7 @@ func NewNonblockingSender(g *globals.Context, sender Sender) *NonblockingSender 
 }
 
 func (s *NonblockingSender) Prepare(ctx context.Context, msg chat1.MessagePlaintext,
-	membersType chat1.ConversationMembersType, convID *chat1.ConversationID) (*chat1.MessageBoxed, []chat1.Asset, error) {
-	var conv *chat1.Conversation
-	if convID != nil {
-		// Get conversation metadata first
-		uconv, _, err := utils.GetUnverifiedConv(ctx, s.G(), msg.ClientHeader.Sender, *convID, true)
-		if err != nil {
-			s.Debug(ctx, "Prepare: error getting conversation metadata: %s", err.Error())
-			return nil, nil, err
-		}
-		conv = &uconv
-	}
+	membersType chat1.ConversationMembersType, conv *chat1.Conversation) (*chat1.MessageBoxed, []chat1.Asset, error) {
 	return s.sender.Prepare(ctx, msg, membersType, conv)
 }
 
