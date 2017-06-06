@@ -723,6 +723,19 @@
       ],
       "response": null
     },
+    "updateTeam": {
+      "request": [
+        {
+          "name": "teamID",
+          "type": "TLFID"
+        },
+        {
+          "name": "members",
+          "type": "keybase1.TeamMembers"
+        }
+      ],
+      "response": null
+    },
     "publishReadMessage": {
       "request": [
         {

@@ -853,6 +853,18 @@ func (o TlfResolveArg) DeepCopy() TlfResolveArg {
 	}
 }
 
+type UpdateTeamArg struct {
+	TeamID  TLFID                `codec:"teamID" json:"teamID"`
+	Members keybase1.TeamMembers `codec:"members" json:"members"`
+}
+
+func (o UpdateTeamArg) DeepCopy() UpdateTeamArg {
+	return UpdateTeamArg{
+		TeamID:  o.TeamID.DeepCopy(),
+		Members: o.Members.DeepCopy(),
+	}
+}
+
 type PublishReadMessageArg struct {
 	Uid    gregor1.UID    `codec:"uid" json:"uid"`
 	ConvID ConversationID `codec:"convID" json:"convID"`
@@ -916,6 +928,7 @@ type RemoteInterface interface {
 	SyncAll(context.Context, SyncAllArg) (SyncAllResult, error)
 	TlfFinalize(context.Context, TlfFinalizeArg) error
 	TlfResolve(context.Context, TlfResolveArg) error
+	UpdateTeam(context.Context, UpdateTeamArg) error
 	PublishReadMessage(context.Context, PublishReadMessageArg) error
 	PublishSetConversationStatus(context.Context, PublishSetConversationStatusArg) error
 	UpdateTypingRemote(context.Context, UpdateTypingRemoteArg) error
@@ -1213,6 +1226,22 @@ func RemoteProtocol(i RemoteInterface) rpc.Protocol {
 				},
 				MethodType: rpc.MethodCall,
 			},
+			"updateTeam": {
+				MakeArg: func() interface{} {
+					ret := make([]UpdateTeamArg, 1)
+					return &ret
+				},
+				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
+					typedArgs, ok := args.(*[]UpdateTeamArg)
+					if !ok {
+						err = rpc.NewTypeError((*[]UpdateTeamArg)(nil), args)
+						return
+					}
+					err = i.UpdateTeam(ctx, (*typedArgs)[0])
+					return
+				},
+				MethodType: rpc.MethodCall,
+			},
 			"publishReadMessage": {
 				MakeArg: func() interface{} {
 					ret := make([]PublishReadMessageArg, 1)
@@ -1362,6 +1391,11 @@ func (c RemoteClient) TlfFinalize(ctx context.Context, __arg TlfFinalizeArg) (er
 
 func (c RemoteClient) TlfResolve(ctx context.Context, __arg TlfResolveArg) (err error) {
 	err = c.Cli.Call(ctx, "chat.1.remote.tlfResolve", []interface{}{__arg}, nil)
+	return
+}
+
+func (c RemoteClient) UpdateTeam(ctx context.Context, __arg UpdateTeamArg) (err error) {
+	err = c.Cli.Call(ctx, "chat.1.remote.updateTeam", []interface{}{__arg}, nil)
 	return
 }
 

@@ -873,6 +873,21 @@ export function remoteTlfResolveRpcPromise (request: $Exact<requestCommon & requ
   return new Promise((resolve, reject) => engineRpcOutgoing('chat.1.remote.tlfResolve', request, (error, result) => error ? reject(error) : resolve(result)))
 }
 
+export function remoteUpdateTeamRpc (request: Exact<requestCommon & requestErrorCallback & {param: remoteUpdateTeamRpcParam}>) {
+  engineRpcOutgoing('chat.1.remote.updateTeam', request)
+}
+
+export function remoteUpdateTeamRpcChannelMap (configKeys: Array<string>, request: $Exact<requestCommon & requestErrorCallback & {param: remoteUpdateTeamRpcParam}>): EngineChannel {
+  return engine()._channelMapRpcHelper(configKeys, 'chat.1.remote.updateTeam', request)
+}
+export function remoteUpdateTeamRpcChannelMapOld (channelConfig: ChannelConfig<*>, request: $Exact<requestCommon & requestErrorCallback & {param: remoteUpdateTeamRpcParam}>): ChannelMap<*> {
+  return _channelMapRpcHelper(channelConfig, (incomingCallMap, callback) => { engineRpcOutgoing('chat.1.remote.updateTeam', request, callback, incomingCallMap) })
+}
+
+export function remoteUpdateTeamRpcPromise (request: $Exact<requestCommon & requestErrorCallback & {param: remoteUpdateTeamRpcParam}>): Promise<void> {
+  return new Promise((resolve, reject) => engineRpcOutgoing('chat.1.remote.updateTeam', request, (error, result) => error ? reject(error) : resolve(result)))
+}
+
 export function remoteUpdateTypingRemoteRpc (request: Exact<requestCommon & requestErrorCallback & {param: remoteUpdateTypingRemoteRpcParam}>) {
   engineRpcOutgoing('chat.1.remote.updateTypingRemote', request)
 }
@@ -2178,6 +2193,11 @@ export type remoteTlfResolveRpcParam = Exact<{
   resolvedReaders?: ?Array<gregor1.UID>
 }>
 
+export type remoteUpdateTeamRpcParam = Exact<{
+  teamID: TLFID,
+  members: keybase1.TeamMembers
+}>
+
 export type remoteUpdateTypingRemoteRpcParam = Exact<{
   uid: gregor1.UID,
   deviceID: gregor1.DeviceID,
@@ -2269,6 +2289,7 @@ export type rpc =
   | remoteSyncInboxRpc
   | remoteTlfFinalizeRpc
   | remoteTlfResolveRpc
+  | remoteUpdateTeamRpc
   | remoteUpdateTypingRemoteRpc
 
 export type incomingCallMapType = Exact<{
