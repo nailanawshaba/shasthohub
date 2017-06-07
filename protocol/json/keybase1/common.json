@@ -394,6 +394,42 @@
     },
     {
       "type": "record",
+      "name": "TeamPlusAllKeys",
+      "fields": [
+        {
+          "type": "TeamID",
+          "name": "id"
+        },
+        {
+          "type": "string",
+          "name": "name"
+        },
+        {
+          "type": {
+            "type": "array",
+            "items": "string"
+          },
+          "name": "writers"
+        },
+        {
+          "type": {
+            "type": "array",
+            "items": "string"
+          },
+          "name": "readers"
+        },
+        {
+          "type": {
+            "type": "map",
+            "values": "PerTeamKey",
+            "keys": "int"
+          },
+          "name": "perTeamKeys"
+        }
+      ]
+    },
+    {
+      "type": "record",
       "name": "UserPlusKeys",
       "fields": [
         {

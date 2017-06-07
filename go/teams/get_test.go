@@ -143,3 +143,19 @@ func createTeam(tc libkb.TestContext) string {
 	}
 	return name
 }
+
+func TestTeamPlusAllKeysExim(t *testing.T) {
+	tc := libkb.SetupTest(t, "team", 1)
+	tc.Tp.UpgradePerUserKey = true
+	defer tc.Cleanup()
+	kbtest.CreateAndSignupFakeUser("team", tc.G)
+	name := createTeam(tc)
+	team, err := Get(context.TODO(), tc.G, name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var exported = team.ExportToTeamPlusAllKeys(keybase1.Time(0))
+	if exported.Name != name {
+		t.Errorf("Got name %s, expected %s", exported.Name, name)
+	}
+}

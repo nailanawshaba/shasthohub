@@ -158,6 +158,19 @@ protocol Common {
       KID encKID;
   }
 
+  record TeamPlusAllKeys {
+      TeamID id;
+      string name;
+
+      // I believe UID is a type copy of string, teams.avdl uses array<string>, is array<UID> better?
+      // how to 'typecast' from string to uid...Team.members returns strings
+      array<string> writers;
+      array<string> readers;
+
+      // Implicit generation, like in UserPlusKeysV2
+      map<int, PerTeamKey> perTeamKeys;
+  }
+
   record UserPlusKeys {
       UID uid;
       string username;

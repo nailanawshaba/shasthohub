@@ -398,6 +398,46 @@ func (o PerUserKey) DeepCopy() PerUserKey {
 	}
 }
 
+type TeamPlusAllKeys struct {
+	Id          TeamID             `codec:"id" json:"id"`
+	Name        string             `codec:"name" json:"name"`
+	Writers     []string           `codec:"writers" json:"writers"`
+	Readers     []string           `codec:"readers" json:"readers"`
+	PerTeamKeys map[int]PerTeamKey `codec:"perTeamKeys" json:"perTeamKeys"`
+}
+
+func (o TeamPlusAllKeys) DeepCopy() TeamPlusAllKeys {
+	return TeamPlusAllKeys{
+		Id:   o.Id.DeepCopy(),
+		Name: o.Name,
+		Writers: (func(x []string) []string {
+			var ret []string
+			for _, v := range x {
+				vCopy := v
+				ret = append(ret, vCopy)
+			}
+			return ret
+		})(o.Writers),
+		Readers: (func(x []string) []string {
+			var ret []string
+			for _, v := range x {
+				vCopy := v
+				ret = append(ret, vCopy)
+			}
+			return ret
+		})(o.Readers),
+		PerTeamKeys: (func(x map[int]PerTeamKey) map[int]PerTeamKey {
+			ret := make(map[int]PerTeamKey)
+			for k, v := range x {
+				kCopy := k
+				vCopy := v.DeepCopy()
+				ret[kCopy] = vCopy
+			}
+			return ret
+		})(o.PerTeamKeys),
+	}
+}
+
 type UserPlusKeys struct {
 	Uid               UID               `codec:"uid" json:"uid"`
 	Username          string            `codec:"username" json:"username"`
