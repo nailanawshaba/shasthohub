@@ -242,7 +242,7 @@ func ImportStatusAsError(s *keybase1.Status) error {
 		}
 		return KeyExistsError{fp}
 	case SCKeyNotFound:
-		return NoKeyError{}
+		return NoKeyError{s.Desc}
 	case SCKeyNoEldest:
 		return NoSigChainError{}
 	case SCStreamExists:
