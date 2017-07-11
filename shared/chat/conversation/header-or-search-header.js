@@ -15,7 +15,7 @@ type Props = {
   sidePanelOpen: boolean,
   onToggleSidePanel: () => void,
   onBack: () => void,
-  onAddNewParticipant: () => void,
+  onAddNewParticipant: (clicked: boolean) => void,
   addNewParticipant: boolean,
 }
 

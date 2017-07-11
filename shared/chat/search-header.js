@@ -26,6 +26,8 @@ type OwnProps = {
   selectedSearchId: ?SearchConstants.SearchResultId,
   onUpdateSelectedSearchResult: (id: SearchConstants.SearchResultId) => void,
   showServiceFilter: boolean,
+  onAddNewParticipant: (clicked: boolean) => void,
+  addNewParticipant: boolean,
 }
 
 const mapStateToProps = createSelector(
@@ -94,9 +96,9 @@ export default compose(
         props.clearSearchResults()
         props.search(props.searchText, nextService)
       },
-      onClickAddButton: (props: OwnProps) => clicked => {
-        props.onAddNewParticipant(clicked)
-        props.search('')
+      onClickAddButton: (props: OwnProps) => () => {
+        props.onAddNewParticipant(true)
+        props.search('', props.selectedService)
       },
     }
   }),
