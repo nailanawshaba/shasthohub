@@ -15,6 +15,8 @@ type Props = {
   sidePanelOpen: boolean,
   onToggleSidePanel: () => void,
   onBack: () => void,
+  onAddNewParticipant: () => void,
+  addNewParticipant: boolean,
 }
 
 export default (props: Props) =>
@@ -25,6 +27,8 @@ export default (props: Props) =>
         selectedConversationIDKey={props.selectedConversationIDKey}
         selectedSearchId={props.selectedSearchId}
         onUpdateSelectedSearchResult={props.onUpdateSelectedSearchResult}
+        onAddNewParticipant={props.onAddNewParticipant}
+        addNewParticipant={props.addNewParticipant}
       />
     : <Header
         sidePanelOpen={props.sidePanelOpen}
