@@ -496,6 +496,18 @@ protocol local {
     array<keybase1.TLFIdentifyFailure> identifyFailures;
   }
 
+  record GetInboxNonblockItem {
+    ConversationID convID;
+    ConversationMembersType membersType;
+    union { string, null } error;
+    boolean isMuted;
+    boolean isTrusted;
+    boolean isUnkeyed;
+    array<string> participants;
+    string channelName;
+    gregor1.Time timestamp;
+    int unreadCount;
+  }
   NonblockFetchRes getInboxNonblockLocal(int sessionID, union { null, int } maxUnbox, union { null, GetInboxLocalQuery} query, union { null, Pagination } pagination, keybase1.TLFIdentifyBehavior identifyBehavior);
 
   PostLocalRes postLocal(ConversationID conversationID, MessagePlaintext msg, keybase1.TLFIdentifyBehavior identifyBehavior);
