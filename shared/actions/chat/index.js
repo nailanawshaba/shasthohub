@@ -242,6 +242,14 @@ function* _setupChatHandlers(): SagaGenerator<any, any> {
         dispatch(Creators.markThreadsStale(updates))
       }
     })
+
+    engine().setIncomingHandler('chat.1.NotifyChat.ChatSyncingUpdate', ({syncing}) => {
+      if (syncing) {
+        dispatch(Creators.setInboxUntrustedState('loading'))
+      } else {
+        dispatch(Creators.setInboxUntrustedState('loaded'))
+      }
+    })
   })
 }
 

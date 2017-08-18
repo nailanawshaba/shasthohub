@@ -124,4 +124,7 @@ protocol NotifyChat {
   @lint("ignore")
   void ChatLeftConversation(keybase1.UID uid, ConversationID convID);
 
+  @notify("")
+  @lint("ignore")
+  void ChatSyncingUpdate(keybase1.UID uid, boolean syncing);
 }

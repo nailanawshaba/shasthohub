@@ -1559,6 +1559,11 @@ export type NotifyChatChatLeftConversationRpcParam = Exact<{
   convID: ConversationID
 }>
 
+export type NotifyChatChatSyncingUpdateRpcParam = Exact<{
+  uid: keybase1.UID,
+  syncing: boolean
+}>
+
 export type NotifyChatChatTLFFinalizeRpcParam = Exact<{
   uid: keybase1.UID,
   convID: ConversationID,
@@ -2540,6 +2545,14 @@ export type incomingCallMapType = Exact<{
     params: Exact<{
       uid: keybase1.UID,
       convID: ConversationID
+    }> /* ,
+    response: {} // Notify call
+    */
+  ) => void,
+  'keybase.1.NotifyChat.ChatSyncingUpdate'?: (
+    params: Exact<{
+      uid: keybase1.UID,
+      syncing: boolean
     }> /* ,
     response: {} // Notify call
     */

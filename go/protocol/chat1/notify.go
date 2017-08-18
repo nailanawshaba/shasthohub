@@ -606,6 +606,18 @@ func (o ChatLeftConversationArg) DeepCopy() ChatLeftConversationArg {
 	}
 }
 
+type ChatSyncingUpdateArg struct {
+	Uid     keybase1.UID `codec:"uid" json:"uid"`
+	Syncing bool         `codec:"syncing" json:"syncing"`
+}
+
+func (o ChatSyncingUpdateArg) DeepCopy() ChatSyncingUpdateArg {
+	return ChatSyncingUpdateArg{
+		Uid:     o.Uid.DeepCopy(),
+		Syncing: o.Syncing,
+	}
+}
+
 type NotifyChatInterface interface {
 	NewChatActivity(context.Context, NewChatActivityArg) error
 	ChatIdentifyUpdate(context.Context, keybase1.CanonicalTLFNameAndIDWithBreaks) error
@@ -616,6 +628,7 @@ type NotifyChatInterface interface {
 	ChatTypingUpdate(context.Context, []ConvTypingUpdate) error
 	ChatJoinedConversation(context.Context, ChatJoinedConversationArg) error
 	ChatLeftConversation(context.Context, ChatLeftConversationArg) error
+	ChatSyncingUpdate(context.Context, ChatSyncingUpdateArg) error
 }
 
 func NotifyChatProtocol(i NotifyChatInterface) rpc.Protocol {
@@ -766,6 +779,22 @@ func NotifyChatProtocol(i NotifyChatInterface) rpc.Protocol {
 				},
 				MethodType: rpc.MethodNotify,
 			},
+			"ChatSyncingUpdate": {
+				MakeArg: func() interface{} {
+					ret := make([]ChatSyncingUpdateArg, 1)
+					return &ret
+				},
+				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
+					typedArgs, ok := args.(*[]ChatSyncingUpdateArg)
+					if !ok {
+						err = rpc.NewTypeError((*[]ChatSyncingUpdateArg)(nil), args)
+						return
+					}
+					err = i.ChatSyncingUpdate(ctx, (*typedArgs)[0])
+					return
+				},
+				MethodType: rpc.MethodNotify,
+			},
 		},
 	}
 }
@@ -819,5 +848,10 @@ func (c NotifyChatClient) ChatJoinedConversation(ctx context.Context, __arg Chat
 
 func (c NotifyChatClient) ChatLeftConversation(ctx context.Context, __arg ChatLeftConversationArg) (err error) {
 	err = c.Cli.Notify(ctx, "chat.1.NotifyChat.ChatLeftConversation", []interface{}{__arg})
+	return
+}
+
+func (c NotifyChatClient) ChatSyncingUpdate(ctx context.Context, __arg ChatSyncingUpdateArg) (err error) {
+	err = c.Cli.Notify(ctx, "chat.1.NotifyChat.ChatSyncingUpdate", []interface{}{__arg})
 	return
 }

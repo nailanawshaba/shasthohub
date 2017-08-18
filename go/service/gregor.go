@@ -643,6 +643,8 @@ func (g *gregorHandler) OnConnect(ctx context.Context, conn *rpc.Connection,
 
 	// Run SyncAll to both authenticate, and grab all the data we will need to run the
 	// various resync procedures for chat and notifications
+	g.G().NotifyRouter.HandleChatSyncingUpdate(ctx, keybase1.UID(uid.String()), true)
+	defer g.G().NotifyRouter.HandleChatSyncingUpdate(ctx, keybase1.UID(uid.String()), false)
 	var identBreaks []keybase1.TLFIdentifyFailure
 	ctx = chat.Context(ctx, g.G(), keybase1.TLFIdentifyBehavior_CHAT_GUI, &identBreaks,
 		chat.NewIdentifyNotifier(g.G()))

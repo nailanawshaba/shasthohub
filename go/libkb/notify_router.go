@@ -42,6 +42,7 @@ type NotifyListener interface {
 	KeyfamilyChanged(uid keybase1.UID)
 	NewChatActivity(uid keybase1.UID, activity chat1.ChatActivity)
 	ChatIdentifyUpdate(update keybase1.CanonicalTLFNameAndIDWithBreaks)
+	ChatSyncingUpdate(uid keybase1.UID, syncing bool)
 	ChatTLFFinalize(uid keybase1.UID, convID chat1.ConversationID,
 		finalizeInfo chat1.ConversationFinalizeInfo)
 	ChatTLFResolve(uid keybase1.UID, convID chat1.ConversationID,
@@ -532,6 +533,34 @@ func (n *NotifyRouter) HandleChatIdentifyUpdate(ctx context.Context, update keyb
 		n.listener.ChatIdentifyUpdate(update)
 	}
 	n.G().Log.CDebugf(ctx, "- Sent ChatIdentifyUpdate notification")
+}
+
+func (n *NotifyRouter) HandleChatSyncingUpdate(ctx context.Context, uid keybase1.UID, syncing bool) {
+	if n == nil {
+		return
+	}
+	var wg sync.WaitGroup
+	n.G().Log.CDebugf(ctx, "+ Sending ChatSyncingUpdate notification")
+	n.cm.ApplyAll(func(id ConnectionID, xp rpc.Transporter) bool {
+		if n.getNotificationChannels(id).Chat {
+			wg.Add(1)
+			go func() {
+				(chat1.NotifyChatClient{
+					Cli: rpc.NewClient(xp, ErrorUnwrapper{}, nil),
+				}).ChatSyncingUpdate(context.Background(), chat1.ChatSyncingUpdateArg{
+					Uid:     uid,
+					Syncing: syncing,
+				})
+				wg.Done()
+			}()
+		}
+		return true
+	})
+	wg.Wait()
+	if n.listener != nil {
+		n.listener.ChatSyncingUpdate(uid, syncing)
+	}
+	n.G().Log.CDebugf(ctx, "- Sent ChatSyncingUpdate notification")
 }
 
 func (n *NotifyRouter) HandleChatTLFFinalize(ctx context.Context, uid keybase1.UID, convID chat1.ConversationID, finalizeInfo chat1.ConversationFinalizeInfo, conv *chat1.InboxUIItem) {
