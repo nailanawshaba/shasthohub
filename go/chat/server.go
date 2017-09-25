@@ -2423,3 +2423,41 @@ func (h *Server) GetGlobalAppNotificationSettingsLocal(ctx context.Context) (res
 	}
 	return h.remoteClient().GetGlobalAppNotificationSettings(ctx)
 }
+
+func (h *Server) SyncInboxLocal(ctx context.Context, items []chat1.SyncInboxLocalItem) (res chat1.SyncInboxLocalRes, err error) {
+	ctx = Context(ctx, h.G(), keybase1.TLFIdentifyBehavior_CHAT_GUI, nil, h.identNotifier)
+	defer h.Trace(ctx, func() error { return err }, "SyncInboxLocal")()
+	if err = h.assertLoggedIn(ctx); err != nil {
+		return res, err
+	}
+	uid := gregor1.UID(h.G().Env.GetUID().ToBytes())
+	var convIDs []chat1.ConversationID
+	for _, item := range items {
+		convIDs = append(convIDs, item.ConvID)
+	}
+
+	ib, rl, err := h.G().InboxSource.ReadUnverified(ctx, uid, true, &chat1.GetInboxQuery{
+		ConvIDs: convIDs,
+	}, nil)
+	if err != nil {
+		return res, err
+	}
+	if rl != nil {
+		res.RateLimits = []chat1.RateLimit{*rl}
+	}
+
+	convVers := make(map[string]chat1.ConversationVers)
+	for _, conv := range ib.ConvsUnverified {
+		convVers[conv.GetConvID().String()] = conv.Metadata.Version
+	}
+
+	for _, item := range items {
+		vers, ok := convVers[item.ConvID.String()]
+		if !ok || item.Vers != vers {
+			res.ConvIDs = append(res.ConvIDs, item.ConvID)
+		}
+	}
+
+	res.Offline = h.G().InboxSource.IsOffline(ctx)
+	return res, nil
+}

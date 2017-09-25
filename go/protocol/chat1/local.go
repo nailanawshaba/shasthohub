@@ -3063,6 +3063,46 @@ func (o AppNotificationSettingLocal) DeepCopy() AppNotificationSettingLocal {
 	}
 }
 
+type SyncInboxLocalRes struct {
+	ConvIDs    []ConversationID `codec:"convIDs" json:"convIDs"`
+	Offline    bool             `codec:"offline" json:"offline"`
+	RateLimits []RateLimit      `codec:"rateLimits" json:"rateLimits"`
+}
+
+func (o SyncInboxLocalRes) DeepCopy() SyncInboxLocalRes {
+	return SyncInboxLocalRes{
+		ConvIDs: (func(x []ConversationID) []ConversationID {
+			var ret []ConversationID
+			for _, v := range x {
+				vCopy := v.DeepCopy()
+				ret = append(ret, vCopy)
+			}
+			return ret
+		})(o.ConvIDs),
+		Offline: o.Offline,
+		RateLimits: (func(x []RateLimit) []RateLimit {
+			var ret []RateLimit
+			for _, v := range x {
+				vCopy := v.DeepCopy()
+				ret = append(ret, vCopy)
+			}
+			return ret
+		})(o.RateLimits),
+	}
+}
+
+type SyncInboxLocalItem struct {
+	ConvID ConversationID   `codec:"convID" json:"convID"`
+	Vers   ConversationVers `codec:"vers" json:"vers"`
+}
+
+func (o SyncInboxLocalItem) DeepCopy() SyncInboxLocalItem {
+	return SyncInboxLocalItem{
+		ConvID: o.ConvID.DeepCopy(),
+		Vers:   o.Vers.DeepCopy(),
+	}
+}
+
 type GetThreadLocalArg struct {
 	ConversationID   ConversationID               `codec:"conversationID" json:"conversationID"`
 	Query            *GetThreadQuery              `codec:"query,omitempty" json:"query,omitempty"`
@@ -3806,6 +3846,23 @@ func (o UnboxMobilePushNotificationArg) DeepCopy() UnboxMobilePushNotificationAr
 	}
 }
 
+type SyncInboxLocalArg struct {
+	Items []SyncInboxLocalItem `codec:"items" json:"items"`
+}
+
+func (o SyncInboxLocalArg) DeepCopy() SyncInboxLocalArg {
+	return SyncInboxLocalArg{
+		Items: (func(x []SyncInboxLocalItem) []SyncInboxLocalItem {
+			var ret []SyncInboxLocalItem
+			for _, v := range x {
+				vCopy := v.DeepCopy()
+				ret = append(ret, vCopy)
+			}
+			return ret
+		})(o.Items),
+	}
+}
+
 type LocalInterface interface {
 	GetThreadLocal(context.Context, GetThreadLocalArg) (GetThreadLocalRes, error)
 	GetCachedThread(context.Context, GetCachedThreadArg) (GetThreadLocalRes, error)
@@ -3844,6 +3901,7 @@ type LocalInterface interface {
 	SetGlobalAppNotificationSettingsLocal(context.Context, map[string]bool) error
 	GetGlobalAppNotificationSettingsLocal(context.Context) (GlobalAppNotificationSettings, error)
 	UnboxMobilePushNotification(context.Context, UnboxMobilePushNotificationArg) (string, error)
+	SyncInboxLocal(context.Context, []SyncInboxLocalItem) (SyncInboxLocalRes, error)
 }
 
 func LocalProtocol(i LocalInterface) rpc.Protocol {
@@ -4432,6 +4490,22 @@ func LocalProtocol(i LocalInterface) rpc.Protocol {
 				},
 				MethodType: rpc.MethodCall,
 			},
+			"syncInboxLocal": {
+				MakeArg: func() interface{} {
+					ret := make([]SyncInboxLocalArg, 1)
+					return &ret
+				},
+				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
+					typedArgs, ok := args.(*[]SyncInboxLocalArg)
+					if !ok {
+						err = rpc.NewTypeError((*[]SyncInboxLocalArg)(nil), args)
+						return
+					}
+					ret, err = i.SyncInboxLocal(ctx, (*typedArgs)[0].Items)
+					return
+				},
+				MethodType: rpc.MethodCall,
+			},
 		},
 	}
 }
@@ -4629,5 +4703,11 @@ func (c LocalClient) GetGlobalAppNotificationSettingsLocal(ctx context.Context) 
 
 func (c LocalClient) UnboxMobilePushNotification(ctx context.Context, __arg UnboxMobilePushNotificationArg) (res string, err error) {
 	err = c.Cli.Call(ctx, "chat.1.local.unboxMobilePushNotification", []interface{}{__arg}, &res)
+	return
+}
+
+func (c LocalClient) SyncInboxLocal(ctx context.Context, items []SyncInboxLocalItem) (res SyncInboxLocalRes, err error) {
+	__arg := SyncInboxLocalArg{Items: items}
+	err = c.Cli.Call(ctx, "chat.1.local.syncInboxLocal", []interface{}{__arg}, &res)
 	return
 }

@@ -1957,6 +1957,44 @@
           "name": "enabled"
         }
       ]
+    },
+    {
+      "type": "record",
+      "name": "SyncInboxLocalRes",
+      "fields": [
+        {
+          "type": {
+            "type": "array",
+            "items": "ConversationID"
+          },
+          "name": "convIDs"
+        },
+        {
+          "type": "boolean",
+          "name": "offline"
+        },
+        {
+          "type": {
+            "type": "array",
+            "items": "RateLimit"
+          },
+          "name": "rateLimits"
+        }
+      ]
+    },
+    {
+      "type": "record",
+      "name": "SyncInboxLocalItem",
+      "fields": [
+        {
+          "type": "ConversationID",
+          "name": "convID"
+        },
+        {
+          "type": "ConversationVers",
+          "name": "vers"
+        }
+      ]
     }
   ],
   "messages": {
@@ -2801,6 +2839,18 @@
         }
       ],
       "response": "string"
+    },
+    "syncInboxLocal": {
+      "request": [
+        {
+          "name": "items",
+          "type": {
+            "type": "array",
+            "items": "SyncInboxLocalItem"
+          }
+        }
+      ],
+      "response": "SyncInboxLocalRes"
     }
   },
   "namespace": "chat.1"

@@ -694,4 +694,16 @@ protocol local {
 
   // Unpack message from a push notification
   string unboxMobilePushNotification(string payload, string convID, ConversationMembersType membersType, array<string> pushIDs);
+
+  // Sync inbox view with UI
+  record SyncInboxLocalRes {
+    array<Conversation> convs;
+    boolean offline;
+    array<RateLimit> rateLimits;
+  }
+  record SyncInboxLocalItem {
+    ConversationID convID;
+    ConversationVers vers;
+  }
+  SyncInboxLocalRes syncInboxLocal(array<SyncInboxLocalItem> items);
 }
