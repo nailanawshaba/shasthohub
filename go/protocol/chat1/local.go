@@ -3806,6 +3806,18 @@ func (o UnboxMobilePushNotificationArg) DeepCopy() UnboxMobilePushNotificationAr
 	}
 }
 
+type SyncInboxLocalArg struct {
+	SessionID int       `codec:"sessionID" json:"sessionID"`
+	InboxVers InboxVers `codec:"inboxVers" json:"inboxVers"`
+}
+
+func (o SyncInboxLocalArg) DeepCopy() SyncInboxLocalArg {
+	return SyncInboxLocalArg{
+		SessionID: o.SessionID,
+		InboxVers: o.InboxVers.DeepCopy(),
+	}
+}
+
 type LocalInterface interface {
 	GetThreadLocal(context.Context, GetThreadLocalArg) (GetThreadLocalRes, error)
 	GetCachedThread(context.Context, GetCachedThreadArg) (GetThreadLocalRes, error)
@@ -3844,6 +3856,7 @@ type LocalInterface interface {
 	SetGlobalAppNotificationSettingsLocal(context.Context, map[string]bool) error
 	GetGlobalAppNotificationSettingsLocal(context.Context) (GlobalAppNotificationSettings, error)
 	UnboxMobilePushNotification(context.Context, UnboxMobilePushNotificationArg) (string, error)
+	SyncInboxLocal(context.Context, SyncInboxLocalArg) error
 }
 
 func LocalProtocol(i LocalInterface) rpc.Protocol {
@@ -4432,6 +4445,22 @@ func LocalProtocol(i LocalInterface) rpc.Protocol {
 				},
 				MethodType: rpc.MethodCall,
 			},
+			"syncInboxLocal": {
+				MakeArg: func() interface{} {
+					ret := make([]SyncInboxLocalArg, 1)
+					return &ret
+				},
+				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
+					typedArgs, ok := args.(*[]SyncInboxLocalArg)
+					if !ok {
+						err = rpc.NewTypeError((*[]SyncInboxLocalArg)(nil), args)
+						return
+					}
+					err = i.SyncInboxLocal(ctx, (*typedArgs)[0])
+					return
+				},
+				MethodType: rpc.MethodCall,
+			},
 		},
 	}
 }
@@ -4629,5 +4658,10 @@ func (c LocalClient) GetGlobalAppNotificationSettingsLocal(ctx context.Context) 
 
 func (c LocalClient) UnboxMobilePushNotification(ctx context.Context, __arg UnboxMobilePushNotificationArg) (res string, err error) {
 	err = c.Cli.Call(ctx, "chat.1.local.unboxMobilePushNotification", []interface{}{__arg}, &res)
+	return
+}
+
+func (c LocalClient) SyncInboxLocal(ctx context.Context, __arg SyncInboxLocalArg) (err error) {
+	err = c.Cli.Call(ctx, "chat.1.local.syncInboxLocal", []interface{}{__arg}, nil)
 	return
 }

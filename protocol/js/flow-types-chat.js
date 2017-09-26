@@ -519,6 +519,14 @@ export function localSetGlobalAppNotificationSettingsLocalRpcPromise (request: (
   return new Promise((resolve, reject) => engineRpcOutgoing('chat.1.local.setGlobalAppNotificationSettingsLocal', request, (error, result) => error ? reject(error) : resolve(result)))
 }
 
+export function localSyncInboxLocalRpcChannelMap (configKeys: Array<string>, request: requestCommon & requestErrorCallback & {param: localSyncInboxLocalRpcParam}): EngineChannel {
+  return engine()._channelMapRpcHelper(configKeys, 'chat.1.local.syncInboxLocal', request)
+}
+
+export function localSyncInboxLocalRpcPromise (request: (requestCommon & requestErrorCallback & {param: localSyncInboxLocalRpcParam})): Promise<void> {
+  return new Promise((resolve, reject) => engineRpcOutgoing('chat.1.local.syncInboxLocal', request, (error, result) => error ? reject(error) : resolve(result)))
+}
+
 export function localUnboxMobilePushNotificationRpcChannelMap (configKeys: Array<string>, request: requestCommon & {callback?: ?(err: ?any, response: localUnboxMobilePushNotificationResult) => void} & {param: localUnboxMobilePushNotificationRpcParam}): EngineChannel {
   return engine()._channelMapRpcHelper(configKeys, 'chat.1.local.unboxMobilePushNotification', request)
 }
@@ -2293,6 +2301,10 @@ export type localSetGlobalAppNotificationSettingsLocalRpcParam = Exact<{
   settings: {[key: string]: bool}
 }>
 
+export type localSyncInboxLocalRpcParam = Exact<{
+  inboxVers: InboxVers
+}>
+
 export type localUnboxMobilePushNotificationRpcParam = Exact<{
   payload: string,
   convID: string,
@@ -2621,6 +2633,16 @@ export type incomingCallMapType = Exact<{
       error: RPCErrorHandler,
       result: (result: chatUiChatConfirmChannelDeleteResult) => void,
     }
+  ) => void,
+  'keybase.1.chatUi.chatSyncInboxRequest'?: (
+    params: Exact<{}>,
+    response: CommonResponseHandler
+  ) => void,
+  'keybase.1.chatUi.chatSyncInboxComplete'?: (
+    params: Exact<{
+      sessionID: int
+    }>,
+    response: CommonResponseHandler
   ) => void,
   'keybase.1.NotifyChat.NewChatActivity'?: (
     params: Exact<{

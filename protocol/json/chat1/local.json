@@ -2801,6 +2801,19 @@
         }
       ],
       "response": "string"
+    },
+    "syncInboxLocal": {
+      "request": [
+        {
+          "name": "sessionID",
+          "type": "int"
+        },
+        {
+          "name": "inboxVers",
+          "type": "InboxVers"
+        }
+      ],
+      "response": null
     }
   },
   "namespace": "chat.1"

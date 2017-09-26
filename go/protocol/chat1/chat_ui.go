@@ -642,6 +642,23 @@ func (o ChatConfirmChannelDeleteArg) DeepCopy() ChatConfirmChannelDeleteArg {
 	}
 }
 
+type ChatSyncInboxRequestArg struct {
+}
+
+func (o ChatSyncInboxRequestArg) DeepCopy() ChatSyncInboxRequestArg {
+	return ChatSyncInboxRequestArg{}
+}
+
+type ChatSyncInboxCompleteArg struct {
+	SessionID int `codec:"sessionID" json:"sessionID"`
+}
+
+func (o ChatSyncInboxCompleteArg) DeepCopy() ChatSyncInboxCompleteArg {
+	return ChatSyncInboxCompleteArg{
+		SessionID: o.SessionID,
+	}
+}
+
 type ChatUiInterface interface {
 	ChatAttachmentUploadOutboxID(context.Context, ChatAttachmentUploadOutboxIDArg) error
 	ChatAttachmentUploadStart(context.Context, ChatAttachmentUploadStartArg) error
@@ -658,6 +675,8 @@ type ChatUiInterface interface {
 	ChatThreadCached(context.Context, ChatThreadCachedArg) error
 	ChatThreadFull(context.Context, ChatThreadFullArg) error
 	ChatConfirmChannelDelete(context.Context, ChatConfirmChannelDeleteArg) (bool, error)
+	ChatSyncInboxRequest(context.Context) error
+	ChatSyncInboxComplete(context.Context, int) error
 }
 
 func ChatUiProtocol(i ChatUiInterface) rpc.Protocol {
@@ -904,6 +923,33 @@ func ChatUiProtocol(i ChatUiInterface) rpc.Protocol {
 				},
 				MethodType: rpc.MethodCall,
 			},
+			"chatSyncInboxRequest": {
+				MakeArg: func() interface{} {
+					ret := make([]ChatSyncInboxRequestArg, 1)
+					return &ret
+				},
+				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
+					err = i.ChatSyncInboxRequest(ctx)
+					return
+				},
+				MethodType: rpc.MethodCall,
+			},
+			"chatSyncInboxComplete": {
+				MakeArg: func() interface{} {
+					ret := make([]ChatSyncInboxCompleteArg, 1)
+					return &ret
+				},
+				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
+					typedArgs, ok := args.(*[]ChatSyncInboxCompleteArg)
+					if !ok {
+						err = rpc.NewTypeError((*[]ChatSyncInboxCompleteArg)(nil), args)
+						return
+					}
+					err = i.ChatSyncInboxComplete(ctx, (*typedArgs)[0].SessionID)
+					return
+				},
+				MethodType: rpc.MethodCall,
+			},
 		},
 	}
 }
@@ -988,5 +1034,16 @@ func (c ChatUiClient) ChatThreadFull(ctx context.Context, __arg ChatThreadFullAr
 
 func (c ChatUiClient) ChatConfirmChannelDelete(ctx context.Context, __arg ChatConfirmChannelDeleteArg) (res bool, err error) {
 	err = c.Cli.Call(ctx, "chat.1.chatUi.chatConfirmChannelDelete", []interface{}{__arg}, &res)
+	return
+}
+
+func (c ChatUiClient) ChatSyncInboxRequest(ctx context.Context) (err error) {
+	err = c.Cli.Call(ctx, "chat.1.chatUi.chatSyncInboxRequest", []interface{}{ChatSyncInboxRequestArg{}}, nil)
+	return
+}
+
+func (c ChatUiClient) ChatSyncInboxComplete(ctx context.Context, sessionID int) (err error) {
+	__arg := ChatSyncInboxCompleteArg{SessionID: sessionID}
+	err = c.Cli.Call(ctx, "chat.1.chatUi.chatSyncInboxComplete", []interface{}{__arg}, nil)
 	return
 }

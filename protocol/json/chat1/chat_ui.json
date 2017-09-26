@@ -582,6 +582,19 @@
         }
       ],
       "response": "boolean"
+    },
+    "chatSyncInboxRequest": {
+      "request": [],
+      "response": null
+    },
+    "chatSyncInboxComplete": {
+      "request": [
+        {
+          "name": "sessionID",
+          "type": "int"
+        }
+      ],
+      "response": null
     }
   },
   "namespace": "chat.1"

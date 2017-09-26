@@ -694,4 +694,8 @@ protocol local {
 
   // Unpack message from a push notification
   string unboxMobilePushNotification(string payload, string convID, ConversationMembersType membersType, array<string> pushIDs);
+
+  // Local sync RPC
+  void syncInboxLocal(int sessionID, InboxVers inboxVers);
+
 }

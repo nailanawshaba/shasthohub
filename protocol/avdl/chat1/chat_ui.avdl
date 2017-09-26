@@ -120,4 +120,8 @@ protocol chatUi {
   void chatThreadFull(int sessionID, string thread) oneway;
 
   boolean chatConfirmChannelDelete(int sessionID, string channel);
+
+  void chatSyncInboxRequest();
+  void chatSyncInboxComplete(int sessionID);
+
 }
