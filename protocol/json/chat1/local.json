@@ -2809,8 +2809,8 @@
           "type": "int"
         },
         {
-          "name": "inboxVers",
-          "type": "InboxVers"
+          "name": "syncID",
+          "type": "int"
         }
       ],
       "response": null

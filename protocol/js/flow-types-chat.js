@@ -2073,6 +2073,10 @@ export type chatUiChatSyncInboxConversationRpcParam = Exact<{
   conv: InboxUIItem
 }>
 
+export type chatUiChatSyncInboxRequestRpcParam = Exact<{
+  syncID: int
+}>
+
 export type chatUiChatSyncInboxUnverifiedRpcParam = Exact<{
   convs?: ?Array<UnverifiedInboxUIItem>
 }>
@@ -2315,7 +2319,7 @@ export type localSetGlobalAppNotificationSettingsLocalRpcParam = Exact<{
 }>
 
 export type localSyncInboxLocalRpcParam = Exact<{
-  inboxVers: InboxVers
+  syncID: int
 }>
 
 export type localUnboxMobilePushNotificationRpcParam = Exact<{
@@ -2648,7 +2652,9 @@ export type incomingCallMapType = Exact<{
     }
   ) => void,
   'keybase.1.chatUi.chatSyncInboxRequest'?: (
-    params: Exact<{}>,
+    params: Exact<{
+      syncID: int
+    }>,
     response: CommonResponseHandler
   ) => void,
   'keybase.1.chatUi.chatSyncInboxUnverified'?: (

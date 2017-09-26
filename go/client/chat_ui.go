@@ -152,6 +152,6 @@ func (c *ChatUI) ChatSyncInboxComplete(ctx context.Context, sessionID int) error
 	return nil
 }
 
-func (c *ChatUI) ChatSyncInboxRequest(ctx context.Context) error {
+func (c *ChatUI) ChatSyncInboxRequest(ctx context.Context, syncID int) error {
 	return nil
 }

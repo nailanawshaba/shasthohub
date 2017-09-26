@@ -121,7 +121,7 @@ protocol chatUi {
 
   boolean chatConfirmChannelDelete(int sessionID, string channel);
 
-  void chatSyncInboxRequest();
+  void chatSyncInboxRequest(int syncID);
   void chatSyncInboxUnverified(int sessionID, array<UnverifiedInboxUIItem> convs);
   void chatSyncInboxConversation(int sessionID, InboxUIItem conv);
   void chatSyncInboxConversationFailed(int sessionID, ConversationID convID, ConversationErrorLocal error);

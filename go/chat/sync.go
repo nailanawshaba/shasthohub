@@ -8,12 +8,18 @@ import (
 	"github.com/keybase/client/go/chat/storage"
 	"github.com/keybase/client/go/chat/types"
 	"github.com/keybase/client/go/chat/utils"
+	"github.com/keybase/client/go/libkb"
 	"github.com/keybase/client/go/protocol/chat1"
 	"github.com/keybase/client/go/protocol/gregor1"
 	"github.com/keybase/client/go/protocol/keybase1"
 	"github.com/keybase/clockwork"
 	"golang.org/x/net/context"
 )
+
+type syncResult struct {
+	syncResType chat1.SyncInboxResType
+	syncRes     *chat1.SyncChatRes
+}
 
 type Syncer struct {
 	globals.Contextified
@@ -31,6 +37,7 @@ type Syncer struct {
 	flushCh           chan struct{}
 	notificationQueue map[string][]chat1.ConversationStaleUpdate
 	fullReload        map[string]bool
+	syncResults       map[int]syncResult
 }
 
 func NewSyncer(g *globals.Context) *Syncer {
@@ -45,6 +52,7 @@ func NewSyncer(g *globals.Context) *Syncer {
 		notificationQueue: make(map[string][]chat1.ConversationStaleUpdate),
 		fullReload:        make(map[string]bool),
 		sendDelay:         time.Millisecond * 1000,
+		syncResults:       make(map[int]syncResult),
 	}
 
 	go s.sendNotificationLoop()
@@ -333,6 +341,11 @@ func (s *Syncer) sync(ctx context.Context, cli chat1.RemoteInterface, uid gregor
 			}
 		}
 	}
+
+	return nil
+}
+
+func (s *Syncer) RunSyncUI(ctx context.Context, syncID int, chatUI libkb.ChatUI) error {
 
 	return nil
 }

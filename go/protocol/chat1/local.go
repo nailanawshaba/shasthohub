@@ -3807,14 +3807,14 @@ func (o UnboxMobilePushNotificationArg) DeepCopy() UnboxMobilePushNotificationAr
 }
 
 type SyncInboxLocalArg struct {
-	SessionID int       `codec:"sessionID" json:"sessionID"`
-	InboxVers InboxVers `codec:"inboxVers" json:"inboxVers"`
+	SessionID int `codec:"sessionID" json:"sessionID"`
+	SyncID    int `codec:"syncID" json:"syncID"`
 }
 
 func (o SyncInboxLocalArg) DeepCopy() SyncInboxLocalArg {
 	return SyncInboxLocalArg{
 		SessionID: o.SessionID,
-		InboxVers: o.InboxVers.DeepCopy(),
+		SyncID:    o.SyncID,
 	}
 }
 

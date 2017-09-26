@@ -643,10 +643,13 @@ func (o ChatConfirmChannelDeleteArg) DeepCopy() ChatConfirmChannelDeleteArg {
 }
 
 type ChatSyncInboxRequestArg struct {
+	SyncID int `codec:"syncID" json:"syncID"`
 }
 
 func (o ChatSyncInboxRequestArg) DeepCopy() ChatSyncInboxRequestArg {
-	return ChatSyncInboxRequestArg{}
+	return ChatSyncInboxRequestArg{
+		SyncID: o.SyncID,
+	}
 }
 
 type ChatSyncInboxUnverifiedArg struct {
@@ -720,7 +723,7 @@ type ChatUiInterface interface {
 	ChatThreadCached(context.Context, ChatThreadCachedArg) error
 	ChatThreadFull(context.Context, ChatThreadFullArg) error
 	ChatConfirmChannelDelete(context.Context, ChatConfirmChannelDeleteArg) (bool, error)
-	ChatSyncInboxRequest(context.Context) error
+	ChatSyncInboxRequest(context.Context, int) error
 	ChatSyncInboxUnverified(context.Context, ChatSyncInboxUnverifiedArg) error
 	ChatSyncInboxConversation(context.Context, ChatSyncInboxConversationArg) error
 	ChatSyncInboxConversationFailed(context.Context, ChatSyncInboxConversationFailedArg) error
@@ -977,7 +980,12 @@ func ChatUiProtocol(i ChatUiInterface) rpc.Protocol {
 					return &ret
 				},
 				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
-					err = i.ChatSyncInboxRequest(ctx)
+					typedArgs, ok := args.(*[]ChatSyncInboxRequestArg)
+					if !ok {
+						err = rpc.NewTypeError((*[]ChatSyncInboxRequestArg)(nil), args)
+						return
+					}
+					err = i.ChatSyncInboxRequest(ctx, (*typedArgs)[0].SyncID)
 					return
 				},
 				MethodType: rpc.MethodCall,
@@ -1133,8 +1141,9 @@ func (c ChatUiClient) ChatConfirmChannelDelete(ctx context.Context, __arg ChatCo
 	return
 }
 
-func (c ChatUiClient) ChatSyncInboxRequest(ctx context.Context) (err error) {
-	err = c.Cli.Call(ctx, "chat.1.chatUi.chatSyncInboxRequest", []interface{}{ChatSyncInboxRequestArg{}}, nil)
+func (c ChatUiClient) ChatSyncInboxRequest(ctx context.Context, syncID int) (err error) {
+	__arg := ChatSyncInboxRequestArg{SyncID: syncID}
+	err = c.Cli.Call(ctx, "chat.1.chatUi.chatSyncInboxRequest", []interface{}{__arg}, nil)
 	return
 }
 

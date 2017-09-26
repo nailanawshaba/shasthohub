@@ -696,6 +696,6 @@ protocol local {
   string unboxMobilePushNotification(string payload, string convID, ConversationMembersType membersType, array<string> pushIDs);
 
   // Local sync RPC
-  void syncInboxLocal(int sessionID, InboxVers inboxVers);
+  void syncInboxLocal(int sessionID, int syncID);
 
 }

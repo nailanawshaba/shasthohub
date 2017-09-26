@@ -584,7 +584,12 @@
       "response": "boolean"
     },
     "chatSyncInboxRequest": {
-      "request": [],
+      "request": [
+        {
+          "name": "syncID",
+          "type": "int"
+        }
+      ],
       "response": null
     },
     "chatSyncInboxUnverified": {
