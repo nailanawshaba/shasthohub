@@ -587,6 +587,52 @@
       "request": [],
       "response": null
     },
+    "chatSyncInboxUnverified": {
+      "request": [
+        {
+          "name": "sessionID",
+          "type": "int"
+        },
+        {
+          "name": "convs",
+          "type": {
+            "type": "array",
+            "items": "UnverifiedInboxUIItem"
+          }
+        }
+      ],
+      "response": null
+    },
+    "chatSyncInboxConversation": {
+      "request": [
+        {
+          "name": "sessionID",
+          "type": "int"
+        },
+        {
+          "name": "conv",
+          "type": "InboxUIItem"
+        }
+      ],
+      "response": null
+    },
+    "chatSyncInboxConversationFailed": {
+      "request": [
+        {
+          "name": "sessionID",
+          "type": "int"
+        },
+        {
+          "name": "convID",
+          "type": "ConversationID"
+        },
+        {
+          "name": "error",
+          "type": "ConversationErrorLocal"
+        }
+      ],
+      "response": null
+    },
     "chatSyncInboxComplete": {
       "request": [
         {

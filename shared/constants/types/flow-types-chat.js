@@ -2064,6 +2064,19 @@ export type chatUiChatInboxUnverifiedRpcParam = Exact<{
   inbox: string
 }>
 
+export type chatUiChatSyncInboxConversationFailedRpcParam = Exact<{
+  convID: ConversationID,
+  error: ConversationErrorLocal
+}>
+
+export type chatUiChatSyncInboxConversationRpcParam = Exact<{
+  conv: InboxUIItem
+}>
+
+export type chatUiChatSyncInboxUnverifiedRpcParam = Exact<{
+  convs?: ?Array<UnverifiedInboxUIItem>
+}>
+
 export type chatUiChatThreadCachedRpcParam = Exact<{
   thread?: ?string
 }>
@@ -2636,6 +2649,28 @@ export type incomingCallMapType = Exact<{
   ) => void,
   'keybase.1.chatUi.chatSyncInboxRequest'?: (
     params: Exact<{}>,
+    response: CommonResponseHandler
+  ) => void,
+  'keybase.1.chatUi.chatSyncInboxUnverified'?: (
+    params: Exact<{
+      sessionID: int,
+      convs?: ?Array<UnverifiedInboxUIItem>
+    }>,
+    response: CommonResponseHandler
+  ) => void,
+  'keybase.1.chatUi.chatSyncInboxConversation'?: (
+    params: Exact<{
+      sessionID: int,
+      conv: InboxUIItem
+    }>,
+    response: CommonResponseHandler
+  ) => void,
+  'keybase.1.chatUi.chatSyncInboxConversationFailed'?: (
+    params: Exact<{
+      sessionID: int,
+      convID: ConversationID,
+      error: ConversationErrorLocal
+    }>,
     response: CommonResponseHandler
   ) => void,
   'keybase.1.chatUi.chatSyncInboxComplete'?: (

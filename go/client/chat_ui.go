@@ -135,3 +135,23 @@ func (c *ChatUI) ChatConfirmChannelDelete(ctx context.Context, arg chat1.ChatCon
 	}
 	return strings.TrimSpace(response) == confirm, nil
 }
+
+func (c *ChatUI) ChatSyncInboxUnverified(ctx context.Context, arg chat1.ChatSyncInboxUnverifiedArg) error {
+	return nil
+}
+
+func (c *ChatUI) ChatSyncInboxConversation(ctx context.Context, arg chat1.ChatSyncInboxConversationArg) error {
+	return nil
+}
+
+func (c *ChatUI) ChatSyncInboxConversationFailed(ctx context.Context, arg chat1.ChatSyncInboxConversationFailedArg) error {
+	return nil
+}
+
+func (c *ChatUI) ChatSyncInboxComplete(ctx context.Context, sessionID int) error {
+	return nil
+}
+
+func (c *ChatUI) ChatSyncInboxRequest(ctx context.Context) error {
+	return nil
+}

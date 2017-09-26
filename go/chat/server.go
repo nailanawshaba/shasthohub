@@ -2419,3 +2419,7 @@ func (h *Server) GetGlobalAppNotificationSettingsLocal(ctx context.Context) (res
 	}
 	return h.remoteClient().GetGlobalAppNotificationSettings(ctx)
 }
+
+func (h *Server) SyncInboxLocal(ctx context.Context, arg chat1.SyncInboxLocalArg) error {
+	return errors.New("not implemented")
+}

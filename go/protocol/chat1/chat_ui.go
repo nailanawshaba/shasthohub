@@ -649,6 +649,51 @@ func (o ChatSyncInboxRequestArg) DeepCopy() ChatSyncInboxRequestArg {
 	return ChatSyncInboxRequestArg{}
 }
 
+type ChatSyncInboxUnverifiedArg struct {
+	SessionID int                     `codec:"sessionID" json:"sessionID"`
+	Convs     []UnverifiedInboxUIItem `codec:"convs" json:"convs"`
+}
+
+func (o ChatSyncInboxUnverifiedArg) DeepCopy() ChatSyncInboxUnverifiedArg {
+	return ChatSyncInboxUnverifiedArg{
+		SessionID: o.SessionID,
+		Convs: (func(x []UnverifiedInboxUIItem) []UnverifiedInboxUIItem {
+			var ret []UnverifiedInboxUIItem
+			for _, v := range x {
+				vCopy := v.DeepCopy()
+				ret = append(ret, vCopy)
+			}
+			return ret
+		})(o.Convs),
+	}
+}
+
+type ChatSyncInboxConversationArg struct {
+	SessionID int         `codec:"sessionID" json:"sessionID"`
+	Conv      InboxUIItem `codec:"conv" json:"conv"`
+}
+
+func (o ChatSyncInboxConversationArg) DeepCopy() ChatSyncInboxConversationArg {
+	return ChatSyncInboxConversationArg{
+		SessionID: o.SessionID,
+		Conv:      o.Conv.DeepCopy(),
+	}
+}
+
+type ChatSyncInboxConversationFailedArg struct {
+	SessionID int                    `codec:"sessionID" json:"sessionID"`
+	ConvID    ConversationID         `codec:"convID" json:"convID"`
+	Error     ConversationErrorLocal `codec:"error" json:"error"`
+}
+
+func (o ChatSyncInboxConversationFailedArg) DeepCopy() ChatSyncInboxConversationFailedArg {
+	return ChatSyncInboxConversationFailedArg{
+		SessionID: o.SessionID,
+		ConvID:    o.ConvID.DeepCopy(),
+		Error:     o.Error.DeepCopy(),
+	}
+}
+
 type ChatSyncInboxCompleteArg struct {
 	SessionID int `codec:"sessionID" json:"sessionID"`
 }
@@ -676,6 +721,9 @@ type ChatUiInterface interface {
 	ChatThreadFull(context.Context, ChatThreadFullArg) error
 	ChatConfirmChannelDelete(context.Context, ChatConfirmChannelDeleteArg) (bool, error)
 	ChatSyncInboxRequest(context.Context) error
+	ChatSyncInboxUnverified(context.Context, ChatSyncInboxUnverifiedArg) error
+	ChatSyncInboxConversation(context.Context, ChatSyncInboxConversationArg) error
+	ChatSyncInboxConversationFailed(context.Context, ChatSyncInboxConversationFailedArg) error
 	ChatSyncInboxComplete(context.Context, int) error
 }
 
@@ -934,6 +982,54 @@ func ChatUiProtocol(i ChatUiInterface) rpc.Protocol {
 				},
 				MethodType: rpc.MethodCall,
 			},
+			"chatSyncInboxUnverified": {
+				MakeArg: func() interface{} {
+					ret := make([]ChatSyncInboxUnverifiedArg, 1)
+					return &ret
+				},
+				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
+					typedArgs, ok := args.(*[]ChatSyncInboxUnverifiedArg)
+					if !ok {
+						err = rpc.NewTypeError((*[]ChatSyncInboxUnverifiedArg)(nil), args)
+						return
+					}
+					err = i.ChatSyncInboxUnverified(ctx, (*typedArgs)[0])
+					return
+				},
+				MethodType: rpc.MethodCall,
+			},
+			"chatSyncInboxConversation": {
+				MakeArg: func() interface{} {
+					ret := make([]ChatSyncInboxConversationArg, 1)
+					return &ret
+				},
+				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
+					typedArgs, ok := args.(*[]ChatSyncInboxConversationArg)
+					if !ok {
+						err = rpc.NewTypeError((*[]ChatSyncInboxConversationArg)(nil), args)
+						return
+					}
+					err = i.ChatSyncInboxConversation(ctx, (*typedArgs)[0])
+					return
+				},
+				MethodType: rpc.MethodCall,
+			},
+			"chatSyncInboxConversationFailed": {
+				MakeArg: func() interface{} {
+					ret := make([]ChatSyncInboxConversationFailedArg, 1)
+					return &ret
+				},
+				Handler: func(ctx context.Context, args interface{}) (ret interface{}, err error) {
+					typedArgs, ok := args.(*[]ChatSyncInboxConversationFailedArg)
+					if !ok {
+						err = rpc.NewTypeError((*[]ChatSyncInboxConversationFailedArg)(nil), args)
+						return
+					}
+					err = i.ChatSyncInboxConversationFailed(ctx, (*typedArgs)[0])
+					return
+				},
+				MethodType: rpc.MethodCall,
+			},
 			"chatSyncInboxComplete": {
 				MakeArg: func() interface{} {
 					ret := make([]ChatSyncInboxCompleteArg, 1)
@@ -1039,6 +1135,21 @@ func (c ChatUiClient) ChatConfirmChannelDelete(ctx context.Context, __arg ChatCo
 
 func (c ChatUiClient) ChatSyncInboxRequest(ctx context.Context) (err error) {
 	err = c.Cli.Call(ctx, "chat.1.chatUi.chatSyncInboxRequest", []interface{}{ChatSyncInboxRequestArg{}}, nil)
+	return
+}
+
+func (c ChatUiClient) ChatSyncInboxUnverified(ctx context.Context, __arg ChatSyncInboxUnverifiedArg) (err error) {
+	err = c.Cli.Call(ctx, "chat.1.chatUi.chatSyncInboxUnverified", []interface{}{__arg}, nil)
+	return
+}
+
+func (c ChatUiClient) ChatSyncInboxConversation(ctx context.Context, __arg ChatSyncInboxConversationArg) (err error) {
+	err = c.Cli.Call(ctx, "chat.1.chatUi.chatSyncInboxConversation", []interface{}{__arg}, nil)
+	return
+}
+
+func (c ChatUiClient) ChatSyncInboxConversationFailed(ctx context.Context, __arg ChatSyncInboxConversationFailedArg) (err error) {
+	err = c.Cli.Call(ctx, "chat.1.chatUi.chatSyncInboxConversationFailed", []interface{}{__arg}, nil)
 	return
 }
 
