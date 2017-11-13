@@ -260,21 +260,23 @@ func List(ctx context.Context, g *libkb.GlobalContext, arg keybase1.TeamListArg)
 				FullName: fullName,
 			}
 
+			anInvites, err = AnnotateInvites(subctx, g, team)
+			if err != nil {
+				g.Log.CDebugf(subctx, "| Failed to AnnotateInvites for team %q: %v", team.ID, err)
+			}
+
 			if !arg.All {
 				members, err := team.Members()
 				if err == nil {
 					anMemberInfo.MemberCount = len(members.AllUIDs())
+					for _, annotatedTeamInvite := range anInvites {
+						category, err := annotatedTeamInvite.Type.C()
+						if err == nil && category == keybase1.TeamInviteCategory_KEYBASE {
+							anMemberInfo.MemberCount++
+						}
+					}
 				} else {
 					g.Log.CDebugf(subctx, "| Failed to get Members() for team %q: %v", team.ID, err)
-				}
-			}
-
-			anInvites = make(AnnotatedTeamInviteMap)
-			if serverSaysNeedAdmin {
-				anInvites, err = AnnotateInvites(subctx, g, team)
-				if err != nil {
-					g.Log.CDebugf(subctx, "| Failed to AnnotateInvites for team %q: %v", team.ID, err)
-					return nil
 				}
 			}
 
