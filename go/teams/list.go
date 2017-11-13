@@ -199,6 +199,8 @@ func List(ctx context.Context, g *libkb.GlobalContext, arg keybase1.TeamListArg)
 		return res, nil
 	}
 
+	var teamsForUser = map[keybase1.TeamID]keybase1.MemberInfo{}
+
 	tracer.Stage("Loads")
 
 	expectEmptyList := true
@@ -243,9 +245,7 @@ func List(ctx context.Context, g *libkb.GlobalContext, arg keybase1.TeamListArg)
 				return nil
 			}
 
-			type AnnotatedTeamInviteMap map[keybase1.TeamInviteID]keybase1.AnnotatedTeamInvite
 			var anMemberInfo *keybase1.AnnotatedMemberInfo
-			var anInvites AnnotatedTeamInviteMap
 
 			anMemberInfo = &keybase1.AnnotatedMemberInfo{
 				TeamID:         team.ID,
@@ -260,21 +260,10 @@ func List(ctx context.Context, g *libkb.GlobalContext, arg keybase1.TeamListArg)
 				FullName: fullName,
 			}
 
-			anInvites, err = AnnotateInvites(subctx, g, team)
-			if err != nil {
-				g.Log.CDebugf(subctx, "| Failed to AnnotateInvites for team %q: %v", team.ID, err)
-			}
-
 			if !arg.All {
 				members, err := team.Members()
 				if err == nil {
 					anMemberInfo.MemberCount = len(members.AllUIDs())
-					for _, annotatedTeamInvite := range anInvites {
-						category, err := annotatedTeamInvite.Type.C()
-						if err == nil && category == keybase1.TeamInviteCategory_KEYBASE {
-							anMemberInfo.MemberCount++
-						}
-					}
 				} else {
 					g.Log.CDebugf(subctx, "| Failed to get Members() for team %q: %v", team.ID, err)
 				}
@@ -285,8 +274,9 @@ func List(ctx context.Context, g *libkb.GlobalContext, arg keybase1.TeamListArg)
 			defer resLock.Unlock()
 
 			res.Teams = append(res.Teams, *anMemberInfo)
-			for teamInviteID, annotatedTeamInvite := range anInvites {
-				res.AnnotatedActiveInvites[teamInviteID] = annotatedTeamInvite
+
+			if memberInfo.UserID == meUID {
+				teamsForUser[team.ID] = memberInfo
 			}
 
 			return nil
@@ -294,6 +284,46 @@ func List(ctx context.Context, g *libkb.GlobalContext, arg keybase1.TeamListArg)
 	}
 
 	err = group.Wait()
+
+	tracer.Stage("Invites")
+
+	for _, memberInfo := range teamsForUser {
+		team, err := getTeamForMember(subctx, g, memberInfo, false)
+		if err != nil {
+			g.Log.CDebugf(subctx, "| Error in getTeamForMember %q: %v; skipping team", memberInfo.UserID, err)
+			continue
+		}
+		
+		type AnnotatedTeamInviteMap map[keybase1.TeamInviteID]keybase1.AnnotatedTeamInvite
+		var anInvites AnnotatedTeamInviteMap
+		anInvites, err = AnnotateInvites(subctx, g, team)
+		if err != nil {
+			g.Log.CDebugf(subctx, "| Failed to AnnotateInvites for team %q: %v", team.ID, err)
+			continue
+		}
+
+		for teamInviteID, annotatedTeamInvite := range anInvites {
+			res.AnnotatedActiveInvites[teamInviteID] = annotatedTeamInvite
+		}
+
+		if !arg.All {
+			var anTeam *keybase1.AnnotatedMemberInfo
+			for _, t := range res.Teams {
+				if t.TeamID == team.ID {
+					anTeam = &t
+					break
+				}
+			}
+			if anTeam != nil {
+				for _, annotatedTeamInvite := range anInvites {
+					category, err := annotatedTeamInvite.Type.C()
+					if err == nil && category == keybase1.TeamInviteCategory_KEYBASE {
+						anTeam.MemberCount++
+					}
+				}
+			}
+		}
+	}
 
 	if arg.All && len(res.Teams) != 0 {
 		tracer.Stage("FillUsernames")
@@ -423,6 +453,51 @@ func AnnotateInvites(ctx context.Context, g *libkb.GlobalContext, team *Team) (m
 			Uv:              uv,
 			Inviter:         invite.Inviter,
 			InviterUsername: username.String(),
+			TeamName:        teamName,
+		}
+	}
+	return annotatedInvites, nil
+}
+
+// annotateInvitesNoLookup annotates invites but doesn't do any
+// Username/Fullname/Eldest lookups. Caller is expected to do these
+// lookups on their own, filling Names (for `Keybase` invites) and
+// InviterUsernames, but also filtering bad EldestSeqnos `Keybase`
+// invites.
+func annotateInvitesNoLookup(ctx context.Context, g *libkb.GlobalContext, team *Team) (map[keybase1.TeamInviteID]keybase1.AnnotatedTeamInvite, error) {
+	invites := team.chain().inner.ActiveInvites
+	teamName := team.Name().String()
+
+	annotatedInvites := make(map[keybase1.TeamInviteID]keybase1.AnnotatedTeamInvite, len(invites))
+	for id, invite := range invites {
+		name := invite.Name
+		category, err := invite.Type.C()
+		if err != nil {
+			return nil, err
+		}
+		var uv keybase1.UserVersion
+		if category == keybase1.TeamInviteCategory_KEYBASE {
+			// "keybase" invites (i.e. pukless users) have user version for name
+			var err error
+			uv, err = invite.KeybaseUserVersion()
+			if err != nil {
+				return nil, err
+			}
+			name = ""
+		} else if category == keybase1.TeamInviteCategory_SEITAN {
+			name, err = AnnotateSeitanInvite(ctx, team, invite)
+			if err != nil {
+				return annotatedInvites, err
+			}
+		}
+
+		annotatedInvites[id] = keybase1.AnnotatedTeamInvite{
+			Role:            invite.Role,
+			Id:              invite.Id,
+			Type:            invite.Type,
+			Name:            name,
+			Uv:              uv,
+			Inviter:         invite.Inviter,
 			TeamName:        teamName,
 		}
 	}
