@@ -72,7 +72,7 @@ function _threadIsCleared(originalAction: Action, checkAction: Action): boolean 
 
 function* _loadMoreMessages(action: ChatGen.LoadMoreMessagesPayload): Saga.SagaGenerator<any, any> {
   const conversationIDKey = action.payload.conversationIDKey
-  const recent = action.payload.wantNewer === true
+  const recent = action.payload.wantOlder === false
 
   try {
     if (!conversationIDKey) {

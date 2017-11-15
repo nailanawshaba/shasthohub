@@ -103,7 +103,7 @@ const mapDispatchToProps = (dispatch: Dispatch): DispatchProps => ({
     dispatch(ChatGen.createSaveAttachment({messageKey}))
   },
   _onLoadMoreMessages: (conversationIDKey: Constants.ConversationIDKey) => {
-    dispatch(ChatGen.createLoadMoreMessages({conversationIDKey, onlyIfUnloaded: false}))
+    dispatch(ChatGen.createLoadMoreMessages({conversationIDKey, onlyIfUnloaded: false, wantOlder: true}))
   },
   onDeleteMessage: (message: Constants.Message) => {
     dispatch(ChatGen.createDeleteMessage({message}))

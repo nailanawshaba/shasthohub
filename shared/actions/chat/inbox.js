@@ -766,7 +766,6 @@ function* _inboxSynced(action: ChatGen.InboxSyncedPayload): Saga.SagaGenerator<a
         conversationIDKey: selectedConversation,
         onlyIfUnloaded: false,
         fromUser: false,
-        wantNewer: true,
         numberOverride,
       })
     )
