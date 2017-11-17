@@ -82,6 +82,7 @@ export type TextMessage = {
   editedCount: number, // increase as we edit it
   mentions: Mentions,
   channelMention: ChannelMention,
+  ordinal: number,
 }
 export function textMessageEditable(message: TextMessage): boolean {
   // For now, disallow editing of non-sent messages. In the future, we
@@ -96,6 +97,7 @@ export type ErrorMessage = {
   conversationIDKey: ConversationIDKey,
   messageID?: MessageID,
   key: MessageKey,
+  ordinal: number,
 }
 
 export type InvisibleErrorMessage = {
@@ -105,6 +107,7 @@ export type InvisibleErrorMessage = {
   messageID: MessageID,
   key: MessageKey,
   data: any,
+  ordinal: number,
 }
 
 export type UnhandledMessage = {
@@ -113,7 +116,8 @@ export type UnhandledMessage = {
   conversationIDKey: ConversationIDKey,
   messageID: MessageID,
   key: MessageKey,
-}
+  ordinal: number,
+} & OrderableMessage
 
 export type AttachmentSize = {
   width: number,
@@ -149,6 +153,7 @@ export type AttachmentMessage = {
   senderDeviceRevokedAt: ?number,
   key: MessageKey,
   failureDescription?: ?string,
+  ordinal: number,
 }
 
 export type TimestampMessage = {
@@ -174,6 +179,7 @@ export type JoinedLeftMessage = {
   timestamp: number,
   message: HiddenString,
   key: MessageKey,
+  ordinal: number,
 }
 
 export type SystemMessage = {
@@ -183,6 +189,7 @@ export type SystemMessage = {
   timestamp: number,
   message: HiddenString,
   key: MessageKey,
+  ordinal: number,
 }
 
 export type SupersedesMessage = {
@@ -199,6 +206,7 @@ export type DeletedMessage = {
   key: MessageKey,
   messageID: MessageID,
   deletedIDs: Array<MessageID>,
+  ordinal: number,
 }
 
 export type EditingMessage = {
@@ -211,6 +219,7 @@ export type EditingMessage = {
   timestamp: number,
   mentions: Mentions,
   channelMention: ChannelMention,
+  ordinal: number,
 }
 
 export type UpdatingAttachment = {
@@ -250,6 +259,12 @@ export type ServerMessage =
 export type Message = ClientMessage | ServerMessage
 
 export type MaybeTimestamp = TimestampMessage | null
+
+export type ConversationMessages = I.RecordOf<{
+  high: number,
+  low: number,
+  messages: I.List<MessageKey>,
+}>
 
 export const ConversationStatusByEnum = invert(ChatTypes.commonConversationStatus)
 type _ConversationState = {
@@ -778,6 +793,11 @@ function messageKeyKindIsMessageID(key: MessageKey): boolean {
 }
 
 function messageKeyKind(key: MessageKey): MessageKeyKind {
+  try {
+    key.split(':')
+  } catch (e) {
+    console.log(JSON.stringify(key))
+  }
   const [, kind] = key.split(':')
   switch (kind) {
     case 'joinedleft':
@@ -921,8 +941,11 @@ const getUserItems = createShallowEqualSelector(
     })
 )
 
-function getConversationMessages(state: TypedState, convIDKey: ConversationIDKey): I.OrderedSet<MessageKey> {
-  return state.entities.conversationMessages.get(convIDKey, I.OrderedSet())
+function getConversationMessages(state: TypedState, convIDKey: ConversationIDKey): ConversationMessages {
+  return state.entities.conversationMessages.get(
+    convIDKey,
+    makeConversationMessages({high: -1, low: -1, messages: I.List()})
+  )
 }
 
 function getDeletedMessageIDs(state: TypedState, convIDKey: ConversationIDKey): I.Set<MessageID> {
@@ -1018,7 +1041,8 @@ function getMessageKeyFromConvKeyMessageID(
   messageID: MessageID | OutboxIDKey // Works for outbox id too since it uses the message key
 ) {
   const convMsgs = getConversationMessages(state, conversationIDKey)
-  return convMsgs.find(k => {
+  const messageKeys = convMsgs.messages
+  return messageKeys.find(k => {
     const {messageID: mID} = splitMessageIDKey(k)
     return messageID === mID
   })
@@ -1034,7 +1058,8 @@ function getMessageFromConvKeyMessageID(
 }
 
 function lastMessageID(state: TypedState, conversationIDKey: ConversationIDKey): ?MessageID {
-  const messageKeys = getConversationMessages(state, conversationIDKey)
+  const convMsgs = getConversationMessages(state, conversationIDKey)
+  const messageKeys = convMsgs.messages
   const lastMessageKey = messageKeys.findLast(m => {
     if (m) {
       const {type: msgIDType} = parseMessageID(messageKeyValue(m))
@@ -1097,6 +1122,12 @@ function getPaginationPrev(state: TypedState, conversationIDKey: ConversationIDK
   return state.entities.pagination.prev.get(conversationIDKey, null)
 }
 
+const makeConversationMessages = I.Record({
+  high: 0,
+  low: 0,
+  messages: I.List(),
+})
+
 export {
   getBrokenUsers,
   getConversationMessages,
@@ -1124,6 +1155,7 @@ export {
   convSupersededByInfo,
   keyToConversationID,
   keyToOutboxID,
+  makeConversationMessages,
   makeSnippet,
   makeTeamTitle,
   messageKey,

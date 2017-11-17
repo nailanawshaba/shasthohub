@@ -1145,7 +1145,7 @@ export type OutboxID = Bytes
 
 export type OutboxInfo = {|prev: MessageID,composeTime: Gregor1.Time,|}
 
-export type OutboxRecord = {|state: OutboxState,outboxID: OutboxID,convID: ConversationID,ctime: Gregor1.Time,Msg: MessagePlaintext,identifyBehavior: Keybase1.TLFIdentifyBehavior,|}
+export type OutboxRecord = {|state: OutboxState,outboxID: OutboxID,convID: ConversationID,ctime: Gregor1.Time,Msg: MessagePlaintext,identifyBehavior: Keybase1.TLFIdentifyBehavior,ordinal: Int,|}
 
 export type OutboxState ={ state: 0, sending: ?Int } | { state: 1, error: ?OutboxStateError }
 

@@ -68,7 +68,7 @@ type _State = {
   attachmentPreviewProgress: I.Map<ChatConstants.MessageKey, ?number>,
   attachmentSavedPath: I.Map<ChatConstants.MessageKey, ?string>,
   attachmentUploadProgress: I.Map<ChatConstants.MessageKey, ?number>,
-  conversationMessages: I.Map<ChatConstants.ConversationIDKey, I.OrderedSet<ChatConstants.MessageKey>>,
+  conversationMessages: I.Map<ChatConstants.ConversationIDKey, ChatConstants.ConversationMessages>,
   deletedIDs: I.Map<ChatConstants.ConversationIDKey, I.Set<ChatConstants.MessageID>>,
   devices: I.Map<string, DeviceDetail>,
   git: Git.State,

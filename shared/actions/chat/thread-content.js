@@ -123,7 +123,8 @@ function* _loadMoreMessages(action: ChatGen.LoadMoreMessagesPayload): Saga.SagaG
       .map(k => ChatTypes.commonMessageType[k])
     const conversationID = Constants.keyToConversationID(conversationIDKey)
 
-    const messageKeys = yield Saga.select(Constants.getConversationMessages, conversationIDKey)
+    const convMsgs = yield Saga.select(Constants.getConversationMessages, conversationIDKey)
+    const messageKeys = convMsgs.messages
     // Find a real message id (ignore outbox etc)
     let pivotMessageKey = recent
       ? messageKeys.findLast(Constants.messageKeyKindIsMessageID)
@@ -407,6 +408,7 @@ function _unboxedToMessage(
       timestamp: payload.ctime,
       type: 'Text',
       you: yourName,
+      ordinal: payload.ordinal,
     }
   }
 
@@ -427,6 +429,7 @@ function _unboxedToMessage(
         senderDeviceRevokedAt: payload.senderDeviceRevokedAt,
         timestamp: payload.ctime,
         you: yourName,
+        ordinal: payload.messageID,
       }
 
       switch (payload.messageBody.messageType) {
@@ -506,6 +509,7 @@ function _unboxedToMessage(
             messageID: common.messageID,
             key: Constants.messageKey(common.conversationIDKey, 'messageIDDeleted', common.messageID),
             deletedIDs,
+            ordinal: common.ordinal,
           }
         case ChatTypes.commonMessageType.edit: {
           const message = new HiddenString(
@@ -524,6 +528,7 @@ function _unboxedToMessage(
             targetMessageID,
             timestamp: common.timestamp,
             type: 'Edit',
+            ordinal: common.ordinal,
           }
         }
         case ChatTypes.commonMessageType.join: {
@@ -535,6 +540,7 @@ function _unboxedToMessage(
             timestamp: common.timestamp,
             message,
             key: Constants.messageKey(common.conversationIDKey, 'joinedleft', common.messageID),
+            ordinal: common.ordinal,
           }
         }
         case ChatTypes.commonMessageType.leave: {
@@ -546,6 +552,7 @@ function _unboxedToMessage(
             timestamp: common.timestamp,
             message,
             key: Constants.messageKey(common.conversationIDKey, 'joinedleft', common.messageID),
+            ordinal: common.ordinal,
           }
         }
         case ChatTypes.commonMessageType.system: {
@@ -610,6 +617,7 @@ function _unboxedToMessage(
               Constants.rpcMessageIDToMessageID(error.messageID)
             ),
             messageID: Constants.rpcMessageIDToMessageID(error.messageID),
+            rawMessageID: error.messageID,
             reason: error.errMsg || '',
             timestamp: error.ctime,
             type: 'Error',
@@ -624,6 +632,7 @@ function _unboxedToMessage(
             ),
             data: message,
             messageID: Constants.rpcMessageIDToMessageID(error.messageID),
+            rawMessageID: error.messageID,
             timestamp: error.ctime,
             type: 'InvisibleError',
           }
@@ -744,21 +753,41 @@ function* _updateThread({
   }
 }
 
-function* _appendMessagesToConversation({
+function* _addMessagesToConversation({
   payload: {conversationIDKey, messages},
 }: ChatGen.AppendMessagesPayload) {
-  const currentMessages = yield Saga.select(Constants.getConversationMessages, conversationIDKey)
-  const nextMessages = currentMessages.concat(messages.map(m => m.key))
-  yield Saga.put(
-    EntityCreators.replaceEntity(['conversationMessages'], I.Map({[conversationIDKey]: nextMessages}))
-  )
-}
+  const state: TypedState = yield Saga.select()
+  const currentMessages = Constants.getConversationMessages(state, conversationIDKey)
+  const lowMessages = messages.filter((m: Constants.ServerMessage) => {
+    return m.ordinal < currentMessages.low
+  })
 
-function* _prependMessagesToConversation({
-  payload: {conversationIDKey, messages},
-}: ChatGen.AppendMessagesPayload) {
-  const currentMessages = yield Saga.select(Constants.getConversationMessages, conversationIDKey)
-  const nextMessages = I.OrderedSet(messages.map(m => m.key)).concat(currentMessages)
+  console.log(`lowMessages: ${JSON.stringify(lowMessages)}`)
+  const highMessages = messages.filter((m: Constants.ServerMessage) => {
+    return m.ordinal > currentMessages.high
+  })
+  const incrMessages = lowMessages.concat(highMessages)
+
+  const newLow = incrMessages.length > 0 &&
+    (currentMessages.low < 0 || incrMessages[0].ordinal < currentMessages.low)
+    ? incrMessages[0].ordinal
+    : currentMessages.low
+  const newHigh = incrMessages.length > 0 &&
+    incrMessages[incrMessages.length - 1].ordinal > currentMessages.high
+    ? incrMessages[incrMessages.length - 1].ordinal
+    : currentMessages.high
+  console.log(`newLow: ${newLow} newHigh: ${newHigh}`)
+  console.log(`highMessages: ${JSON.stringify(highMessages)}`)
+  const newMessages = lowMessages
+    .map(m => m.key)
+    .concat(currentMessages.messages.toArray())
+    .concat(highMessages.map(m => m.key))
+  console.log(`newMessages: ${JSON.stringify(newMessages)}`)
+  const nextMessages = Constants.makeConversationMessages({
+    high: newHigh,
+    low: newLow,
+    messages: I.List(newMessages),
+  })
   yield Saga.put(
     EntityCreators.replaceEntity(['conversationMessages'], I.Map({[conversationIDKey]: nextMessages}))
   )
@@ -961,8 +990,7 @@ function* registerSagas(): Saga.SagaGenerator<any, any> {
   yield Saga.safeTakeEvery(ChatGen.updateThread, _updateThread)
   yield Saga.safeTakeEveryPure(ChatGen.updateBadging, _updateBadging)
   yield Saga.safeTakeEveryPure(ChatGen.updateTempMessage, _updateMessageEntity)
-  yield Saga.safeTakeEvery(ChatGen.appendMessages, _appendMessagesToConversation)
-  yield Saga.safeTakeEvery(ChatGen.prependMessages, _prependMessagesToConversation)
+  yield Saga.safeTakeEvery([ChatGen.appendMessages, ChatGen.prependMessages], _addMessagesToConversation)
   yield Saga.safeTakeEveryPure(ChatGen.removeOutboxMessage, _removeOutboxMessage)
   yield Saga.safeTakeEvery(ChatGen.outboxMessageBecameReal, _updateOutboxMessageToReal)
   yield Saga.safeTakeEvery(ChatGen.openConversation, _openConversation)

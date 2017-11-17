@@ -434,7 +434,7 @@ const mockStore = {
         return acc
       }, {})
     ),
-    conversationMessages: I.Map({[convID]: I.OrderedSet(msgs.map(m => m.key))}),
+    conversationMessages: I.Map({[convID]: ChatConstants.makeConversationMessages(msgs)}),
   }),
 }
 
