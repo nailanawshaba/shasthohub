@@ -375,6 +375,7 @@ function _unboxedToMessage(
   if (message && message.state === ChatTypes.chatUiMessageUnboxedState.outbox && message.outbox) {
     // Outbox messages are always text, not attachments.
     const payload: ChatTypes.UIMessageOutbox = message.outbox
+    console.log(`OUTBOX ITEM: ${JSON.stringify(payload)}`)
     // prettier-ignore
     const messageState: Constants.MessageState = payload &&
       payload.state &&
@@ -763,7 +764,7 @@ function getMessageOrdinal(m: Constants.ServerMessage): number {
   switch (m.type) {
     case 'Attachment':
     case 'Text':
-      if (m.messageState === 'pending') {
+      if (m.messageState === 'pending' || m.messageState === 'failed') {
         return m.ordinal
       }
       return m.rawMessageID
@@ -781,6 +782,7 @@ function* _addMessagesToConversation({
     return getMessageOrdinal(m) < currentMessages.low
   })
 
+  console.log(`currentMessages: ${JSON.stringify(currentMessages.messages)}`)
   console.log(`lowMessages: ${JSON.stringify(lowMessages)}`)
   const highMessages = messages.filter((m: Constants.ServerMessage) => {
     return getMessageOrdinal(m) > currentMessages.high
@@ -847,6 +849,7 @@ function _removeOutboxMessage(
   if (nextMessages.equals(msgKeys)) {
     return
   }
+  console.log('removed outbox message')
   return Saga.put(
     EntityCreators.replaceEntity(['conversationMessages'], I.Map({[conversationIDKey]: nextMessages}))
   )
