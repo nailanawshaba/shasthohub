@@ -391,7 +391,7 @@ function _unboxedToMessage(
       ? _decodeFailureDescription(payload.state.error.typ)
       : null
     // $FlowIssue
-    const messageText: ChatTypes.MessageText = message.outbox.body
+    const messageText = message.outbox.body
     const outboxIDKey = payload.outboxID && Constants.outboxIDToKey(payload.outboxID)
 
     return {
@@ -404,7 +404,7 @@ function _unboxedToMessage(
       failureDescription,
       key: Constants.messageKey(conversationIDKey, 'outboxIDText', outboxIDKey),
       mentions: I.Set(),
-      message: new HiddenString((messageText && messageText.body) || ''),
+      message: new HiddenString(messageText),
       messageState,
       outboxID: outboxIDKey,
       rawMessageID: -1,
