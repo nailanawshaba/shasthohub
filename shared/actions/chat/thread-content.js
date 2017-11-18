@@ -491,6 +491,7 @@ function _unboxedToMessage(
               common.messageID
             ),
             messageID: common.messageID,
+            rawMessageID: common.rawMessageID,
             targetMessageID: Constants.rpcMessageIDToMessageID(attachmentUploaded.messageID),
             timestamp: common.timestamp,
             type: 'UpdateAttachment',
@@ -507,6 +508,7 @@ function _unboxedToMessage(
             type: 'Deleted',
             timestamp: payload.ctime,
             messageID: common.messageID,
+            rawMessageID: common.rawMessageID,
             key: Constants.messageKey(common.conversationIDKey, 'messageIDDeleted', common.messageID),
             deletedIDs,
             ordinal: common.ordinal,
@@ -522,6 +524,7 @@ function _unboxedToMessage(
             key: Constants.messageKey(common.conversationIDKey, 'messageIDEdit', common.messageID),
             message,
             messageID: common.messageID,
+            rawMessageID: common.rawMessageID,
             outboxID: common.outboxID,
             mentions: common.mentions,
             channelMention: common.channelMention,
@@ -536,6 +539,7 @@ function _unboxedToMessage(
           return {
             type: 'JoinedLeft',
             messageID: common.messageID,
+            rawMessageID: common.rawMessageID,
             author: common.author,
             timestamp: common.timestamp,
             message,
@@ -548,6 +552,7 @@ function _unboxedToMessage(
           return {
             type: 'JoinedLeft',
             messageID: common.messageID,
+            rawMessageID: common.rawMessageID,
             author: common.author,
             timestamp: common.timestamp,
             message,
@@ -642,6 +647,7 @@ function _unboxedToMessage(
 
   return {
     type: 'Error',
+    rawMessageID: -1,
     key: Constants.messageKey(
       conversationIDKey,
       'error',
@@ -753,28 +759,39 @@ function* _updateThread({
   }
 }
 
+function getMessageOrdinal(m: Constants.ServerMessage): number {
+  switch (m.type) {
+    case 'Text':
+      if (m.messageState === 'pending') {
+        return m.ordinal
+      }
+    default:
+      return m.rawMessageID
+  }
+}
+
 function* _addMessagesToConversation({
   payload: {conversationIDKey, messages},
 }: ChatGen.AppendMessagesPayload) {
   const state: TypedState = yield Saga.select()
   const currentMessages = Constants.getConversationMessages(state, conversationIDKey)
   const lowMessages = messages.filter((m: Constants.ServerMessage) => {
-    return m.ordinal < currentMessages.low
+    return getMessageOrdinal(m) < currentMessages.low
   })
 
   console.log(`lowMessages: ${JSON.stringify(lowMessages)}`)
   const highMessages = messages.filter((m: Constants.ServerMessage) => {
-    return m.ordinal > currentMessages.high
+    return getMessageOrdinal(m) > currentMessages.high
   })
   const incrMessages = lowMessages.concat(highMessages)
 
   const newLow = incrMessages.length > 0 &&
-    (currentMessages.low < 0 || incrMessages[0].ordinal < currentMessages.low)
-    ? incrMessages[0].ordinal
+    (currentMessages.low < 0 || getMessageOrdinal(incrMessages[0]) < currentMessages.low)
+    ? getMessageOrdinal(incrMessages[0])
     : currentMessages.low
   const newHigh = incrMessages.length > 0 &&
-    incrMessages[incrMessages.length - 1].ordinal > currentMessages.high
-    ? incrMessages[incrMessages.length - 1].ordinal
+    getMessageOrdinal(incrMessages[incrMessages.length - 1]) > currentMessages.high
+    ? getMessageOrdinal(incrMessages[incrMessages.length - 1])
     : currentMessages.high
   console.log(`newLow: ${newLow} newHigh: ${newHigh}`)
   console.log(`highMessages: ${JSON.stringify(highMessages)}`)

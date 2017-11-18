@@ -97,7 +97,7 @@ export type ErrorMessage = {
   conversationIDKey: ConversationIDKey,
   messageID?: MessageID,
   key: MessageKey,
-  ordinal: number,
+  rawMessageID: number,
 }
 
 export type InvisibleErrorMessage = {
@@ -107,7 +107,7 @@ export type InvisibleErrorMessage = {
   messageID: MessageID,
   key: MessageKey,
   data: any,
-  ordinal: number,
+  rawMessageID: number,
 }
 
 export type UnhandledMessage = {
@@ -116,8 +116,8 @@ export type UnhandledMessage = {
   conversationIDKey: ConversationIDKey,
   messageID: MessageID,
   key: MessageKey,
-  ordinal: number,
-} & OrderableMessage
+  rawMessageID: number,
+}
 
 export type AttachmentSize = {
   width: number,
@@ -153,7 +153,6 @@ export type AttachmentMessage = {
   senderDeviceRevokedAt: ?number,
   key: MessageKey,
   failureDescription?: ?string,
-  ordinal: number,
 }
 
 export type TimestampMessage = {
@@ -174,7 +173,8 @@ export type ChatSecuredHeaderMessage = {
 
 export type JoinedLeftMessage = {
   type: 'JoinedLeft',
-  messageID?: MessageID,
+  messageID: MessageID,
+  rawMessageID: number,
   author: string,
   timestamp: number,
   message: HiddenString,
@@ -184,7 +184,8 @@ export type JoinedLeftMessage = {
 
 export type SystemMessage = {
   type: 'System',
-  messageID?: MessageID,
+  messageID: MessageID,
+  rawMessageID: number,
   author: string,
   timestamp: number,
   message: HiddenString,
@@ -205,6 +206,7 @@ export type DeletedMessage = {
   timestamp: number,
   key: MessageKey,
   messageID: MessageID,
+  rawMessageID: number,
   deletedIDs: Array<MessageID>,
   ordinal: number,
 }
@@ -214,6 +216,7 @@ export type EditingMessage = {
   key: MessageKey,
   message: HiddenString,
   messageID: MessageID,
+  rawMessageID: number,
   outboxID?: ?OutboxIDKey,
   targetMessageID: MessageID,
   timestamp: number,
@@ -226,6 +229,7 @@ export type UpdatingAttachment = {
   type: 'UpdateAttachment',
   key: MessageKey,
   messageID: MessageID,
+  rawMessageID: number,
   targetMessageID: MessageID,
   timestamp: number,
   updates: {
