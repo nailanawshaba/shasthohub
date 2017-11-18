@@ -117,7 +117,7 @@ function* postMessage(action: ChatGen.PostMessagePayload): SagaGenerator<any, an
     timestamp: Date.now(),
     type: 'Text',
     you: author,
-    ordinal: lastOrd + 0.001,
+    ordinal: Constants.nextFractionalOrdinal(lastOrd),
   }
 
   const selectedConversation = yield Saga.select(Constants.getSelectedConversation)

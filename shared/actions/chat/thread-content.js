@@ -761,6 +761,7 @@ function* _updateThread({
 
 function getMessageOrdinal(m: Constants.ServerMessage): number {
   switch (m.type) {
+    case 'Attachment':
     case 'Text':
       if (m.messageState === 'pending') {
         return m.ordinal

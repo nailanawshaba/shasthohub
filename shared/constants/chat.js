@@ -153,6 +153,7 @@ export type AttachmentMessage = {
   senderDeviceRevokedAt: ?number,
   key: MessageKey,
   failureDescription?: ?string,
+  ordinal: number,
 }
 
 export type TimestampMessage = {
@@ -1079,6 +1080,10 @@ function lastOrdinal(state: TypedState, conversationIDKey: ConversationIDKey): n
   return convMsgs.high
 }
 
+function nextFractionalOrdinal(ord: number): number {
+  return ord + 0.001
+}
+
 const getDownloadProgress = ({entities: {attachmentDownloadProgress}}: TypedState, messageKey: MessageKey) =>
   attachmentDownloadProgress.get(messageKey, null)
 
@@ -1204,4 +1209,5 @@ export {
   parseMessageID,
   lastMessageID,
   lastOrdinal,
+  nextFractionalOrdinal,
 }
