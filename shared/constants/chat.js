@@ -1074,6 +1074,11 @@ function lastMessageID(state: TypedState, conversationIDKey: ConversationIDKey):
   return lastMessageKey ? messageKeyValue(lastMessageKey) : null
 }
 
+function lastOrdinal(state: TypedState, conversationIDKey: ConversationIDKey): number {
+  const convMsgs = getConversationMessages(state, conversationIDKey)
+  return convMsgs.high
+}
+
 const getDownloadProgress = ({entities: {attachmentDownloadProgress}}: TypedState, messageKey: MessageKey) =>
   attachmentDownloadProgress.get(messageKey, null)
 
@@ -1198,4 +1203,5 @@ export {
   messageIDToSelfInventedID,
   parseMessageID,
   lastMessageID,
+  lastOrdinal,
 }

@@ -96,6 +96,8 @@ function* postMessage(action: ChatGen.PostMessagePayload): SagaGenerator<any, an
   const outboxID = yield Saga.call(RPCChatTypes.localGenerateOutboxIDRpcPromise)
   const author = yield Saga.select(usernameSelector)
   const outboxIDKey = Constants.outboxIDToKey(outboxID)
+  const clientPrev = lastMessageID ? Constants.parseMessageID(lastMessageID).msgID : 0
+  const lastOrd = yield Saga.select(Constants.lastOrdinal, conversationIDKey)
 
   const message: Constants.TextMessage = {
     author,
@@ -115,6 +117,7 @@ function* postMessage(action: ChatGen.PostMessagePayload): SagaGenerator<any, an
     timestamp: Date.now(),
     type: 'Text',
     you: author,
+    ordinal: lastOrd + 0.001,
   }
 
   const selectedConversation = yield Saga.select(Constants.getSelectedConversation)
@@ -138,7 +141,7 @@ function* postMessage(action: ChatGen.PostMessagePayload): SagaGenerator<any, an
       outboxID,
       body: action.payload.text.stringValue(),
       identifyBehavior: yield Saga.call(Shared.getPostingIdentifyBehavior, conversationIDKey),
-      clientPrev: lastMessageID ? Constants.parseMessageID(lastMessageID).msgID : 0,
+      clientPrev: clientPrev,
     },
   })
 }

@@ -765,6 +765,7 @@ function getMessageOrdinal(m: Constants.ServerMessage): number {
       if (m.messageState === 'pending') {
         return m.ordinal
       }
+      return m.rawMessageID
     default:
       return m.rawMessageID
   }
@@ -831,10 +832,15 @@ function _removeOutboxMessage(
   {payload: {conversationIDKey, outboxID}}: ChatGen.RemoveOutboxMessagePayload,
   s: TypedState
 ) {
-  const msgKeys: I.OrderedSet<Constants.MessageKey> = Constants.getConversationMessages(s, conversationIDKey)
-  const nextMessages = msgKeys.filter(k => {
-    const {messageID} = Constants.splitMessageIDKey(k)
-    return messageID !== outboxID
+  const convMsgs = Constants.getConversationMessages(s, conversationIDKey)
+  const msgKeys: I.List<Constants.MessageKey> = convMsgs.messages
+  const nextMessages = Constants.makeConversationMessages({
+    high: convMsgs.high,
+    low: convMsgs.low,
+    messages: msgKeys.filter(k => {
+      const {messageID} = Constants.splitMessageIDKey(k)
+      return messageID !== outboxID
+    }),
   })
 
   if (nextMessages.equals(msgKeys)) {
@@ -851,7 +857,11 @@ function* _updateOutboxMessageToReal({
   const localMessageState = yield Saga.select(Constants.getLocalMessageStateFromMessageKey, oldMessageKey)
   const conversationIDKey = Constants.messageKeyConversationIDKey(newMessageKey)
   const currentMessages = yield Saga.select(Constants.getConversationMessages, conversationIDKey)
-  const nextMessages = currentMessages.map(k => (k === oldMessageKey ? newMessageKey : k))
+  const nextMessages = Constants.makeConversationMessages({
+    high: currentMessages.high,
+    low: currentMessages.low,
+    messages: currentMessages.messages.map(k => (k === oldMessageKey ? newMessageKey : k)),
+  })
   yield Saga.all([
     Saga.put(
       EntityCreators.replaceEntity(['conversationMessages'], I.Map({[conversationIDKey]: nextMessages}))
