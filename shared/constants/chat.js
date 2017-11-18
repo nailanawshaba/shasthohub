@@ -946,11 +946,12 @@ const getUserItems = createShallowEqualSelector(
     })
 )
 
+function emptyConversationMessages(): ConversationMessages {
+  return makeConversationMessages({high: -1, low: -1, messages: I.List()})
+}
+
 function getConversationMessages(state: TypedState, convIDKey: ConversationIDKey): ConversationMessages {
-  return state.entities.conversationMessages.get(
-    convIDKey,
-    makeConversationMessages({high: -1, low: -1, messages: I.List()})
-  )
+  return state.entities.conversationMessages.get(convIDKey, emptyConversationMessages())
 }
 
 function getDeletedMessageIDs(state: TypedState, convIDKey: ConversationIDKey): I.Set<MessageID> {
@@ -1210,4 +1211,5 @@ export {
   lastMessageID,
   lastOrdinal,
   nextFractionalOrdinal,
+  emptyConversationMessages,
 }

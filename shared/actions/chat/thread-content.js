@@ -20,7 +20,10 @@ import {type ChangedFocus, type ChangedActive} from '../../constants/app'
 
 function* _clearConversationMessages({payload: {conversationIDKey}}: ChatGen.ClearMessagesPayload) {
   yield Saga.put(
-    EntityCreators.replaceEntity(['conversationMessages'], I.Map({[conversationIDKey]: I.OrderedSet()}))
+    EntityCreators.replaceEntity(
+      ['conversationMessages'],
+      I.Map({[conversationIDKey]: Constants.emptyConversationMessages()})
+    )
   )
 }
 
@@ -719,20 +722,6 @@ function* _updateThread({
       yourDeviceName,
       conversationIDKey
     )
-    const messageFromYou =
-      message.deviceName === yourDeviceName && message.author && yourName === message.author
-
-    if ((message.type === 'Text' || message.type === 'Attachment') && messageFromYou && message.outboxID) {
-      const outboxID: Constants.OutboxIDKey = message.outboxID
-      const state = yield Saga.select()
-      const pendingMessage = Shared.messageOutboxIDSelector(state, conversationIDKey, outboxID)
-      if (pendingMessage) {
-        // Delete the pre-existing pending version of this message, since we're
-        // about to add a newly received version of the same message.
-        yield Saga.put(ChatGen.createRemoveOutboxMessage({conversationIDKey, outboxID}))
-      }
-    }
-
     if (message.type !== 'Unhandled') {
       newMessages.push(message)
     }
