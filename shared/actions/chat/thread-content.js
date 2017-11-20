@@ -378,7 +378,6 @@ function _unboxedToMessage(
   if (message && message.state === ChatTypes.chatUiMessageUnboxedState.outbox && message.outbox) {
     // Outbox messages are always text, not attachments.
     const payload: ChatTypes.UIMessageOutbox = message.outbox
-    console.log(`OUTBOX ITEM: ${JSON.stringify(payload)}`)
     // prettier-ignore
     const messageState: Constants.MessageState = payload &&
       payload.state &&
@@ -749,7 +748,7 @@ function* _updateThread({
   }
 }
 
-function getMessageOrdinal(m: Constants.ServerMessage): number {
+function _getMessageOrdinal(m: Constants.ServerMessage): number {
   switch (m.type) {
     case 'Attachment':
     case 'Text':
@@ -762,42 +761,44 @@ function getMessageOrdinal(m: Constants.ServerMessage): number {
   }
 }
 
-function* _addMessagesToConversation({
-  payload: {conversationIDKey, messages},
-}: ChatGen.AppendMessagesPayload) {
-  const state: TypedState = yield Saga.select()
+function addMessagesToConversation(
+  state: TypedState,
+  conversationIDKey: Constants.ConversationIDKey,
+  messages: Array<Constants.ServerMessage>
+): Constants.ConversationMessages {
   const currentMessages = Constants.getConversationMessages(state, conversationIDKey)
   const lowMessages = messages.filter((m: Constants.ServerMessage) => {
-    return getMessageOrdinal(m) < currentMessages.low
+    return _getMessageOrdinal(m) < currentMessages.low
   })
-
-  console.log(`currentMessages: ${JSON.stringify(currentMessages.messages)}`)
-  console.log(`lowMessages: ${JSON.stringify(lowMessages)}`)
   const highMessages = messages.filter((m: Constants.ServerMessage) => {
-    return getMessageOrdinal(m) > currentMessages.high
+    return _getMessageOrdinal(m) > currentMessages.high
   })
   const incrMessages = lowMessages.concat(highMessages)
 
   const newLow = incrMessages.length > 0 &&
-    (currentMessages.low < 0 || getMessageOrdinal(incrMessages[0]) < currentMessages.low)
-    ? getMessageOrdinal(incrMessages[0])
+    (currentMessages.low < 0 || _getMessageOrdinal(incrMessages[0]) < currentMessages.low)
+    ? _getMessageOrdinal(incrMessages[0])
     : currentMessages.low
   const newHigh = incrMessages.length > 0 &&
-    getMessageOrdinal(incrMessages[incrMessages.length - 1]) > currentMessages.high
-    ? getMessageOrdinal(incrMessages[incrMessages.length - 1])
+    _getMessageOrdinal(incrMessages[incrMessages.length - 1]) > currentMessages.high
+    ? _getMessageOrdinal(incrMessages[incrMessages.length - 1])
     : currentMessages.high
-  console.log(`newLow: ${newLow} newHigh: ${newHigh}`)
-  console.log(`highMessages: ${JSON.stringify(highMessages)}`)
   const newMessages = lowMessages
     .map(m => m.key)
     .concat(currentMessages.messages.toArray())
     .concat(highMessages.map(m => m.key))
-  console.log(`newMessages: ${JSON.stringify(newMessages)}`)
-  const nextMessages = Constants.makeConversationMessages({
+  return Constants.makeConversationMessages({
     high: newHigh,
     low: newLow,
     messages: I.List(newMessages),
   })
+}
+
+function* _addMessagesToConversationSaga({
+  payload: {conversationIDKey, messages},
+}: ChatGen.AppendMessagesPayload) {
+  const state: TypedState = yield Saga.select()
+  const nextMessages = addMessagesToConversation(state, conversationIDKey, messages)
   yield Saga.put(
     EntityCreators.replaceEntity(['conversationMessages'], I.Map({[conversationIDKey]: nextMessages}))
   )
@@ -1010,7 +1011,7 @@ function* registerSagas(): Saga.SagaGenerator<any, any> {
   yield Saga.safeTakeEvery(ChatGen.updateThread, _updateThread)
   yield Saga.safeTakeEveryPure(ChatGen.updateBadging, _updateBadging)
   yield Saga.safeTakeEveryPure(ChatGen.updateTempMessage, _updateMessageEntity)
-  yield Saga.safeTakeEvery([ChatGen.appendMessages, ChatGen.prependMessages], _addMessagesToConversation)
+  yield Saga.safeTakeEvery([ChatGen.appendMessages, ChatGen.prependMessages], _addMessagesToConversationSaga)
   yield Saga.safeTakeEveryPure(ChatGen.removeOutboxMessage, _removeOutboxMessage)
   yield Saga.safeTakeEvery(ChatGen.outboxMessageBecameReal, _updateOutboxMessageToReal)
   yield Saga.safeTakeEvery(ChatGen.openConversation, _openConversation)
@@ -1025,4 +1026,4 @@ function* registerSagas(): Saga.SagaGenerator<any, any> {
   }
 }
 
-export {registerSagas}
+export {registerSagas, addMessagesToConversation}
