@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"time"
 
 	"sync"
 
@@ -658,7 +659,9 @@ func (s *HybridConversationSource) updateMessage(ctx context.Context, message ch
 			return chat1.MessageUnboxed{}, err
 		}
 		if !found {
-			return chat1.MessageUnboxed{}, NewPermanentUnboxingError(libkb.NoKeyError{Msg: "sender key not found"})
+			now := gregor1.ToTime(time.Now())
+			revoked = &now
+			s.Debug(ctx, "updateMessage: unable to find key for user, marking as revoked")
 		}
 		if !validAtCtime {
 			return chat1.MessageUnboxed{}, NewPermanentUnboxingError(libkb.NoKeyError{Msg: "key invalid for sender at message ctime"})
