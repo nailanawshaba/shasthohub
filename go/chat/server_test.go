@@ -2533,9 +2533,6 @@ func TestChatSrvTeamChannels(t *testing.T) {
 		_, err = ctc.as(t, users[1]).chatLocalHandler().LeaveConversationLocal(ctx1,
 			ncres.Conv.GetConvID())
 		require.NoError(t, err)
-		consumeNewMsg(t, listener0, chat1.MessageType_LEAVE)
-		consumeNewMsg(t, listener1, chat1.MessageType_LEAVE)
-		consumeNewMsg(t, listener2, chat1.MessageType_LEAVE)
 		select {
 		case convID := <-listener1.leftConv:
 			require.Equal(t, convID, getTLFRes.Convs[1].GetConvID())
@@ -2550,6 +2547,9 @@ func TestChatSrvTeamChannels(t *testing.T) {
 		case <-time.After(20 * time.Second):
 			require.Fail(t, "failed to get members update")
 		}
+		consumeNewMsg(t, listener0, chat1.MessageType_LEAVE)
+		consumeNewMsg(t, listener1, chat1.MessageType_LEAVE)
+		consumeNewMsg(t, listener2, chat1.MessageType_LEAVE)
 
 		_, err = postLocalForTest(t, ctc, users[2], ncres.Conv.Info, chat1.NewMessageBodyWithText(chat1.MessageText{
 			Body: "FAIL",
