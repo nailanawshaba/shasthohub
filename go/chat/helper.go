@@ -620,7 +620,17 @@ func LeaveConversation(ctx context.Context, g *globals.Context, debugger utils.D
 		rl = append(rl, *irl)
 	}
 
-	// Send a message to the channel before leaving
+	leaveRes, err := ri().LeaveConversation(ctx, convID)
+	if err != nil {
+		debugger.Debug(ctx, "LeaveConversation: failed to leave conversation: %s", err.Error())
+		return rl, err
+	}
+	if leaveRes.RateLimit != nil {
+		rl = append(rl, *leaveRes.RateLimit)
+	}
+
+	// Send a message to the channel after leaving, the server will let it happen. If we wait until
+	// we are actually out of the channel, we won't drop spurious leave messages in the channel.
 	if alreadyIn {
 		leaveMessageBody := chat1.NewMessageBodyWithLeave(chat1.MessageLeave{})
 		irl, err := postJoinLeave(ctx, g, ri, uid, convID, leaveMessageBody)
@@ -629,15 +639,6 @@ func LeaveConversation(ctx context.Context, g *globals.Context, debugger utils.D
 			// ignore the error
 		}
 		rl = append(rl, irl...)
-	}
-
-	leaveRes, err := ri().LeaveConversation(ctx, convID)
-	if err != nil {
-		debugger.Debug(ctx, "LeaveConversation: failed to leave conversation: %s", err.Error())
-		return rl, err
-	}
-	if leaveRes.RateLimit != nil {
-		rl = append(rl, *leaveRes.RateLimit)
 	}
 
 	return rl, nil
