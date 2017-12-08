@@ -2107,3 +2107,11 @@ func (req *TeamChangeReq) AddUVWithRole(uv UserVersion, role TeamRole) error {
 	}
 	return nil
 }
+
+func (req *TeamChangeReq) GetAddedUserVersions() (res []UserVersion) {
+	res = append(res, req.Owners...)
+	res = append(res, req.Admins...)
+	res = append(res, req.Writers...)
+	res = append(res, req.Readers...)
+	return res
+}

@@ -1629,11 +1629,22 @@ func AddMembersBestEffort(ctx context.Context, g *libkb.GlobalContext, teamID ke
 	}
 
 	if needPostMembership {
-		memberCount := len(req.Owners) + len(req.Admins) + len(req.Writers) + len(req.Readers)
+		addedUVs := req.GetAddedUserVersions()
+		memberCount := len(addedUVs)
 		g.Log.CDebugf(ctx, "Posting ChangeMembership with %d members", memberCount)
 		err = team.ChangeMembership(ctx, req)
 		if err != nil {
 			return err
+		}
+
+		// Send welcome messages to all cryptomembers we just signed in. Make sure
+		// we only do that if we have actual role in the team (thus access to keys),
+		// we might as well be an implicit admin who doesn't have access to CHAT.
+		if myRole, err := team.myRole(ctx); err == nil && myRole != keybase1.TeamRole_NONE {
+			for _, uv := range addedUVs {
+				g.Log.CDebugf(ctx, "sending welcome message for successful open team TAR: %s", uv)
+				SendChatOpenTeamWelcomeMessage(ctx, g, team.Name().String(), uv.Uid)
+			}
 		}
 	}
 

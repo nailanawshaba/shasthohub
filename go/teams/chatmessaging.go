@@ -92,3 +92,27 @@ func SendChatInviteWelcomeMessage(ctx context.Context, g *libkb.GlobalContext, t
 	}
 	return true
 }
+
+func SendChatOpenTeamWelcomeMessage(ctx context.Context, g *libkb.GlobalContext, team string, invitee keybase1.UID) (res bool) {
+	inviteeName, err := g.GetUPAKLoader().LookupUsername(ctx, invitee)
+	if err != nil {
+		g.Log.CDebugf(ctx, "sendChatInviteWelcomeMessage: failed to lookup invitee username: %s", err)
+		return false
+	}
+
+	username := g.Env.GetUsername()
+	subBody := chat1.NewMessageSystemWithInviteaddedtoteam(chat1.MessageSystemInviteAddedToTeam{
+		Team:    team,
+		Invitee: inviteeName.String(),
+		Adder:   username.String(),
+	})
+	body := chat1.NewMessageBodyWithSystem(subBody)
+
+	if err = g.ChatHelper.SendMsgByName(ctx, team, &globals.DefaultTeamTopic,
+		chat1.ConversationMembersType_TEAM, keybase1.TLFIdentifyBehavior_CHAT_CLI, body,
+		chat1.MessageType_SYSTEM); err != nil {
+		g.Log.CDebugf(ctx, "SendChatOpenTeamWelcomeMessage: failed to send message: %s", err)
+		return false
+	}
+	return true
+}
