@@ -16,6 +16,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/keybase/client/go/protocol/chat1"
+
 	"strings"
 
 	"github.com/keybase/client/go/externals"
@@ -252,6 +254,17 @@ func Reset() error {
 // Version returns semantic version string
 func Version() string {
 	return libkb.VersionString()
+}
+
+func SendTextByName(convo, text string) {
+	if err := kbCtx.ChatHelper.SendTextByName(context.Background(), convo, nil,
+		chat1.ConversationMembersType_IMPTEAM, keybase1.TLFIdentifyBehavior_CHAT_GUI, text); err != nil {
+		kbCtx.GetLog().Debug("bind: failed to send text: %s", err)
+	}
+}
+
+func Shutdown() {
+	kbCtx.Shutdown()
 }
 
 func startTrace(logFile string) {

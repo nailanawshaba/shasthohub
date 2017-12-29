@@ -9,6 +9,12 @@
 /* Begin PBXBuildFile section */
 		0044E59D1BCD7CEA008EF7EE /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0044E59C1BCD7CEA008EF7EE /* LaunchScreen.storyboard */; };
 		2746CFFA1E9884BD00E579B0 /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 274AFB721E972F5300615A64 /* libresolv.tbd */; };
+		27B57F311FF5892600D8BFCD /* ShareViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 27B57F301FF5892600D8BFCD /* ShareViewController.m */; };
+		27B57F341FF5892600D8BFCD /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 27B57F321FF5892600D8BFCD /* MainInterface.storyboard */; };
+		27B57F381FF5892600D8BFCD /* Keybase Share.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 27B57F2D1FF5892600D8BFCD /* Keybase Share.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		27B57F651FF5985C00D8BFCD /* keybase.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB0846041BA75DC800F54960 /* keybase.framework */; };
+		27B57F661FF5995900D8BFCD /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 274AFB721E972F5300615A64 /* libresolv.tbd */; };
+		27B57F8D1FF5B4E000D8BFCD /* ivc.m in Sources */ = {isa = PBXBuildFile; fileRef = 27B57F8C1FF5B4E000D8BFCD /* ivc.m */; };
 		370EFC8E1FB3BDE1004DB3BB /* MessageUIManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 370EFC8D1FB3BDE1004DB3BB /* MessageUIManager.m */; };
 		A90CD4A81FCE1D0B00F97901 /* NativeLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = A90CD4A61FCE1D0A00F97901 /* NativeLogger.m */; };
 		A969A40A1CF65C9C00F273F2 /* LogSend.m in Sources */ = {isa = PBXBuildFile; fileRef = A969A4091CF65C9C00F273F2 /* LogSend.m */; };
@@ -66,6 +72,13 @@
 			proxyType = 2;
 			remoteGlobalIDString = 014A3B5C1C6CF33500B6D375;
 			remoteInfo = RNImagePicker;
+		};
+		27B57F361FF5892600D8BFCD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 27B57F2C1FF5892600D8BFCD;
+			remoteInfo = "Keybase Share";
 		};
 		27B80F581FB4C0F3008EF78B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -340,23 +353,20 @@
 			remoteGlobalIDString = 3D3CD9181DE5FBD800167DC4;
 			remoteInfo = "jschelpers-tvOS";
 		};
-		DBEE30641FE84EF40020EBA5 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = DB2BD17E1DE7D81C00BB7989 /* React.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 9936F3131F5F2E4B0010BF04;
-			remoteInfo = privatedata;
-		};
-		DBEE30661FE84EF40020EBA5 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = DB2BD17E1DE7D81C00BB7989 /* React.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 9936F32F1F5F2E5B0010BF04;
-			remoteInfo = "privatedata-tvOS";
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		27B57F641FF5892600D8BFCD /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				27B57F381FF5892600D8BFCD /* Keybase Share.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A90CD56F1FD70F7E00F97901 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -376,6 +386,14 @@
 		00E356F21AD99517003FC87E /* KeybaseTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KeybaseTests.m; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* Keybase.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Keybase.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		274AFB721E972F5300615A64 /* libresolv.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libresolv.tbd; path = usr/lib/libresolv.tbd; sourceTree = SDKROOT; };
+		27B57F2D1FF5892600D8BFCD /* Keybase Share.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Keybase Share.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		27B57F2F1FF5892600D8BFCD /* ShareViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShareViewController.h; sourceTree = "<group>"; };
+		27B57F301FF5892600D8BFCD /* ShareViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ShareViewController.m; sourceTree = "<group>"; };
+		27B57F331FF5892600D8BFCD /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
+		27B57F351FF5892600D8BFCD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		27B57F671FF59F9400D8BFCD /* Keybase Share.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Keybase Share.entitlements"; sourceTree = "<group>"; };
+		27B57F8C1FF5B4E000D8BFCD /* ivc.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ivc.m; sourceTree = "<group>"; };
+		27B57FB61FF5B63600D8BFCD /* ivc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ivc.h; sourceTree = "<group>"; };
 		27DDEEF0AE72483E8BF08ED2 /* RNFetchBlob.xcodeproj */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = "wrapper.pb-project"; name = RNFetchBlob.xcodeproj; path = "../../node_modules/react-native-fetch-blob/ios/RNFetchBlob.xcodeproj"; sourceTree = "<group>"; };
 		370EFC8D1FB3BDE1004DB3BB /* MessageUIManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MessageUIManager.m; sourceTree = "<group>"; };
 		3724B72A1FB491F000A12CE6 /* MessageUIManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MessageUIManager.h; sourceTree = "<group>"; };
@@ -473,6 +491,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		27B57F2A1FF5892600D8BFCD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				27B57F661FF5995900D8BFCD /* libresolv.tbd in Frameworks */,
+				27B57F651FF5985C00D8BFCD /* keybase.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		DB7539061D776CC400AFA61B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -506,6 +533,20 @@
 				27429B081E64A7A90058A4F9 /* libRNImagePicker.a */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		27B57F2E1FF5892600D8BFCD /* Keybase Share */ = {
+			isa = PBXGroup;
+			children = (
+				27B57F671FF59F9400D8BFCD /* Keybase Share.entitlements */,
+				27B57F2F1FF5892600D8BFCD /* ShareViewController.h */,
+				27B57F301FF5892600D8BFCD /* ShareViewController.m */,
+				27B57F321FF5892600D8BFCD /* MainInterface.storyboard */,
+				27B57F351FF5892600D8BFCD /* Info.plist */,
+				27B57F8C1FF5B4E000D8BFCD /* ivc.m */,
+				27B57FB61FF5B63600D8BFCD /* ivc.h */,
+			);
+			path = "Keybase Share";
 			sourceTree = "<group>";
 		};
 		37D298061F9A48D600D43971 /* Products */ = {
@@ -549,6 +590,7 @@
 				DBDCF3031B8D03DD00BA95D8 /* Keybase */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				00E356EF1AD99517003FC87E /* KeybaseTests */,
+				27B57F2E1FF5892600D8BFCD /* Keybase Share */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				8B23D2F59C5F2B2FA28E899F /* Frameworks */,
 				DB090F7F1F719A2F007E4E1B /* Recovered References */,
@@ -562,6 +604,7 @@
 			children = (
 				13B07F961A680F5B00A75B9A /* Keybase.app */,
 				DB7539221D776CC400AFA61B /* Keybase For Tests.app */,
+				27B57F2D1FF5892600D8BFCD /* Keybase Share.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -629,8 +672,6 @@
 				DB0501221F10114D000B54AD /* libthird-party.a */,
 				DB0501241F10114D000B54AD /* libdouble-conversion.a */,
 				DB0501261F10114D000B54AD /* libdouble-conversion.a */,
-				DBEE30651FE84EF40020EBA5 /* libprivatedata.a */,
-				DBEE30671FE84EF40020EBA5 /* libprivatedata-tvOS.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -826,15 +867,34 @@
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				DB229EE81BF697160081901A /* Bundle React Native code and images */,
 				A90CD56F1FD70F7E00F97901 /* Embed Frameworks */,
+				27B57F641FF5892600D8BFCD /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				27B57F371FF5892600D8BFCD /* PBXTargetDependency */,
 			);
 			name = Keybase;
 			productName = "Hello World";
 			productReference = 13B07F961A680F5B00A75B9A /* Keybase.app */;
 			productType = "com.apple.product-type.application";
+		};
+		27B57F2C1FF5892600D8BFCD /* Keybase Share */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 27B57F631FF5892600D8BFCD /* Build configuration list for PBXNativeTarget "Keybase Share" */;
+			buildPhases = (
+				27B57F291FF5892600D8BFCD /* Sources */,
+				27B57F2A1FF5892600D8BFCD /* Frameworks */,
+				27B57F2B1FF5892600D8BFCD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Keybase Share";
+			productName = "Keybase Share";
+			productReference = 27B57F2D1FF5892600D8BFCD /* Keybase Share.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		DB7538FB1D776CC400AFA61B /* Keybase For Tests */ = {
 			isa = PBXNativeTarget;
@@ -888,6 +948,19 @@
 								enabled = 1;
 							};
 							com.apple.SafariKeychain = {
+								enabled = 1;
+							};
+						};
+					};
+					27B57F2C1FF5892600D8BFCD = {
+						CreatedOnToolsVersion = 9.2;
+						DevelopmentTeam = 99229SGT5K;
+						ProvisioningStyle = Automatic;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+							com.apple.Keychain = {
 								enabled = 1;
 							};
 						};
@@ -983,6 +1056,7 @@
 			targets = (
 				13B07F861A680F5B00A75B9A /* Keybase */,
 				DB7538FB1D776CC400AFA61B /* Keybase For Tests */,
+				27B57F2C1FF5892600D8BFCD /* Keybase Share */,
 			);
 		};
 /* End PBXProject section */
@@ -1268,20 +1342,6 @@
 			remoteRef = DB7417C01E1FFF1000CEC6B7 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		DBEE30651FE84EF40020EBA5 /* libprivatedata.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libprivatedata.a;
-			remoteRef = DBEE30641FE84EF40020EBA5 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		DBEE30671FE84EF40020EBA5 /* libprivatedata-tvOS.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = "libprivatedata-tvOS.a";
-			remoteRef = DBEE30661FE84EF40020EBA5 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
 /* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
@@ -1301,6 +1361,14 @@
 				0044E59D1BCD7CEA008EF7EE /* LaunchScreen.storyboard in Resources */,
 				DBDCF30E1B8D03DD00BA95D8 /* Images.xcassets in Resources */,
 				DBDC80121DE7CC8E005387B3 /* SourceCodePro.ttf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		27B57F2B1FF5892600D8BFCD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				27B57F341FF5892600D8BFCD /* MainInterface.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1413,6 +1481,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		27B57F291FF5892600D8BFCD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				27B57F311FF5892600D8BFCD /* ShareViewController.m in Sources */,
+				27B57F8D1FF5B4E000D8BFCD /* ivc.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		DB7538FC1D776CC400AFA61B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1424,6 +1501,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		27B57F371FF5892600D8BFCD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 27B57F2C1FF5892600D8BFCD /* Keybase Share */;
+			targetProxy = 27B57F361FF5892600D8BFCD /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		27B57F321FF5892600D8BFCD /* MainInterface.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				27B57F331FF5892600D8BFCD /* Base */,
+			);
+			name = MainInterface.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
@@ -1520,6 +1616,77 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "Keybase/Keybase-Bridging-Header.h";
 				SWIFT_VERSION = 3.0;
 				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		27B57F391FF5892600D8BFCD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = "Keybase Share/Keybase Share.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 99229SGT5K;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = "Keybase Share/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.2;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "keybase.ios.Keybase-Share";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		27B57F3A1FF5892600D8BFCD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = "Keybase Share/Keybase Share.entitlements";
+				CODE_SIGN_IDENTITY = "iPhone Distribution: Keybase, Inc. (99229SGT5K)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 99229SGT5K;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = "Keybase Share/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 11.2;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "keybase.ios.Keybase-Share";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -1715,6 +1882,15 @@
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
 				13B07F951A680F5B00A75B9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		27B57F631FF5892600D8BFCD /* Build configuration list for PBXNativeTarget "Keybase Share" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				27B57F391FF5892600D8BFCD /* Debug */,
+				27B57F3A1FF5892600D8BFCD /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -71,14 +71,16 @@ const BOOL isDebug = NO;
   BOOL securityAccessGroupOverride = isSimulator;
   BOOL skipLogFile = false;
 
-  NSString * home = NSHomeDirectory();
+  //NSString * home = NSHomeDirectory();
+  NSFileManager* fm = [NSFileManager defaultManager];
+  NSString* home = [[fm containerURLForSecurityApplicationGroupIdentifier:@"group.keybase"] path];
 
   NSString * keybasePath = [@"~/Library/Application Support/Keybase" stringByExpandingTildeInPath];
   NSString * levelDBPath = [@"~/Library/Application Support/Keybase/keybase.leveldb" stringByExpandingTildeInPath];
   NSString * chatLevelDBPath = [@"~/Library/Application Support/Keybase/keybase.chat.leveldb" stringByExpandingTildeInPath];
   NSString * logPath = [@"~/Library/Caches/Keybase" stringByExpandingTildeInPath];
   NSString * serviceLogFile = skipLogFile ? @"" : [logPath stringByAppendingString:@"/ios.log"];
-  NSFileManager* fm = [NSFileManager defaultManager];
+  
 
   // Make keybasePath if it doesn't exist
   [fm createDirectoryAtPath:keybasePath
