@@ -75,7 +75,7 @@ SLComposeSheetConfigurationItem *item;
   item.title = @"Conversation";
   item.value = @"mikem";
   item.tapHandler = ^{
-    ItemViewController *vie
+    ItemViewController *vie = [[ItemViewController] alloc]
     UITableViewController *viewController = [[UITableViewController alloc] initWithStyle:UITableViewStylePlain];
     [viewController tableView:<#(nonnull UITableView *)#> willBeginEditingRowAtIndexPath:<#(nonnull NSIndexPath *)#>
     [self pushConfigurationViewController:viewController];
