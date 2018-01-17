@@ -461,6 +461,33 @@ func FilterByType(msgs []chat1.MessageUnboxed, query *chat1.GetThreadQuery, incl
 	return res
 }
 
+func FilterSystemMessages(env libkb.Env, msgs []chat1.MessageUnboxed) (res []chat1.MessageUnboxed) {
+	for _, msg := range msgs {
+		if !msg.IsValid() || msg.GetMessageType() != chat1.MessageType_SYSTEM {
+			continue
+		}
+		typ, err := msg.Valid().MessageBody.MessageType()
+		if err != nil {
+			continue
+		}
+		if typ != chat1.MessageType_SYSTEM {
+			continue
+		}
+		styp, err := msg.Valid().MessageBody.System().SystemType()
+		if err != nil {
+			continue
+		}
+		sysmsg := msg.Valid().MessageBody.System()
+		switch styp {
+		case chat1.MessageSystemType_ADDEDTOTEAM:
+			if sysmsg.Addedtoteam().AddeeOnly {
+				if sysmsg.Addedtoteam().Addee == env.GetUsername()
+			}
+		}
+	}
+
+}
+
 // GetSupersedes must be called with a valid msg
 func GetSupersedes(msg chat1.MessageUnboxed) ([]chat1.MessageID, error) {
 	body := msg.Valid().MessageBody

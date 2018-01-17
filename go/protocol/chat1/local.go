@@ -109,13 +109,14 @@ func (e MessageSystemType) String() string {
 }
 
 type MessageSystemAddedToTeam struct {
-	Team    string   `codec:"team" json:"team"`
-	Adder   string   `codec:"adder" json:"adder"`
-	Addee   string   `codec:"addee" json:"addee"`
-	Owners  []string `codec:"owners" json:"owners"`
-	Admins  []string `codec:"admins" json:"admins"`
-	Writers []string `codec:"writers" json:"writers"`
-	Readers []string `codec:"readers" json:"readers"`
+	Team      string   `codec:"team" json:"team"`
+	Adder     string   `codec:"adder" json:"adder"`
+	Addee     string   `codec:"addee" json:"addee"`
+	Owners    []string `codec:"owners" json:"owners"`
+	Admins    []string `codec:"admins" json:"admins"`
+	Writers   []string `codec:"writers" json:"writers"`
+	Readers   []string `codec:"readers" json:"readers"`
+	AddeeOnly bool     `codec:"addeeOnly" json:"addeeOnly"`
 }
 
 func (o MessageSystemAddedToTeam) DeepCopy() MessageSystemAddedToTeam {
@@ -167,6 +168,7 @@ func (o MessageSystemAddedToTeam) DeepCopy() MessageSystemAddedToTeam {
 			}
 			return ret
 		})(o.Readers),
+		AddeeOnly: o.AddeeOnly,
 	}
 }
 

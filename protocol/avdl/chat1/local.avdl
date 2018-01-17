@@ -42,6 +42,7 @@ protocol local {
     array<string> admins;
     array<string> writers;
     array<string> readers;
+    boolean addeeOnly;
   }
 
   record MessageSystemInviteAddedToTeam {
