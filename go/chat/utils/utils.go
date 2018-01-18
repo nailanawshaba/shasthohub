@@ -461,31 +461,41 @@ func FilterByType(msgs []chat1.MessageUnboxed, query *chat1.GetThreadQuery, incl
 	return res
 }
 
-func FilterSystemMessages(env libkb.Env, msgs []chat1.MessageUnboxed) (res []chat1.MessageUnboxed) {
+func FilterSystemMessages(env *libkb.Env, msgs []chat1.MessageUnboxed) (res []chat1.MessageUnboxed) {
+	rejects := make(map[chat1.MessageID]bool)
 	for _, msg := range msgs {
 		if !msg.IsValid() || msg.GetMessageType() != chat1.MessageType_SYSTEM {
 			continue
 		}
-		typ, err := msg.Valid().MessageBody.MessageType()
+		bod := msg.Valid().MessageBody
+		typ, err := bod.MessageType()
 		if err != nil {
 			continue
 		}
 		if typ != chat1.MessageType_SYSTEM {
 			continue
 		}
-		styp, err := msg.Valid().MessageBody.System().SystemType()
+		sys := bod.System()
+		styp, err := sys.SystemType()
 		if err != nil {
 			continue
 		}
-		sysmsg := msg.Valid().MessageBody.System()
+		sysmsg := bod.System()
 		switch styp {
-		case chat1.MessageSystemType_ADDEDTOTEAM:
-			if sysmsg.Addedtoteam().AddeeOnly {
-				if sysmsg.Addedtoteam().Addee == env.GetUsername()
+		case chat1.MessageSystemType_ADDEDTOTEAMSILENT:
+			// For a silent added to team, we only want to show the message to the person that has
+			// been added.
+			if sysmsg.Addedtoteamsilent().Addee != env.GetUsername().String() {
+				rejects[msg.GetMessageID()] = true
 			}
 		}
 	}
-
+	for _, msg := range msgs {
+		if !rejects[msg.GetMessageID()] {
+			res = append(res, msg)
+		}
+	}
+	return res
 }
 
 // GetSupersedes must be called with a valid msg

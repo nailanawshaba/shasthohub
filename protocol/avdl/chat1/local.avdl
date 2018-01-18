@@ -31,7 +31,8 @@ protocol local {
     INVITEADDEDTOTEAM_1,
     COMPLEXTEAM_2,
     CREATETEAM_3,
-    GITPUSH_4
+    GITPUSH_4,
+    ADDEDTOTEAMSILENT_5
   }
 
   record MessageSystemAddedToTeam {
@@ -42,7 +43,6 @@ protocol local {
     array<string> admins;
     array<string> writers;
     array<string> readers;
-    boolean addeeOnly;
   }
 
   record MessageSystemInviteAddedToTeam {
@@ -75,6 +75,7 @@ protocol local {
     case COMPLEXTEAM: MessageSystemComplexTeam;
     case CREATETEAM: MessageSystemCreateTeam;
     case GITPUSH: MessageSystemGitPush;
+    case ADDEDTOTEAMSILENT: MessageSystemAddedToTeam;
   }
 
   record MessageDeleteHistory {

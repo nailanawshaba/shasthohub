@@ -82,7 +82,8 @@
         "INVITEADDEDTOTEAM_1",
         "COMPLEXTEAM_2",
         "CREATETEAM_3",
-        "GITPUSH_4"
+        "GITPUSH_4",
+        "ADDEDTOTEAMSILENT_5"
       ]
     },
     {
@@ -128,10 +129,6 @@
             "items": "string"
           },
           "name": "readers"
-        },
-        {
-          "type": "boolean",
-          "name": "addeeOnly"
         }
       ]
     },
@@ -252,6 +249,13 @@
             "def": false
           },
           "body": "MessageSystemGitPush"
+        },
+        {
+          "label": {
+            "name": "ADDEDTOTEAMSILENT",
+            "def": false
+          },
+          "body": "MessageSystemAddedToTeam"
         }
       ]
     },

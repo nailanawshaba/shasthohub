@@ -382,6 +382,15 @@ func (g *PushHandler) presentUIItem(conv *chat1.ConversationLocal) (res *chat1.I
 	return res
 }
 
+func (g *PushHandler) shouldNotifyNewMessage(ctx context.Context, msg chat1.MessageUnboxed) bool {
+	// Check to see if this is a filtered system message, and return false if so
+	fmsgs := utils.FilterSystemMessages(g.G().GetEnv(), []chat1.MessageUnboxed{msg})
+	if len(fmsgs) == 0 {
+		return false
+	}
+	return true
+}
+
 func (g *PushHandler) Activity(ctx context.Context, m gregor.OutOfBandMessage) (err error) {
 	var identBreaks []keybase1.TLFIdentifyFailure
 	ctx = Context(ctx, g.G(), keybase1.TLFIdentifyBehavior_CHAT_GUI, &identBreaks,
@@ -459,7 +468,7 @@ func (g *PushHandler) Activity(ctx context.Context, m gregor.OutOfBandMessage) (
 			}
 
 			// If we have no error on this message, then notify the frontend
-			if pushErr == nil {
+			if pushErr == nil && g.shouldNotifyNewMessage(ctx, decmsg) {
 				// Make a pagination object so client can use it in GetThreadLocal
 				pmsgs := []pager.Message{nm.Message}
 				pager := pager.NewThreadPager()

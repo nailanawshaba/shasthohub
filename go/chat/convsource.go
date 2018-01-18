@@ -70,6 +70,8 @@ func (s *baseConversationSource) postProcessThread(ctx context.Context, uid greg
 
 	// Run type filter if it exists
 	thread.Messages = utils.FilterByType(thread.Messages, q, true)
+	// Filter system messages
+	thread.Messages = utils.FilterSystemMessages(s.G().GetEnv(), thread.Messages)
 
 	// Fetch outbox and tack onto the result
 	outbox := storage.NewOutbox(s.G(), uid)

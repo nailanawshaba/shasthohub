@@ -81,6 +81,7 @@ const (
 	MessageSystemType_COMPLEXTEAM       MessageSystemType = 2
 	MessageSystemType_CREATETEAM        MessageSystemType = 3
 	MessageSystemType_GITPUSH           MessageSystemType = 4
+	MessageSystemType_ADDEDTOTEAMSILENT MessageSystemType = 5
 )
 
 func (o MessageSystemType) DeepCopy() MessageSystemType { return o }
@@ -91,6 +92,7 @@ var MessageSystemTypeMap = map[string]MessageSystemType{
 	"COMPLEXTEAM":       2,
 	"CREATETEAM":        3,
 	"GITPUSH":           4,
+	"ADDEDTOTEAMSILENT": 5,
 }
 
 var MessageSystemTypeRevMap = map[MessageSystemType]string{
@@ -99,6 +101,7 @@ var MessageSystemTypeRevMap = map[MessageSystemType]string{
 	2: "COMPLEXTEAM",
 	3: "CREATETEAM",
 	4: "GITPUSH",
+	5: "ADDEDTOTEAMSILENT",
 }
 
 func (e MessageSystemType) String() string {
@@ -109,14 +112,13 @@ func (e MessageSystemType) String() string {
 }
 
 type MessageSystemAddedToTeam struct {
-	Team      string   `codec:"team" json:"team"`
-	Adder     string   `codec:"adder" json:"adder"`
-	Addee     string   `codec:"addee" json:"addee"`
-	Owners    []string `codec:"owners" json:"owners"`
-	Admins    []string `codec:"admins" json:"admins"`
-	Writers   []string `codec:"writers" json:"writers"`
-	Readers   []string `codec:"readers" json:"readers"`
-	AddeeOnly bool     `codec:"addeeOnly" json:"addeeOnly"`
+	Team    string   `codec:"team" json:"team"`
+	Adder   string   `codec:"adder" json:"adder"`
+	Addee   string   `codec:"addee" json:"addee"`
+	Owners  []string `codec:"owners" json:"owners"`
+	Admins  []string `codec:"admins" json:"admins"`
+	Writers []string `codec:"writers" json:"writers"`
+	Readers []string `codec:"readers" json:"readers"`
 }
 
 func (o MessageSystemAddedToTeam) DeepCopy() MessageSystemAddedToTeam {
@@ -168,7 +170,6 @@ func (o MessageSystemAddedToTeam) DeepCopy() MessageSystemAddedToTeam {
 			}
 			return ret
 		})(o.Readers),
-		AddeeOnly: o.AddeeOnly,
 	}
 }
 
@@ -245,6 +246,7 @@ type MessageSystem struct {
 	Complexteam__       *MessageSystemComplexTeam       `codec:"complexteam,omitempty" json:"complexteam,omitempty"`
 	Createteam__        *MessageSystemCreateTeam        `codec:"createteam,omitempty" json:"createteam,omitempty"`
 	Gitpush__           *MessageSystemGitPush           `codec:"gitpush,omitempty" json:"gitpush,omitempty"`
+	Addedtoteamsilent__ *MessageSystemAddedToTeam       `codec:"addedtoteamsilent,omitempty" json:"addedtoteamsilent,omitempty"`
 }
 
 func (o *MessageSystem) SystemType() (ret MessageSystemType, err error) {
@@ -272,6 +274,11 @@ func (o *MessageSystem) SystemType() (ret MessageSystemType, err error) {
 	case MessageSystemType_GITPUSH:
 		if o.Gitpush__ == nil {
 			err = errors.New("unexpected nil value for Gitpush__")
+			return ret, err
+		}
+	case MessageSystemType_ADDEDTOTEAMSILENT:
+		if o.Addedtoteamsilent__ == nil {
+			err = errors.New("unexpected nil value for Addedtoteamsilent__")
 			return ret, err
 		}
 	}
@@ -328,6 +335,16 @@ func (o MessageSystem) Gitpush() (res MessageSystemGitPush) {
 	return *o.Gitpush__
 }
 
+func (o MessageSystem) Addedtoteamsilent() (res MessageSystemAddedToTeam) {
+	if o.SystemType__ != MessageSystemType_ADDEDTOTEAMSILENT {
+		panic("wrong case accessed")
+	}
+	if o.Addedtoteamsilent__ == nil {
+		return
+	}
+	return *o.Addedtoteamsilent__
+}
+
 func NewMessageSystemWithAddedtoteam(v MessageSystemAddedToTeam) MessageSystem {
 	return MessageSystem{
 		SystemType__:  MessageSystemType_ADDEDTOTEAM,
@@ -360,6 +377,13 @@ func NewMessageSystemWithGitpush(v MessageSystemGitPush) MessageSystem {
 	return MessageSystem{
 		SystemType__: MessageSystemType_GITPUSH,
 		Gitpush__:    &v,
+	}
+}
+
+func NewMessageSystemWithAddedtoteamsilent(v MessageSystemAddedToTeam) MessageSystem {
+	return MessageSystem{
+		SystemType__:        MessageSystemType_ADDEDTOTEAMSILENT,
+		Addedtoteamsilent__: &v,
 	}
 }
 
@@ -401,6 +425,13 @@ func (o MessageSystem) DeepCopy() MessageSystem {
 			tmp := (*x).DeepCopy()
 			return &tmp
 		})(o.Gitpush__),
+		Addedtoteamsilent__: (func(x *MessageSystemAddedToTeam) *MessageSystemAddedToTeam {
+			if x == nil {
+				return nil
+			}
+			tmp := (*x).DeepCopy()
+			return &tmp
+		})(o.Addedtoteamsilent__),
 	}
 }
 
