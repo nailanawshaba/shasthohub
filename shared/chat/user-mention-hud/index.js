@@ -51,7 +51,9 @@ const MentionRowRenderer = ({
     onClick={onClick}
     onMouseOver={onHover}
   >
-    <Avatar username={username} size={32} />
+    {username !== 'here' &&
+      username !== 'channel' &&
+      username !== 'everyone' && <Avatar username={username} size={32} />}
     <Usernames
       type="BodySemibold"
       colorFollowing={true}
@@ -102,13 +104,18 @@ const mapStateToProps: MapStateToProps<*, *, *> = (state: TypedState, {users, se
     .concat([
       {
         username: 'here',
-        fullName: 'here',
+        fullName: 'Everyone in this conversation',
         key: 'here',
       },
       {
         username: 'channel',
-        fullName: 'channel',
+        fullName: 'Everyone in this conversation',
         key: 'channel',
+      },
+      {
+        username: 'everyone',
+        fullName: 'Everyone in this conversation',
+        key: 'everyone',
       },
     ])
     .filter(u => {
