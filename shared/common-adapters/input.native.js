@@ -110,6 +110,27 @@ class Input extends Component<Props, State> {
 
   selections() {
     const selection = this._input && this._inputNode()._lastNativeSelection
+    if (!selection) {
+      return {selectionStart: 0, selectionEnd: 0}
+    }
+    return {
+      selectionStart: selection.start,
+      selectionEnd: selection.end,
+    }
+  }
+
+  replaceText(text: string, startIdx: number, endIdx: number) {
+    const n = this._input && this._inputNode()
+    if (n) {
+      // $FlowIssue
+      const v = this.getValue()
+      const nextValue = v.slice(0, startIdx) + text + v.slice(endIdx)
+      // $FlowIssue
+      this.setValue(nextValue)
+      this.setState({value: nextValue})
+
+      this.props.onChangeText && this.props.onChangeText(nextValue || '')
+    }
   }
 
   _onKeyDown = (e: SyntheticKeyboardEvent<>) => {

@@ -13,7 +13,7 @@ export type PreMentionHocProps = {
   inputValue: () => string,
   isLoading: boolean,
   isPreview: boolean,
-  mentionPopupOpen,
+  mentionPopupOpen: boolean,
   onAttach: (inputs: Array<Types.AttachmentInput>) => void,
   onEditLastMessage: () => void,
   onEditMessage: (message: ?Types.Message, text: string) => void,

@@ -98,7 +98,7 @@ class ConversationInput extends Component<Props> {
 
   _onKeyDown = e => {
     if (e.nativeEvent.key === 'Enter') {
-      this.props.onEnterKeyDown(e.nativeEvent)
+      this.props.onEnterKeyDown(e)
       return
     }
     this.props.onKeyDown(e.nativeEvent)
@@ -110,7 +110,7 @@ class ConversationInput extends Component<Props> {
     const multilineOpts = isIOS ? {rowsMax: 3, rowsMin: 1} : {rowsMax: 2, rowsMin: 2}
 
     return (
-      <Box style={styleContainer}>
+      <Box>
         {this.props.mentionPopupOpen && (
           <MentionHud
             selectDownCounter={this.props.downArrowCounter}
@@ -121,54 +121,54 @@ class ConversationInput extends Component<Props> {
             filter={this.props.mentionFilter}
           />
         )}
-        {isIOS ? (
-          <Input
-            autoCorrect={true}
-            autoCapitalize="sentences"
-            autoFocus={false}
-            hideUnderline={true}
-            hintText="Write a message"
-            inputStyle={styleInputText}
-            multiline={true}
-            onBlur={this._onBlur}
-            onChangeText={this.props.setText}
-            ref={i => this.props.inputSetRef(i && i._input)}
-            small={true}
-            style={styleInput}
-            value={this.props.text}
-            onKeyDown={this._onKeyDown}
-            onKeyUp={this.props.onKeyUp}
-            onEnterKeyDown={this.props.onEnterKeyDown}
-            {...multilineOpts}
+        <Box style={styleContainer}>
+          {isIOS ? (
+            <Input
+              autoCorrect={true}
+              autoCapitalize="sentences"
+              autoFocus={false}
+              hideUnderline={true}
+              hintText="Write a message"
+              inputStyle={styleInputText}
+              multiline={true}
+              onBlur={this._onBlur}
+              onChangeText={this.props.setText}
+              ref={this.props.inputSetRef}
+              small={true}
+              style={styleInput}
+              value={this.props.text}
+              onKeyDown={this._onKeyDown}
+              {...multilineOpts}
+            />
+          ) : (
+            <CustomTextInput
+              autoCorrect={true}
+              autoCapitalize="sentences"
+              autoFocus={false}
+              autoGrow={true}
+              style={styleInput}
+              onChangeText={this.props.setText}
+              onBlur={this._onBlur}
+              placeholder="Write a message"
+              underlineColorAndroid={globalColors.transparent}
+              multiline={true}
+              maxHeight={80}
+              numberOfLines={1}
+              minHeight={40}
+              defaultValue={this.props.text || undefined}
+              ref={this.props.inputSetRef}
+              blurOnSubmit={false}
+            />
+          )}
+          {this.props.typing.length > 0 && <Typing typing={this.props.typing} />}
+          <Action
+            text={this.props.text}
+            onSubmit={this._onSubmit}
+            editingMessage={this.props.editingMessage}
+            openFilePicker={this._openFilePicker}
+            isLoading={this.props.isLoading}
           />
-        ) : (
-          <CustomTextInput
-            autoCorrect={true}
-            autoCapitalize="sentences"
-            autoFocus={false}
-            autoGrow={true}
-            style={styleInput}
-            onChangeText={this.props.setText}
-            onBlur={this._onBlur}
-            placeholder="Write a message"
-            underlineColorAndroid={globalColors.transparent}
-            multiline={true}
-            maxHeight={80}
-            numberOfLines={1}
-            minHeight={40}
-            defaultValue={this.props.text || undefined}
-            ref={this.props.inputSetRef}
-            blurOnSubmit={false}
-          />
-        )}
-        {this.props.typing.length > 0 && <Typing typing={this.props.typing} />}
-        <Action
-          text={this.props.text}
-          onSubmit={this._onSubmit}
-          editingMessage={this.props.editingMessage}
-          openFilePicker={this._openFilePicker}
-          isLoading={this.props.isLoading}
-        />
+        </Box>
       </Box>
     )
   }
@@ -205,8 +205,18 @@ const Action = ({text, onSubmit, editingMessage, openFilePicker, isLoading}) =>
   )
 
 const InputAccessory = Component => props => (
-  <Box style={{position: 'relative', width: '100%'}}>
-    <Component {...props} />
+  <Box style={{position: 'relative', width: '100%', height: '30%'}}>
+    <Box
+      style={{
+        bottom: 1,
+        display: 'flex',
+        left: 0,
+        position: 'absolute',
+        right: 0,
+      }}
+    >
+      <Component {...props} />
+    </Box>
   </Box>
 )
 
