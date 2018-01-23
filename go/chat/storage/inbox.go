@@ -1166,6 +1166,12 @@ func (i *Inbox) ServerVersion(ctx context.Context) (vers int, err Error) {
 
 type InboxSyncRes struct {
 	TeamTypeChanged bool
+	Expunges        []InboxSyncResExpunge
+}
+
+type InboxSyncResExpunge struct {
+	ConvID  chat1.ConversationID
+	Expunge chat1.Expunge
 }
 
 func (i *Inbox) Sync(ctx context.Context, vers chat1.InboxVers, convs []chat1.Conversation) (res InboxSyncRes, err Error) {
@@ -1189,10 +1195,19 @@ func (i *Inbox) Sync(ctx context.Context, vers chat1.InboxVers, convs []chat1.Co
 	}
 	for index, conv := range ibox.Conversations {
 		if newConv, ok := convMap[conv.GetConvID().String()]; ok {
-			if ibox.Conversations[index].Conv.Metadata.TeamType != newConv.Metadata.TeamType {
+			oldConv := ibox.Conversations[index].Conv
+			if oldConv.Metadata.TeamType != newConv.Metadata.TeamType {
 				// Changing the team type might be hard for clients of the inbox system to process,
 				// so call it out so they can know a hard update happened here.
 				res.TeamTypeChanged = true
+			}
+			if oldConv.Expunge != newConv.Expunge {
+				// The earliest point in non-deleted history has moved up.
+				// Point it out so that convsource can get updated.
+				res.Expunges = append(res.Expunges, InboxSyncResExpunge{
+					ConvID:  newConv.Metadata.ConversationID,
+					Expunge: newConv.Expunge,
+				})
 			}
 			ibox.Conversations[index].Conv = newConv
 			delete(convMap, conv.GetConvID().String())

@@ -49,6 +49,8 @@ type ConversationSource interface {
 	Clear(convID chat1.ConversationID, uid gregor1.UID) error
 	TransformSupersedes(ctx context.Context, conv chat1.Conversation, uid gregor1.UID,
 		msgs []chat1.MessageUnboxed) ([]chat1.MessageUnboxed, error)
+	Expunge(ctx context.Context, convID chat1.ConversationID,
+		uid gregor1.UID, expunge chat1.Expunge) error
 
 	SetRemoteInterface(func() chat1.RemoteInterface)
 }
