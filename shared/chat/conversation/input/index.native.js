@@ -7,6 +7,8 @@ import React, {Component} from 'react'
 import {Box, Icon, Input, Text} from '../../../common-adapters'
 import {globalMargins, globalStyles, globalColors} from '../../../styles'
 import {isIOS} from '../../../constants/platform'
+import ConnectedMentionHud from '../../user-mention-hud/mention-hud-container'
+import ConnectedChannelMentionHud from '../../channel-mention-hud/mention-hud-container'
 
 import type {AttachmentInput} from '../../../constants/types/chat'
 import type {Props} from '.'
@@ -94,12 +96,31 @@ class ConversationInput extends Component<Props> {
     }
   }
 
+  _onKeyDown = e => {
+    if (e.nativeEvent.key === 'Enter') {
+      this.props.onEnterKeyDown(e.nativeEvent)
+      return
+    }
+    this.props.onKeyDown(e.nativeEvent)
+    this.props.onKeyUp(e.nativeEvent)
+  }
+
   render() {
     // Auto-growing multiline doesn't work smoothly on Android yet.
     const multilineOpts = isIOS ? {rowsMax: 3, rowsMin: 1} : {rowsMax: 2, rowsMin: 2}
 
     return (
       <Box style={styleContainer}>
+        {this.props.mentionPopupOpen && (
+          <MentionHud
+            selectDownCounter={this.props.downArrowCounter}
+            selectUpCounter={this.props.upArrowCounter}
+            pickSelectedUserCounter={this.props.pickSelectedCounter}
+            onPickUser={this.props.insertMention}
+            onSelectUser={this.props.switchMention}
+            filter={this.props.mentionFilter}
+          />
+        )}
         {isIOS ? (
           <Input
             autoCorrect={true}
@@ -111,10 +132,13 @@ class ConversationInput extends Component<Props> {
             multiline={true}
             onBlur={this._onBlur}
             onChangeText={this.props.setText}
-            ref={this.props.inputSetRef}
+            ref={i => this.props.inputSetRef(i && i._input)}
             small={true}
             style={styleInput}
             value={this.props.text}
+            onKeyDown={this._onKeyDown}
+            onKeyUp={this.props.onKeyUp}
+            onEnterKeyDown={this.props.onEnterKeyDown}
             {...multilineOpts}
           />
         ) : (
@@ -179,6 +203,16 @@ const Action = ({text, onSubmit, editingMessage, openFilePicker, isLoading}) =>
       <Icon onClick={openFilePicker} type="iconfont-camera" style={styleActionButton} />
     </Box>
   )
+
+const InputAccessory = Component => props => (
+  <Box style={{position: 'relative', width: '100%'}}>
+    <Component {...props} />
+  </Box>
+)
+
+const MentionHud = InputAccessory(props => <ConnectedMentionHud style={{}} {...props} />)
+
+const ChannelMentionHud = InputAccessory(props => <ConnectedChannelMentionHud style={{}} {...props} />)
 
 const styleActionText = {
   ...globalStyles.flexBoxColumn,
