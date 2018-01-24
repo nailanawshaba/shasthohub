@@ -50,8 +50,10 @@ export type Props = {
 }
 
 declare export default class Input extends Component<Props> {
-  setNativeProps(props: Object): {},
-  blur: () => void,
-  focus: () => void,
-  select: () => void,
+  setNativeProps(props: Object): {};
+  blur: () => void;
+  focus: () => void;
+  select: () => void;
+  selections: () => {selectionStart: number, selectionEnd: number};
+  replaceText: (text: string, startIdx: number, endIdx: number) => void;
 }

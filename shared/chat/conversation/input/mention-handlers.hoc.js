@@ -2,6 +2,7 @@
 import * as React from 'react'
 import {type PreMentionHocProps, type Props} from '.'
 import logger from '../../../logger'
+import {isMobile} from '../../../constants/platform'
 
 type PropsFromContainer = {
   _inputSetRef: any => void,
@@ -16,6 +17,11 @@ type MentionHocState = {
   channelMentionFilter: string,
   mentionPopupOpen: boolean,
   channelMentionPopupOpen: boolean,
+}
+
+const key = (e: SyntheticKeyboardEvent<>) => {
+  // $FlowIssue doesn't get nativeEvent
+  return isMobile ? e.nativeEvent.key : e.key
 }
 
 const mentionHoc = (InputComponent: React.ComponentType<Props>) => {
@@ -108,7 +114,7 @@ const mentionHoc = (InputComponent: React.ComponentType<Props>) => {
     onKeyDown = (e: SyntheticKeyboardEvent<>) => {
       this.props._onKeyDown(e)
       if (this.state.mentionPopupOpen || this.state.channelMentionPopupOpen) {
-        if (e.key === 'Tab') {
+        if (key(e) === 'Tab') {
           e.preventDefault()
           // If you tab with a partial name typed, we pick the selected item
           if (this.state.mentionFilter.length > 0 || this.state.channelMentionFilter.length > 0) {
@@ -122,34 +128,34 @@ const mentionHoc = (InputComponent: React.ComponentType<Props>) => {
             this._triggerDownArrowCounter()
           }
           return
-        } else if (e.key === 'ArrowUp') {
+        } else if (key(e) === 'ArrowUp') {
           e.preventDefault()
           this._triggerUpArrowCounter()
           return
-        } else if (e.key === 'ArrowDown') {
+        } else if (key(e) === 'ArrowDown') {
           e.preventDefault()
           this._triggerDownArrowCounter()
           return
-        } else if (['Escape', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        } else if (['Escape', 'ArrowLeft', 'ArrowRight'].includes(key(e))) {
           this._setMentionPopupOpen(false)
           this._setChannelMentionPopupOpen(false)
           return
         }
       }
 
-      if (e.key === '@') {
+      if (key(e) === '@') {
         this._setMentionPopupOpen(true)
-      } else if (e.key === '#') {
+      } else if (key(e) === '#') {
         this._setChannelMentionPopupOpen(true)
       }
 
-      if (this.state.mentionPopupOpen && e.key === 'Backspace') {
+      if (this.state.mentionPopupOpen && key(e) === 'Backspace') {
         const lastChar = this.props.text[this.props.text.length - 1]
         if (lastChar === '@') {
           this._setMentionPopupOpen(false)
         }
       }
-      if (this.state.channelMentionPopupOpen && e.key === 'Backspace') {
+      if (this.state.channelMentionPopupOpen && key(e) === 'Backspace') {
         const lastChar = this.props.text[this.props.text.length - 1]
         if (lastChar === '#') {
           this._setChannelMentionPopupOpen(false)
@@ -160,14 +166,14 @@ const mentionHoc = (InputComponent: React.ComponentType<Props>) => {
     onKeyUp = (e: SyntheticKeyboardEvent<*>) => {
       // Ignore moving within the list
       if (this.state.mentionPopupOpen || this.state.channelMentionPopupOpen) {
-        if (['ArrowUp', 'ArrowDown', 'Shift', 'Tab'].includes(e.key)) {
+        if (['ArrowUp', 'ArrowDown', 'Shift', 'Tab'].includes(key(e))) {
           // handled above in _onKeyDown
           return
         }
       }
 
       // Get the word typed so far
-      if (this.state.mentionPopupOpen || this.state.channelMentionPopupOpen || e.key === 'Backspace') {
+      if (this.state.mentionPopupOpen || this.state.channelMentionPopupOpen || key(e) === 'Backspace') {
         const wordSoFar = this._getWordAtCursor(false)
         if (wordSoFar && wordSoFar[0] === '@') {
           !this.state.mentionPopupOpen && this._setMentionPopupOpen(true)

@@ -115,6 +115,9 @@ class ConversationInput extends Component<Props> {
             small={true}
             style={styleInput}
             value={this.props.text}
+            onKeyDown={this.props.onKeyDown}
+            onKeyUp={this.props.onKeyUp}
+            onEnterKeyDown={this.props.onEnterKeyDown}
             {...multilineOpts}
           />
         ) : (

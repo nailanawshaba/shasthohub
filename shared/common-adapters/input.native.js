@@ -108,9 +108,24 @@ class Input extends Component<Props, State> {
     this._input && this._inputNode().blur()
   }
 
+  selections() {
+    const selection = this._input && this._inputNode()._lastNativeSelection
+    if (!selection) {
+      return {selectionStart: 0, selectionEnd: 0}
+    }
+    return {
+      selectionStart: selection.start,
+      selectionEnd: selection.end,
+    }
+  }
+
   _onKeyDown = (e: SyntheticKeyboardEvent<>) => {
     if (this.props.onKeyDown) {
       this.props.onKeyDown(e, false)
+    }
+
+    if (this.props.onKeyUp) {
+      this.props.onKeyUp(e, false)
     }
 
     if (this.props.onEnterKeyDown && e.key === 'Enter') {
@@ -223,7 +238,7 @@ class Input extends Component<Props, State> {
       onBlur: this._onBlur,
       onChangeText: this._onChangeText,
       onFocus: this._onFocus,
-      onKeyDown: this._onKeyDown,
+      onKeyPress: this._onKeyDown,
       onSubmitEditing: this.props.onEnterKeyDown,
       onEndEditing: this.props.onEndEditing,
       placeholder: this.props.hintText,
