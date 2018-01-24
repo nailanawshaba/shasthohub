@@ -108,7 +108,7 @@ class ConversationInput extends Component<Props> {
             selectUpCounter={this.props.upArrowCounter}
             pickSelectedUserCounter={this.props.pickSelectedCounter}
             onPickUser={this.props.insertMention}
-            onSelectUser={this.props.switchMention}
+            onSelectUser={this.props.insertMention}
             filter={this.props.mentionFilter}
           />
         )}
@@ -118,7 +118,7 @@ class ConversationInput extends Component<Props> {
             selectUpCounter={this.props.upArrowCounter}
             pickSelectedChannelCounter={this.props.pickSelectedCounter}
             onPickChannel={this.props.insertChannelMention}
-            onSelectChannel={this.props.switchChannelMention}
+            onSelectChannel={this.props.insertChannelMention}
             filter={this.props.channelMentionFilter}
           />
         )}
