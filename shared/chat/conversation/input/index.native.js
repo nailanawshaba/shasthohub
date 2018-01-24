@@ -112,6 +112,16 @@ class ConversationInput extends Component<Props> {
             filter={this.props.mentionFilter}
           />
         )}
+        {this.props.channelMentionPopupOpen && (
+          <ChannelMentionHud
+            selectDownCounter={this.props.downArrowCounter}
+            selectUpCounter={this.props.upArrowCounter}
+            pickSelectedChannelCounter={this.props.pickSelectedCounter}
+            onPickChannel={this.props.insertChannelMention}
+            onSelectChannel={this.props.switchChannelMention}
+            filter={this.props.channelMentionFilter}
+          />
+        )}
         <Box style={styleContainer}>
           {isIOS ? (
             <Input

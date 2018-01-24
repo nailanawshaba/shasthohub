@@ -143,7 +143,8 @@ class Input extends Component<Props, State> {
     }
 
     if (this.props.onKeyUp) {
-      this.props.onKeyUp(e, false)
+      e.persist()
+      setTimeout(() => this.props.onKeyUp(e, false), 10)
     }
 
     if (this.props.onEnterKeyDown && e.key === 'Enter') {
