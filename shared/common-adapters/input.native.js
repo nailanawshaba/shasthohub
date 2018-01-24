@@ -119,6 +119,24 @@ class Input extends Component<Props, State> {
     }
   }
 
+  insertTextAtCursor(text: string) {
+    const n = this._input && this._inputNode()
+    const selections = this.selections()
+    if (n && selections) {
+      const {selectionStart, selectionEnd} = selections
+      this.replaceText(text, selectionStart, selectionEnd)
+    }
+  }
+
+  replaceText(text: string, startIdx: number, endIdx: number) {
+    const n = this._input && this._inputNode()
+    if (n) {
+      const v = this.getValue()
+      const nextValue = v.slice(0, startIdx) + text + v.slice(endIdx)
+      this._onChangeText(nextValue)
+    }
+  }
+
   _onKeyDown = (e: SyntheticKeyboardEvent<>) => {
     if (this.props.onKeyDown) {
       this.props.onKeyDown(e, false)
