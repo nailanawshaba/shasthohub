@@ -152,12 +152,14 @@ const mentionHoc = (InputComponent: React.ComponentType<Props>) => {
       if (this.state.mentionPopupOpen && key(e) === 'Backspace') {
         const lastChar = this.props.text[this.props.text.length - 1]
         if (lastChar === '@') {
+          this._setMentionFilter('')
           this._setMentionPopupOpen(false)
         }
       }
       if (this.state.channelMentionPopupOpen && key(e) === 'Backspace') {
         const lastChar = this.props.text[this.props.text.length - 1]
         if (lastChar === '#') {
+          this._setChannelMentionFilter('')
           this._setChannelMentionPopupOpen(false)
         }
       }
@@ -182,6 +184,8 @@ const mentionHoc = (InputComponent: React.ComponentType<Props>) => {
           !this.state.channelMentionPopupOpen && this._setChannelMentionPopupOpen(true)
           this._setChannelMentionFilter(wordSoFar.substring(1))
         } else {
+          this._setChannelMentionFilter('')
+          this._setMentionFilter('')
           this.state.mentionPopupOpen && this._setMentionPopupOpen(false)
           this.state.channelMentionPopupOpen && this._setChannelMentionPopupOpen(false)
         }
@@ -238,6 +242,23 @@ const mentionHoc = (InputComponent: React.ComponentType<Props>) => {
       }
     }
 
+    onChangeText = (newText: string) => {
+      this.props.setText(newText)
+      const wordSoFar = this._getWordAtCursor(false)
+      if (wordSoFar && wordSoFar[0] === '@') {
+        !this.state.mentionPopupOpen && this._setMentionPopupOpen(true)
+        this._setMentionFilter(wordSoFar.substring(1))
+      } else if (wordSoFar && wordSoFar[0] === '#') {
+        !this.state.channelMentionPopupOpen && this._setChannelMentionPopupOpen(true)
+        this._setChannelMentionFilter(wordSoFar.substring(1))
+      } else {
+        this._setChannelMentionFilter('')
+        this._setMentionFilter('')
+        this.state.mentionPopupOpen && this._setMentionPopupOpen(false)
+        this.state.channelMentionPopupOpen && this._setChannelMentionPopupOpen(false)
+      }
+    }
+
     render() {
       return (
         <InputComponent
@@ -248,6 +269,7 @@ const mentionHoc = (InputComponent: React.ComponentType<Props>) => {
           switchMention={this.switchMention}
           insertChannelMention={this.insertChannelMention}
           switchChannelMention={this.switchChannelMention}
+          onChangeText={this.onChangeText}
           onKeyDown={this.onKeyDown}
           onKeyUp={this.onKeyUp}
           onEnterKeyDown={this.onEnterKeyDown}

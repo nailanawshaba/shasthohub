@@ -68,10 +68,9 @@ class Input extends Component<Props, State> {
   }
 
   _onChange = (event: {target: {value: ?string}}) => {
-    this.setState({value: event.target.value || ''})
+    const value = event.target.value
+    this.setState({value: value || ''}, () => this.props.onChangeText && this.props.onChangeText(value || ''))
     this._autoResize()
-
-    this.props.onChangeText && this.props.onChangeText(event.target.value || '')
   }
 
   _autoResize() {

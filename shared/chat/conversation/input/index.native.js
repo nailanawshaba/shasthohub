@@ -133,13 +133,12 @@ class ConversationInput extends Component<Props> {
               inputStyle={styleInputText}
               multiline={true}
               onBlur={this._onBlur}
-              onChangeText={this.props.setText}
+              onChangeText={this.props.onChangeText}
               ref={this.props.inputSetRef}
               small={true}
               style={styleInput}
               value={this.props.text}
               onKeyDown={this.props.onKeyDown}
-              onKeyUp={this.props.onKeyUp}
               onEnterKeyDown={this.props.onEnterKeyDown}
               {...multilineOpts}
             />
@@ -150,7 +149,7 @@ class ConversationInput extends Component<Props> {
               autoFocus={false}
               autoGrow={true}
               style={styleInput}
-              onChangeText={this.props.setText}
+              onChangeText={this.props.onChangeText}
               onBlur={this._onBlur}
               placeholder="Write a message"
               underlineColorAndroid={globalColors.transparent}
@@ -230,11 +229,9 @@ const ChannelMentionHud = InputAccessory(props => (
 ))
 
 const styleMentionHud = {
-  borderRadius: 4,
-  // boxShadow: '0 0 8px 0 rgba(0, 0, 0, 0.2)',
+  borderColor: globalColors.black_20,
+  borderTopWidth: 1,
   height: 220,
-  marginLeft: 20,
-  marginRight: 20,
   width: '100%',
 }
 

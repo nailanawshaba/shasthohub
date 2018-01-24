@@ -36,6 +36,7 @@ export type MentionHocProps = {
   onKeyDown: (e: SyntheticKeyboardEvent<>) => void,
   onKeyUp: (e: SyntheticKeyboardEvent<*>) => void,
   onEnterKeyDown: (e: SyntheticKeyboardEvent<>) => void,
+  onChangeText: (nextText: string) => void,
   upArrowCounter: number,
   downArrowCounter: number,
   pickSelectedCounter: number,

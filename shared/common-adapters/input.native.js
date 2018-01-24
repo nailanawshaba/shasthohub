@@ -87,9 +87,7 @@ class Input extends Component<Props, State> {
   }
 
   _onChangeText = (text: string) => {
-    this.setState({value: text || ''})
-
-    this.props.onChangeText && this.props.onChangeText(text || '')
+    this.setState({value: text || ''}, () => this.props.onChangeText && this.props.onChangeText(text || ''))
   }
 
   _inputNode() {
@@ -140,11 +138,6 @@ class Input extends Component<Props, State> {
   _onKeyDown = (e: SyntheticKeyboardEvent<>) => {
     if (this.props.onKeyDown) {
       this.props.onKeyDown(e, false)
-    }
-
-    if (this.props.onKeyUp) {
-      e.persist()
-      setTimeout(() => this.props.onKeyUp(e, false), 10)
     }
 
     if (this.props.onEnterKeyDown && e.key === 'Enter') {
