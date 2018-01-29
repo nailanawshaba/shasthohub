@@ -366,7 +366,7 @@ func (c *ChainLink) GetRevocations() []keybase1.SigID {
 	}
 	var ret []keybase1.SigID
 
-	if s, err := jsonparser.GetString(c.payloadJSON, "body", "revoke", "sig_id"); err != nil {
+	if s, err := jsonparser.GetString(c.payloadJSON, "body", "revoke", "sig_id"); err == nil {
 		if sigID, err := keybase1.SigIDFromString(s, true); err != nil {
 			ret = append(ret, sigID)
 		}
@@ -374,7 +374,7 @@ func (c *ChainLink) GetRevocations() []keybase1.SigID {
 
 	jsonparser.ArrayEach(c.payloadJSON, func(value []byte, dataType jsonparser.ValueType, offset int,
 		err error) {
-		if s, err := keybase1.SigIDFromString(string(value), true); err != nil {
+		if s, err := keybase1.SigIDFromString(string(value), true); err == nil {
 			ret = append(ret, s)
 		}
 	}, "body", "revoke", "sig_ids")
@@ -387,7 +387,7 @@ func (c *ChainLink) GetRevokeKids() []keybase1.KID {
 	}
 	var ret []keybase1.KID
 
-	if s, err := jsonparser.GetString(c.payloadJSON, "body", "revoke", "kid"); err != nil {
+	if s, err := jsonparser.GetString(c.payloadJSON, "body", "revoke", "kid"); err == nil {
 		ret = append(ret, keybase1.KIDFromString(s))
 	}
 
@@ -860,7 +860,7 @@ func (c *ChainLink) VerifySigWithKeyFamily(ckf ComputedKeyFamily) (err error) {
 func ImportLinkFromServer(g *GlobalContext, parent *SigChain, data []byte, selfUID keybase1.UID) (ret *ChainLink, err error) {
 	var id LinkID
 
-	if ph, err := jsonparser.GetString(data, "payload_hash"); err != nil {
+	if ph, err := jsonparser.GetString(data, "payload_hash"); err == nil {
 		id, err = LinkIDFromHex(ph)
 		if err != nil {
 			return nil, err
@@ -883,7 +883,6 @@ func NewChainLink(g *GlobalContext, parent *SigChain, id LinkID, data []byte) *C
 }
 
 func ImportLinkFromStorage(id LinkID, selfUID keybase1.UID, g *GlobalContext) (*ChainLink, error) {
-	return nil, nil
 	link, ok := g.LinkCache.Get(id)
 	if ok {
 		link.Contextified = NewContextified(g)
