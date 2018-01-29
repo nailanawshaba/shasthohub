@@ -7,6 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime"
@@ -42,7 +45,9 @@ func handleQuickVersion() bool {
 
 func main() {
 	err := libkb.SaferDLLLoading()
-
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 	// handle a Quick version query
 	if handleQuickVersion() {
 		return

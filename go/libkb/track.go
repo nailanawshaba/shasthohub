@@ -403,8 +403,8 @@ func LocalTrackDBKey(tracker, trackee keybase1.UID, expireLocal bool) DbKey {
 //=====================================================================
 
 func localTrackChainLinkFor(tracker, trackee keybase1.UID, localExpires bool, g *GlobalContext) (ret *TrackChainLink, err error) {
-	var obj *jsonw.Wrapper
-	obj, err = g.LocalDb.Get(LocalTrackDBKey(tracker, trackee, localExpires))
+	var obj []byte
+	obj, _, err = g.LocalDb.GetRaw(LocalTrackDBKey(tracker, trackee, localExpires))
 	if err != nil {
 		g.Log.Debug("| DB lookup failed")
 		return
