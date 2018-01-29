@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"runtime/debug"
 
 	keybase1 "github.com/keybase/client/go/protocol/keybase1"
 	"github.com/keybase/go-crypto/ed25519"
@@ -453,6 +454,7 @@ func (k NaclSigningKeyPair) VerifyString(ctx VerifyContext, sig string, msg []by
 		return
 	}
 	if !FastByteArrayEq(extractedMsg, msg) {
+		debug.PrintStack()
 		err = BadSigError{"wrong payload"}
 		return
 	}
@@ -659,6 +661,7 @@ func SigAssertKbPayload(armored string, expected []byte) (sigID keybase1.SigID, 
 		return nilSigID, err
 	}
 	if !FastByteArrayEq(expected, payload) {
+		debug.PrintStack()
 		return nilSigID, BadSigError{"wrong payload"}
 	}
 	return sigID, nil

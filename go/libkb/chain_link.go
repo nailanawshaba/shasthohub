@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/buger/jsonparser"
@@ -414,9 +415,16 @@ func (c *ChainLink) checkAgainstMerkleTree(t *MerkleTriple) (found bool, err err
 	return
 }
 
-func (tmp *ChainLinkUnpacked) unpackPayloadJSON(data []byte) (err error) {
+func (tmp *ChainLinkUnpacked) unpackPayloadJSON(edata []byte) (err error) {
 	var sq int64
 
+	sdata, err := strconv.Unquote(fmt.Sprintf(`"%s"`, string(edata)))
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(os.Stderr, "MIKE: %s\n", sdata)
+	tmp.payloadJSONStr = sdata
+	data := []byte(sdata)
 	if s, ierr := jsonparser.GetString(data, "body", "key", "fingerprint"); ierr == nil {
 		if tmp.pgpFingerprint, err = PGPFingerprintFromHex(s); err != nil {
 			return err
@@ -428,11 +436,9 @@ func (tmp *ChainLinkUnpacked) unpackPayloadJSON(data []byte) (err error) {
 	if s, ierr := jsonparser.GetString(data, "body", "key", "eldest_kid"); ierr == nil {
 		tmp.eldestKID = keybase1.KIDFromString(s)
 	}
-	fmt.Fprintf(os.Stderr, "MIKE: BODY: %s\n", data)
 	if tmp.username, err = jsonparser.GetString(data, "body", "key", "username"); err != nil {
 		return err
 	}
-	fmt.Fprintf(os.Stderr, "MIKE: BODY: %s\n", tmp.username)
 	if s, ierr := jsonparser.GetString(data, "body", "key", "uid"); ierr == nil {
 		if tmp.uid, err = UIDFromHex(s); err != nil {
 			return err
@@ -563,7 +569,6 @@ func (c *ChainLink) Unpack(trusted bool, selfUID keybase1.UID) (err error) {
 		if err := tmp.unpackPayloadJSON(data); err != nil {
 			return err
 		}
-		c.G().Log.Debug("MIKE: seqno: %v", tmp.seqno)
 		c.payloadJSON = data
 	}
 

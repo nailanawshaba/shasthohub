@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"runtime/debug"
 	"strings"
 
 	keybase1 "github.com/keybase/client/go/protocol/keybase1"
@@ -762,6 +763,7 @@ func (k PGPKeyBundle) VerifyString(ctx VerifyContext, sig string, msg []byte) (i
 		return
 	}
 	if !FastByteArrayEq(extractedMsg, msg) {
+		debug.PrintStack()
 		err = BadSigError{"wrong payload"}
 		return
 	}
