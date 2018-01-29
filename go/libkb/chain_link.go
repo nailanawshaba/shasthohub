@@ -95,7 +95,6 @@ type ChainLinkUnpacked struct {
 	seqno                              keybase1.Seqno
 	seqType                            keybase1.SeqType
 	ignoreIfUnsupported                bool
-	payloadJSONStr                     string
 	ctime, etime                       int64
 	pgpFingerprint                     *PGPFingerprint
 	kid                                keybase1.KID
@@ -311,7 +310,7 @@ func (c *ChainLink) Pack() error {
 	} else {
 
 		// Store the original JSON string so its order is preserved
-		p.SetKey("payload_json", jsonw.NewString(c.unpacked.payloadJSONStr))
+		p.SetKey("payload_json", jsonw.NewString(string(c.payloadJSON)))
 		p.SetKey("sig", jsonw.NewString(c.unpacked.sig))
 		p.SetKey("sig_id", jsonw.NewString(string(c.unpacked.sigID)))
 		p.SetKey("kid", c.unpacked.kid.ToJsonw())
@@ -415,16 +414,8 @@ func (c *ChainLink) checkAgainstMerkleTree(t *MerkleTriple) (found bool, err err
 	return
 }
 
-func (tmp *ChainLinkUnpacked) unpackPayloadJSON(edata []byte) (err error) {
+func (tmp *ChainLinkUnpacked) unpackPayloadJSON(data []byte) (err error) {
 	var sq int64
-
-	sdata, err := strconv.Unquote(fmt.Sprintf(`"%s"`, string(edata)))
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(os.Stderr, "MIKE: %s\n", sdata)
-	tmp.payloadJSONStr = sdata
-	data := []byte(sdata)
 	if s, ierr := jsonparser.GetString(data, "body", "key", "fingerprint"); ierr == nil {
 		if tmp.pgpFingerprint, err = PGPFingerprintFromHex(s); err != nil {
 			return err
@@ -566,10 +557,14 @@ func (c *ChainLink) Unpack(trusted bool, selfUID keybase1.UID) (err error) {
 	}
 
 	if data, _, _, ierr := jsonparser.Get(c.packed, "payload_json"); ierr == nil {
-		if err := tmp.unpackPayloadJSON(data); err != nil {
+		sdata, err := strconv.Unquote(fmt.Sprintf(`"%s"`, string(data)))
+		if err != nil {
 			return err
 		}
-		c.payloadJSON = data
+		if err := tmp.unpackPayloadJSON([]byte(sdata)); err != nil {
+			return err
+		}
+		c.payloadJSON = []byte(sdata)
 	}
 
 	var sigKID, serverKID, payloadKID keybase1.KID
@@ -682,10 +677,11 @@ func ComputeLinkID(d []byte) LinkID {
 }
 
 func (c *ChainLink) getPayloadHash() LinkID {
-	if c.unpacked == nil || c.unpacked.payloadJSONStr == "" {
+	if c.payloadJSON == nil {
 		return nil
 	}
-	h := sha256.Sum256([]byte(c.unpacked.payloadJSONStr))
+	fmt.Fprintf(os.Stderr, "MIKE: %s\n", c.payloadJSON)
+	h := sha256.Sum256(c.payloadJSON)
 	return h[:]
 }
 
@@ -721,7 +717,7 @@ func (c *ChainLink) verifyHashV1() error {
 // getFixedPayload usually just returns c.unpacked.payloadJSONstr, but sometimes
 // it adds extra whitespace to work around server-side bugs.
 func (c ChainLink) getFixedPayload() []byte {
-	ret := c.unpacked.payloadJSONStr
+	ret := string(c.payloadJSON)
 	if s, ok := badWhitespaceChainLinks[c.unpacked.sigID]; ok {
 		c.G().Log.Debug("Fixing payload by adding newline on link '%s': %s", c.unpacked.sigID, s)
 		ret += "\n"
